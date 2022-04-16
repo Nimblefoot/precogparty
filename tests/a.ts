@@ -23,6 +23,16 @@ import {
 } from "@solana/spl-token";
 import { assert } from "chai";
 
+const assertThrowsAsync = async (fn: () => Promise<any>, msg?: string) => {
+  let error = null;
+  try {
+    await fn();
+  } catch (err) {
+    error = err;
+  }
+  assert.instanceOf(error, Error, msg);
+};
+
 //const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 describe("a", () => {
@@ -242,5 +252,44 @@ describe("a", () => {
       assert.equal(userYesAccount.amount.toString(), "0");
       assert.equal(postMergeUsdc, startingUsdcAmount);
     })();
+
+    /* RESOLVE MARKET */
+    await (async () => {
+      await assertThrowsAsync(
+        () =>
+          program.methods
+            .resolveMarket(19)
+            .accounts({
+              resolutionAuthority: user,
+              marketAccount,
+            })
+            .rpc(),
+        "can't resolve with a nonsense outcome"
+      );
+
+      const sig = await program.methods
+        .resolveMarket(1)
+        .accounts({
+          resolutionAuthority: user,
+          marketAccount,
+        })
+        .rpc();
+      console.log("resolve market NO", sig);
+
+      await assertThrowsAsync(
+        () =>
+          program.methods
+            .resolveMarket(2)
+            .accounts({
+              resolutionAuthority: user,
+              marketAccount,
+            })
+            .rpc(),
+        "can't resolve a resolved market"
+      );
+    })();
+
+    /* TEST REDEEM CONTINGENT COINS */
+    await (async () => {})();
   });
 });

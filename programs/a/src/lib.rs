@@ -141,10 +141,23 @@ pub mod a {
         ctx: Context<RedeemContingentCoin>,
         amount: u64,
     ) -> Result<()> {
-        if ctx.accounts.contingent_coin_mint.key() != ctx.accounts.market_account.yes_mint
-            && ctx.accounts.contingent_coin_mint.key() != ctx.accounts.market_account.no_mint
-        {
+        if (ctx.accounts.market_account.resolution == 0) {
+            return err!(ErrorCode::MarketNotResolved);
+        }
+
+        let coin_is_yes =
+            ctx.accounts.contingent_coin_mint.key() == ctx.accounts.market_account.yes_mint;
+        let coin_is_no =
+            ctx.accounts.contingent_coin_mint.key() == ctx.accounts.market_account.no_mint;
+        if !(coin_is_yes || coin_is_no) {
             return err!(ErrorCode::ContingentMintNotRecognized);
+        }
+
+        let resolution_is_yes = ctx.accounts.market_account.resolution == 1;
+        let resolution_is_no = ctx.accounts.market_account.resolution == 2;
+
+        if !((coin_is_yes && resolution_is_yes) || (coin_is_no && resolution_is_no)) {
+            return err!(ErrorCode::ContingencyNotMet);
         }
 
         let market_name = ctx.accounts.market_account.name.as_ref();
@@ -175,6 +188,14 @@ pub mod a {
 
         Ok(())
     }
+
+    pub fn resolve_market(ctx: Context<ResolveMarket>, resolution: u8) -> Result<()> {
+        if (resolution != 1 && resolution != 2) {
+            return err!(ErrorCode::InvalidResolution);
+        }
+        ctx.accounts.market_account.resolution = resolution;
+        Ok(())
+    }
 }
 #[account]
 #[derive(Default)]
@@ -190,7 +211,7 @@ pub struct PredictionMarket {
     market_authority: Pubkey,      // 32
     resolution_authority: Pubkey,  // 32
     description_authority: Pubkey, // 32
-    resolution: u8,                // 1 (bools are also 1 byte)
+    resolution: u8,                // 1 /* 1 -> yes, 2 -> no */
 }
 
 impl PredictionMarket {
@@ -266,7 +287,10 @@ pub struct MintMergeContingentSet<'info> {
     pub user: Signer<'info>,
 
     #[account(
-        seeds = ["market_account".as_bytes(), market_account.name.as_ref().trim_ascii_whitespace()],
+        seeds = [
+            "market_account".as_bytes(), 
+            market_account.name.as_ref().trim_ascii_whitespace()
+        ],
         bump,
     )]
     pub market_account: Account<'info, PredictionMarket>,
@@ -314,7 +338,10 @@ pub struct MintContingentSetTogether {}
 pub struct RedeemContingentCoin<'info> {
     pub user: Signer<'info>,
     #[account(
-        seeds = ["market_account".as_bytes(), market_account.name.as_ref().trim_ascii_whitespace()],
+        seeds = [
+            "market_account".as_bytes(), 
+            market_account.name.as_ref().trim_ascii_whitespace()
+        ],
         bump,
     )]
     pub market_account: Account<'info, PredictionMarket>,
@@ -339,7 +366,22 @@ pub struct RedeemContingentCoin<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub struct ResolveMarket {}
+#[derive(Accounts)]
+#[instruction(resolution: u8 /* 1 -> yes, 2 -> no */)]
+pub struct ResolveMarket<'info> {
+    pub resolution_authority: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [
+            "market_account".as_bytes(), 
+            market_account.name.as_ref().trim_ascii_whitespace()
+        ],
+        bump,
+        has_one = resolution_authority,
+        constraint = market_account.resolution == 0
+    )]
+    pub market_account: Account<'info, PredictionMarket>,
+}
 
 pub struct UpdateAdminAuthority {}
 pub struct UpdateResolutionAuthority {}
@@ -369,6 +411,12 @@ impl<T: Deref<Target = [u8]>> TrimAsciiWhitespace for T {
 pub enum ErrorCode {
     #[msg("Insufficient USDC")]
     LowUsdc,
+    #[msg("Unrecognized resolution; 1 -> yes, 2 -> no")]
+    InvalidResolution,
     #[msg("Contingent coin mint supplied is not equal to the market's yes_mint or no_mint")]
     ContingentMintNotRecognized,
+    #[msg("Market is not resolved")]
+    MarketNotResolved,
+    #[msg("The outcome associated with the coin is not the resolution")]
+    ContingencyNotMet,
 }
