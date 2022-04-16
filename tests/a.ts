@@ -13,7 +13,6 @@ import {
 import {
   createAssociatedTokenAccountInstruction,
   createInitializeMintInstruction,
-  createMint,
   createMintToInstruction,
   getAccount,
   getAssociatedTokenAddress,
