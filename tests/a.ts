@@ -35,7 +35,7 @@ const assertThrowsAsync = async (fn: () => Promise<any>, msg?: string) => {
 
 //const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
-describe("a", () => {
+describe("a", async () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
   const provider = anchor.getProvider();
@@ -44,8 +44,24 @@ describe("a", () => {
 
   it("end-to-end", async () => {
     const user = provider.wallet.publicKey;
+    const marketName = "test market";
 
-    // SET UP USDC
+    const [marketAccount] = await PublicKey.findProgramAddress(
+      [Buffer.from("market_account"), Buffer.from(marketName)],
+      program.programId
+    );
+
+    const [noMint] = await PublicKey.findProgramAddress(
+      [Buffer.from("no_mint"), marketAccount.toBuffer()],
+      program.programId
+    );
+
+    const [yesMint] = await PublicKey.findProgramAddress(
+      [Buffer.from("yes_mint"), marketAccount.toBuffer()],
+      program.programId
+    );
+
+    /* SET UP USDC */
     const { usdcMint, userUsdc } = await (async () => {
       const usdcMintKeypair = new Keypair();
       const usdcMint = usdcMintKeypair.publicKey;
@@ -95,22 +111,6 @@ describe("a", () => {
 
       return { usdcMint, userUsdc };
     })();
-
-    const marketName = "test market";
-    const [marketAccount] = await PublicKey.findProgramAddress(
-      [Buffer.from("market_account"), Buffer.from(marketName)],
-      program.programId
-    );
-
-    const [noMint] = await PublicKey.findProgramAddress(
-      [Buffer.from("no_mint"), marketAccount.toBuffer()],
-      program.programId
-    );
-
-    const [yesMint] = await PublicKey.findProgramAddress(
-      [Buffer.from("yes_mint"), marketAccount.toBuffer()],
-      program.programId
-    );
 
     const usdcVault = await getAssociatedTokenAddress(
       usdcMint,
@@ -268,7 +268,7 @@ describe("a", () => {
       );
 
       const sig = await program.methods
-        .resolveMarket(1)
+        .resolveMarket(2)
         .accounts({
           resolutionAuthority: user,
           marketAccount,
@@ -279,7 +279,7 @@ describe("a", () => {
       await assertThrowsAsync(
         () =>
           program.methods
-            .resolveMarket(2)
+            .resolveMarket(1)
             .accounts({
               resolutionAuthority: user,
               marketAccount,
@@ -290,6 +290,74 @@ describe("a", () => {
     })();
 
     /* TEST REDEEM CONTINGENT COINS */
-    await (async () => {})();
+    await (async () => {
+      await program.methods
+        .mintContingentSet(new anchor.BN(20))
+        .accounts({
+          user,
+          userNo,
+          userYes,
+          marketAccount,
+          yesMint,
+          noMint,
+          usdcVault,
+          userUsdc,
+        })
+        .rpc()
+        .catch((e) => {
+          console.log(e);
+          throw e;
+        });
+
+      await assertThrowsAsync(
+        () =>
+          program.methods
+            .redeemContingentCoin(new anchor.BN(100))
+            .accounts({
+              user,
+              marketAccount,
+              contingentCoinMint: noMint,
+              userContingentCoin: userNo,
+              usdcVault,
+              userUsdc,
+            })
+            .rpc(),
+        "can't redeem more than you have"
+      );
+      await assertThrowsAsync(
+        () =>
+          program.methods
+            .redeemContingentCoin(new anchor.BN(20))
+            .accounts({
+              user,
+              marketAccount,
+              contingentCoinMint: yesMint,
+              userContingentCoin: userYes,
+              usdcVault,
+              userUsdc,
+            })
+            .rpc(),
+        "can't redeem when outcome is not met"
+      );
+      const sig = await program.methods
+        .redeemContingentCoin(new anchor.BN(20))
+        .accounts({
+          user,
+          marketAccount,
+          contingentCoinMint: noMint,
+          userContingentCoin: userNo,
+          usdcVault,
+          userUsdc,
+        })
+        .rpc();
+      console.log("redeemed NO coin", sig);
+
+      const userNoAccount = await getAccount(connection, userNo);
+      const postRedemptionUsdc = parseInt(
+        (await getAccount(connection, userUsdc)).amount.toString()
+      );
+      assert.equal(userNoAccount.amount.toString(), "0");
+      assert.equal(postRedemptionUsdc, startingUsdcAmount);
+    })();
   });
 });

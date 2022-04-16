@@ -345,6 +345,7 @@ pub struct RedeemContingentCoin<'info> {
         bump,
     )]
     pub market_account: Account<'info, PredictionMarket>,
+    #[account(mut)]
     pub contingent_coin_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
