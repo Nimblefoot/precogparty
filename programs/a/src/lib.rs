@@ -51,7 +51,10 @@ pub mod a {
         Ok(())
     }
 
-    pub fn mint_contingent_set<'info>(ctx: Context<MintContingentSet>, amount: u64) -> Result<()> {
+    pub fn mint_contingent_set<'info>(
+        ctx: Context<MintMergeContingentSet>,
+        amount: u64,
+    ) -> Result<()> {
         let market_name = ctx.accounts.market_account.name.as_ref();
         let seeds = &[
             "market_account".as_bytes(),
@@ -91,7 +94,10 @@ pub mod a {
         Ok(())
     }
 
-    pub fn merge_contingent_set<'info>(ctx: Context<MintContingentSet>, amount: u64) -> Result<()> {
+    pub fn merge_contingent_set<'info>(
+        ctx: Context<MintMergeContingentSet>,
+        amount: u64,
+    ) -> Result<()> {
         let market_name = ctx.accounts.market_account.name.as_ref();
         let seeds = &[
             "market_account".as_bytes(),
@@ -128,6 +134,45 @@ pub mod a {
             let cpi_ctx = CpiContext::new(cpi_program, accounts);
             token::burn(cpi_ctx, amount)?;
         }
+        Ok(())
+    }
+
+    pub fn redeem_contingent_coin<'info>(
+        ctx: Context<RedeemContingentCoin>,
+        amount: u64,
+    ) -> Result<()> {
+        if ctx.accounts.contingent_coin_mint.key() != ctx.accounts.market_account.yes_mint
+            && ctx.accounts.contingent_coin_mint.key() != ctx.accounts.market_account.no_mint
+        {
+            return err!(ErrorCode::ContingentMintNotRecognized);
+        }
+
+        let market_name = ctx.accounts.market_account.name.as_ref();
+        let seeds = &[
+            "market_account".as_bytes(),
+            market_name.trim_ascii_whitespace(),
+            &[ctx.accounts.market_account.bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let accounts = Transfer {
+            from: ctx.accounts.usdc_vault.to_account_info(),
+            to: ctx.accounts.user_usdc.to_account_info(),
+            authority: ctx.accounts.market_account.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
+        token::transfer(cpi_ctx, amount)?;
+
+        let accounts = Burn {
+            mint: ctx.accounts.contingent_coin_mint.to_account_info(),
+            authority: ctx.accounts.user.to_account_info(),
+            from: ctx.accounts.user_contingent_coin.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new(cpi_program, accounts);
+        token::burn(cpi_ctx, amount)?;
+
         Ok(())
     }
 }
@@ -217,7 +262,7 @@ pub struct CreateMarket<'info> {
 
 #[derive(Accounts)]
 #[instruction(amount: u64)]
-pub struct MintContingentSet<'info> {
+pub struct MintMergeContingentSet<'info> {
     pub user: Signer<'info>,
 
     #[account(
@@ -232,51 +277,6 @@ pub struct MintContingentSet<'info> {
     pub yes_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
-        address = market_account.no_mint
-    )]
-    pub no_mint: Box<Account<'info, Mint>>,
-    #[account(
-        mut,
-        address = market_account.usdc_vault
-    )]
-    pub usdc_vault: Box<Account<'info, TokenAccount>>,
-
-    #[account(
-        mut,
-        associated_token::authority = user,
-        associated_token::mint = market_account.yes_mint
-    )]
-    pub user_yes: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        associated_token::authority = user,
-        associated_token::mint = market_account.no_mint)]
-    pub user_no: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        associated_token::authority = user,
-        associated_token::mint = usdc_vault.mint,
-    )]
-    pub user_usdc: Account<'info, TokenAccount>,
-
-    pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-#[instruction(amount: u64)]
-pub struct MergeContingentSet<'info> {
-    pub user: Signer<'info>,
-
-    #[account(
-        seeds = ["market_account".as_bytes(), market_account.name.as_ref().trim_ascii_whitespace()],
-        bump,
-    )]
-    pub market_account: Account<'info, PredictionMarket>,
-    #[account(
-        address = market_account.yes_mint
-    )]
-    pub yes_mint: Box<Account<'info, Mint>>,
-    #[account(
         address = market_account.no_mint
     )]
     pub no_mint: Box<Account<'info, Mint>>,
@@ -309,7 +309,35 @@ pub struct MergeContingentSet<'info> {
 
 pub struct MintContingentSetTogether {}
 
-pub struct RedeemContingentCoin {}
+#[derive(Accounts)]
+#[instruction(amount: u64)]
+pub struct RedeemContingentCoin<'info> {
+    pub user: Signer<'info>,
+    #[account(
+        seeds = ["market_account".as_bytes(), market_account.name.as_ref().trim_ascii_whitespace()],
+        bump,
+    )]
+    pub market_account: Account<'info, PredictionMarket>,
+    pub contingent_coin_mint: Box<Account<'info, Mint>>,
+    #[account(
+        mut,
+        address = market_account.usdc_vault
+    )]
+    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        associated_token::authority = user,
+        associated_token::mint = contingent_coin_mint)]
+    pub user_contingent_coin: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        associated_token::authority = user,
+        associated_token::mint = usdc_vault.mint,
+    )]
+    pub user_usdc: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
+}
 
 pub struct ResolveMarket {}
 
@@ -335,4 +363,12 @@ impl<T: Deref<Target = [u8]>> TrimAsciiWhitespace for T {
         let to = self.iter().rposition(|x| !x.is_ascii_whitespace()).unwrap();
         &self[from..=to]
     }
+}
+
+#[error_code]
+pub enum ErrorCode {
+    #[msg("Insufficient USDC")]
+    LowUsdc,
+    #[msg("Contingent coin mint supplied is not equal to the market's yes_mint or no_mint")]
+    ContingentMintNotRecognized,
 }

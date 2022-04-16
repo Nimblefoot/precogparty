@@ -156,7 +156,29 @@ describe("a", () => {
         createAssociatedTokenAccountInstruction(user, userNo, user, noMint),
         createAssociatedTokenAccountInstruction(user, userYes, user, yesMint),
       ];
+      /* 
+      const expectedFailure = await program.methods
+        .mintContingentSet(new anchor.BN(1000000))
+        .accounts({
+          user,
+          userNo,
+          userYes,
+          marketAccount,
+          yesMint,
+          noMint,
+          usdcVault,
+          userUsdc,
+        })
+        .preInstructions(userAtaIxs)
+        .rpc()
+        .catch((e) => "fail");
 
+      assert.equal(
+        expectedFailure,
+        "fail",
+        "can't mint more than you have in USDC"
+      );
+ */
       const sig = await program.methods
         .mintContingentSet(new anchor.BN(10))
         .accounts({
