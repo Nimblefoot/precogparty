@@ -196,6 +196,19 @@ pub mod a {
         ctx.accounts.market_account.resolution = resolution;
         Ok(())
     }
+
+    pub fn update_market_description(
+        ctx: Context<UpdateMarketDescription>,
+        market_description_uri: String,
+    ) -> Result<()> {
+        let desc_bytes = market_description_uri.as_bytes();
+        let mut desc_data = [b' '; 32];
+        desc_data[..desc_bytes.len()].copy_from_slice(desc_bytes);
+
+        ctx.accounts.market_account.description_uri = desc_data;
+
+        Ok(())
+    }
 }
 #[account]
 #[derive(Default)]
@@ -384,12 +397,41 @@ pub struct ResolveMarket<'info> {
     pub market_account: Account<'info, PredictionMarket>,
 }
 
-pub struct UpdateAdminAuthority {}
+#[derive(Accounts)]
+pub struct UpdateMarketAuthority<'info> {
+    pub market_authority: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [
+            "market_account".as_bytes(), 
+            market_account.name.as_ref().trim_ascii_whitespace()
+        ],
+        bump,
+        has_one = market_authority,
+    )]
+    pub market_account: Account<'info, PredictionMarket>,
+    /// CHECK: we do not care about the contents of this account
+    pub new_market_authority: AccountInfo<'info>,
+}
 pub struct UpdateResolutionAuthority {}
 
 pub struct UpdateDescriptionAuthority {}
 
-pub struct UpdateMarketDescription {}
+#[derive(Accounts)]
+#[instruction(market_description_uri: String)]
+pub struct UpdateMarketDescription<'info> {
+    pub description_authority: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [
+            "market_account".as_bytes(), 
+            market_account.name.as_ref().trim_ascii_whitespace()
+        ],
+        bump,
+        has_one = description_authority,
+    )]
+    pub market_account: Account<'info, PredictionMarket>,
+}
 
 /// Trait to allow trimming ascii whitespace from a &[u8].
 pub trait TrimAsciiWhitespace {

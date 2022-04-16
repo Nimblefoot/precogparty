@@ -35,22 +35,22 @@ const assertThrowsAsync = async (fn: () => Promise<any>, msg?: string) => {
 
 //const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
-describe("a", async () => {
+describe("end-to-end", async () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
   const provider = anchor.getProvider();
   const connection = provider.connection;
   const program = anchor.workspace.A as Program<A>;
 
+  const user = provider.wallet.publicKey;
+  const marketName = "test market";
+
+  const [marketAccount] = await PublicKey.findProgramAddress(
+    [Buffer.from("market_account"), Buffer.from(marketName)],
+    program.programId
+  );
+
   it("end-to-end", async () => {
-    const user = provider.wallet.publicKey;
-    const marketName = "test market";
-
-    const [marketAccount] = await PublicKey.findProgramAddress(
-      [Buffer.from("market_account"), Buffer.from(marketName)],
-      program.programId
-    );
-
     const [noMint] = await PublicKey.findProgramAddress(
       [Buffer.from("no_mint"), marketAccount.toBuffer()],
       program.programId
@@ -359,5 +359,22 @@ describe("a", async () => {
       assert.equal(userNoAccount.amount.toString(), "0");
       assert.equal(postRedemptionUsdc, startingUsdcAmount);
     })();
+  });
+
+  it("Updates description URI", async () => {
+    const desc = "poopynoopy";
+    const sig = await program.methods
+      .updateMarketDescription(desc)
+      .accounts({
+        descriptionAuthority: user,
+        marketAccount,
+      })
+      .rpc();
+    console.log("updated description", sig);
+    const onchainDescription = (
+      await program.account.predictionMarket.fetch(marketAccount)
+    ).descriptionUri;
+    const s = Buffer.from(onchainDescription).toString().trimEnd();
+    assert.strictEqual(desc, s, "description uri updated");
   });
 });
