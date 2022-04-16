@@ -3,25 +3,18 @@ use std::convert::{TryFrom, TryInto};
 use std::ops::Deref;
 
 use anchor_lang::prelude::*;
+
 use anchor_spl::{
     associated_token::{self, AssociatedToken},
     mint,
-    token::{self, Mint, Token, TokenAccount},
+    token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
-fn slice_to_fixed_16(slice: &[u8]) -> &[u8; 16] {
-    slice.try_into().expect("slice with incorrect length")
-}
-fn slice_to_fixed_32(slice: &[u8]) -> &[u8; 32] {
-    slice.try_into().expect("slice with incorrect length")
-}
-
 const TOKEN_DECIMALS: u8 = 6;
 #[program]
 pub mod a {
-    use anchor_spl::token::{MintTo, Transfer};
 
     use super::*;
 
@@ -94,6 +87,46 @@ pub mod a {
             let cpi_program = ctx.accounts.token_program.to_account_info();
             let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
             token::mint_to(cpi_ctx, amount)?;
+        }
+        Ok(())
+    }
+
+    pub fn merge_contingent_set<'info>(ctx: Context<MintContingentSet>, amount: u64) -> Result<()> {
+        let market_name = ctx.accounts.market_account.name.as_ref();
+        let seeds = &[
+            "market_account".as_bytes(),
+            market_name.trim_ascii_whitespace(),
+            &[ctx.accounts.market_account.bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let accounts = Transfer {
+            from: ctx.accounts.usdc_vault.to_account_info(),
+            to: ctx.accounts.user_usdc.to_account_info(),
+            authority: ctx.accounts.market_account.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
+        token::transfer(cpi_ctx, amount)?;
+
+        for [mint, from] in [
+            [
+                ctx.accounts.yes_mint.to_account_info(),
+                ctx.accounts.user_yes.to_account_info(),
+            ],
+            [
+                ctx.accounts.no_mint.to_account_info(),
+                ctx.accounts.user_no.to_account_info(),
+            ],
+        ] {
+            let accounts = Burn {
+                mint,
+                authority: ctx.accounts.user.to_account_info(),
+                from,
+            };
+            let cpi_program = ctx.accounts.token_program.to_account_info();
+            let cpi_ctx = CpiContext::new(cpi_program, accounts);
+            token::burn(cpi_ctx, amount)?;
         }
         Ok(())
     }
@@ -229,9 +262,52 @@ pub struct MintContingentSet<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub struct MintContingentSetTogether {}
+#[derive(Accounts)]
+#[instruction(amount: u64)]
+pub struct MergeContingentSet<'info> {
+    pub user: Signer<'info>,
 
-pub struct MergeContingentSet {}
+    #[account(
+        seeds = ["market_account".as_bytes(), market_account.name.as_ref().trim_ascii_whitespace()],
+        bump,
+    )]
+    pub market_account: Account<'info, PredictionMarket>,
+    #[account(
+        address = market_account.yes_mint
+    )]
+    pub yes_mint: Box<Account<'info, Mint>>,
+    #[account(
+        address = market_account.no_mint
+    )]
+    pub no_mint: Box<Account<'info, Mint>>,
+    #[account(
+        mut,
+        address = market_account.usdc_vault
+    )]
+    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        associated_token::authority = user,
+        associated_token::mint = market_account.yes_mint
+    )]
+    pub user_yes: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        associated_token::authority = user,
+        associated_token::mint = market_account.no_mint)]
+    pub user_no: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        associated_token::authority = user,
+        associated_token::mint = usdc_vault.mint,
+    )]
+    pub user_usdc: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
+}
+
+pub struct MintContingentSetTogether {}
 
 pub struct RedeemContingentCoin {}
 
