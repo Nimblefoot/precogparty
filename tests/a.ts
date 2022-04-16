@@ -35,6 +35,7 @@ describe("a", () => {
   it("end-to-end", async () => {
     const user = provider.wallet.publicKey;
 
+    // SET UP USDC
     const { usdcMint, userUsdc } = await (async () => {
       const usdcMintKeypair = new Keypair();
       const usdcMint = usdcMintKeypair.publicKey;
@@ -101,12 +102,6 @@ describe("a", () => {
       program.programId
     );
 
-    /* 
-    const ix = instructions.createMarket(
-      { marketName, marketDescriptionUri: "fart" },
-      {marketAuthority: provider.wallet.publicKey, marketAccount },
-    ); */
-
     const usdcVault = await getAssociatedTokenAddress(
       usdcMint,
       marketAccount,
@@ -134,18 +129,11 @@ describe("a", () => {
       });
 
     console.log("createMarket", sig);
-    assert(sig);
-
-    /* test mint set */
 
     const userNo = await getAssociatedTokenAddress(noMint, user);
     const userYes = await getAssociatedTokenAddress(yesMint, user);
 
-    const userAtaIxs = [
-      createAssociatedTokenAccountInstruction(user, userNo, user, noMint),
-      createAssociatedTokenAccountInstruction(user, userYes, user, yesMint),
-    ];
-
+    /* 
     const accounts = {
       user: user.toString(),
       userNo: userNo.toString(),
@@ -156,40 +144,81 @@ describe("a", () => {
       usdcVault: usdcVault.toString(),
       userUsdc: userUsdc.toString(),
     };
-    // console.log(accounts);
+    console.log(accounts); */
 
     const startingUsdcAmount = parseInt(
       (await getAccount(connection, userUsdc)).amount.toString()
     );
 
-    const sig2 = await program.methods
-      .mintContingentSet(new anchor.BN(10))
-      .accounts({
-        user,
-        userNo,
-        userYes,
-        marketAccount,
-        yesMint,
-        noMint,
-        usdcVault,
-        userUsdc,
-      })
-      .preInstructions(userAtaIxs)
-      .rpc()
-      .catch((e) => {
-        console.log(e);
-        throw e;
-      });
+    /* TEST MINT SET */
+    await (async () => {
+      const userAtaIxs = [
+        createAssociatedTokenAccountInstruction(user, userNo, user, noMint),
+        createAssociatedTokenAccountInstruction(user, userYes, user, yesMint),
+      ];
 
-    console.log("mint contingent set", sig2);
-    const userNoAccount = await getAccount(connection, userNo);
-    assert.equal(userNoAccount.amount.toString(), "10");
-    const userYesAccount = await getAccount(connection, userYes);
-    assert.equal(userYesAccount.amount.toString(), "10");
+      const sig = await program.methods
+        .mintContingentSet(new anchor.BN(10))
+        .accounts({
+          user,
+          userNo,
+          userYes,
+          marketAccount,
+          yesMint,
+          noMint,
+          usdcVault,
+          userUsdc,
+        })
+        .preInstructions(userAtaIxs)
+        .rpc()
+        .catch((e) => {
+          console.log(e);
+          throw e;
+        });
 
-    const endingUsdcAmount = parseInt(
-      (await getAccount(connection, userUsdc)).amount.toString()
-    );
-    assert.equal(endingUsdcAmount, startingUsdcAmount - 10);
+      console.log("mint contingent set", sig);
+
+      const userNoAccount = await getAccount(connection, userNo);
+      assert.equal(userNoAccount.amount.toString(), "10");
+      const userYesAccount = await getAccount(connection, userYes);
+      assert.equal(userYesAccount.amount.toString(), "10");
+
+      const endingUsdcAmount = parseInt(
+        (await getAccount(connection, userUsdc)).amount.toString()
+      );
+      assert.equal(endingUsdcAmount, startingUsdcAmount - 10);
+    })();
+
+    /* TEST MERGE SET */
+    await (async () => {
+      const sig3 = await program.methods
+        .mergeContingentSet(new anchor.BN(10))
+        .accounts({
+          user,
+          userNo,
+          userYes,
+          marketAccount,
+          yesMint,
+          noMint,
+          usdcVault,
+          userUsdc,
+        })
+        .rpc()
+        .catch((e) => {
+          console.log(e);
+          throw e;
+        });
+      console.log("merge set", sig3);
+
+      const postMergeUsdc = parseInt(
+        (await getAccount(connection, userUsdc)).amount.toString()
+      );
+      const userNoAccount = await getAccount(connection, userNo);
+      const userYesAccount = await getAccount(connection, userYes);
+
+      assert.equal(userNoAccount.amount.toString(), "0");
+      assert.equal(userYesAccount.amount.toString(), "0");
+      assert.equal(postMergeUsdc, startingUsdcAmount);
+    })();
   });
 });
