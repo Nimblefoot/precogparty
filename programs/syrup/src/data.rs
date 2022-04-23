@@ -1,6 +1,11 @@
-use std::mem::size_of;
+// use std::mem::size_of;
 
 use anchor_lang::prelude::*;
+
+#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct ListEntry {
+    value: u16,
+}
 
 #[account]
 #[derive(Default)]
@@ -10,8 +15,9 @@ pub struct ListInfo {
     pub length: u32,
 }
 
+#[account]
 pub struct ListChunk {
-    list: Vec<u16>,
+    list: Vec<ListEntry>,
 }
 
 impl Default for ListChunk {
@@ -39,32 +45,30 @@ impl ListChunk {
         self.list.len() == 0
     }
 
-    pub fn try_push(&mut self, value: u16) -> std::result::Result<(), ListFull> {
-        if self.is_full() {
-            return Err(ListFull);
-        }
+    pub fn try_push(&mut self, value: ListEntry) {
+        // if self.is_full() {
+        //     return Err(ListFull);
+        // }
 
         self.list.push(value);
-
-        Ok(())
     }
 
-    pub fn set(&mut self, index: u32, data: u16) {
+    pub fn set(&mut self, index: u32, data: ListEntry) {
         let idx = index as usize;
         self.list[idx] = data;
     }
 
-    pub fn get(&mut self, index: u32) -> u16 {
+    pub fn get(&mut self, index: u32) -> ListEntry {
         let idx = index as usize;
         self.list[idx]
     }
 
-    pub fn pop(&mut self) -> std::result::Result<u16, ListEmpty> {
+    pub fn pop(&mut self) -> Option<ListEntry> {
         if self.is_empty() {
-            return Err(ListEmpty);
+            return None;
         }
         let result = self.list.pop().unwrap();
 
-        Ok(result)
+        Some(result)
     }
 }

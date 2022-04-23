@@ -1,15 +1,12 @@
 use anchor_lang::prelude::*;
-use data::{ListChunk, ListInfo};
+use data::{ListChunk, ListEmpty, ListEntry, ListInfo};
 use std::cmp;
 pub mod data;
-pub mod error;
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
 #[program]
-pub mod append_only_list {
-    use error::ListError;
-
+pub mod syrup {
     use super::*;
 
     #[allow(unused_variables)]
@@ -24,11 +21,8 @@ pub mod append_only_list {
 
     #[allow(unused_variables)]
     // name variable is used as a seed in #[account...] instruction
-    pub fn append(ctx: Context<Append>, name: String, item: u16) -> Result<()> {
-        ctx.accounts
-            .list
-            .try_push(item)
-            .map_err(<ListError>::from)?;
+    pub fn append(ctx: Context<Append>, name: String, item: ListEntry) -> Result<()> {
+        ctx.accounts.list.try_push(item);
 
         if ctx.accounts.list.is_full() {
             msg!("Full");
@@ -40,7 +34,7 @@ pub mod append_only_list {
     }
 
     #[allow(unused_variables)] // #[instructions]
-    pub fn pop(ctx: Context<Pop>, name: String) -> Result<u16> {
+    pub fn pop(ctx: Context<Pop>, name: String) -> Result<Option<ListEntry>> {
         let list: &mut Account<'_, ListChunk> = &mut ctx.accounts.list;
         let result = list.pop();
 
@@ -65,7 +59,7 @@ pub mod append_only_list {
         let last_page: &mut Account<'_, ListChunk> = &mut ctx.accounts.last_page;
         let list_info: &mut Account<'_, ListInfo> = &mut ctx.accounts.list_info;
 
-        if let Ok(key) = last_page.pop() {
+        if let Some(key) = last_page.pop() {
             list.set(deletion_index, key);
         }
 
@@ -90,7 +84,7 @@ pub struct Append<'info> {
     pub payer: Signer<'info>,
     #[account(mut, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], bump)]
     pub list_info: Account<'info, ListInfo>,
-    #[account(init_if_needed, payer=payer, space = 10240, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
+    #[account(init, payer=payer, space = 10240, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
     pub list: Account<'info, ListChunk>,
     pub system_program: Program<'info, System>,
 }
