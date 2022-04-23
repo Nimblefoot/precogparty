@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
-import { A } from "../target/types/a";
+import { Precog } from "../target/types/precog";
 
 import * as instructions from "@/generated/client/instructions";
 import * as accounts from "@/generated/client/accounts";
@@ -39,7 +39,7 @@ describe("end-to-end", async () => {
   anchor.setProvider(anchor.Provider.env());
   const provider = anchor.getProvider();
   const connection = provider.connection;
-  const program = anchor.workspace.A as Program<A>;
+  const program = anchor.workspace.Precog as Program<Precog>;
 
   const user = provider.wallet.publicKey;
   const marketName = "test market";

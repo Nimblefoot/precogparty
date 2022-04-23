@@ -14,7 +14,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 const TOKEN_DECIMALS: u8 = 6;
 #[program]
-pub mod a {
+pub mod precog {
 
     use super::*;
 
