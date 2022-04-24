@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use data::{ListChunk, ListEmpty, ListEntry, ListInfo};
+use data::{ListChunk, ListEntry, ListInfo};
 pub mod data;
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
@@ -91,7 +91,7 @@ pub struct CreateList<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: String, item: Pubkey)]
+#[instruction(name: String, item: ListEntry)]
 pub struct Append<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,

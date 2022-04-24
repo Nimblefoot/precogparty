@@ -19,8 +19,6 @@ export const getListKeys = async (program: Program<Syrup>, name: string): Promis
     );
     const info = await program.account.listInfo.fetchNullable(infoKey[0]);
 
-    console.log("get keys last page: " + (info ? info.lastPage : 0) );
-    
     const pageKey = await PublicKey.findProgramAddress(
         [
             utf8.encode('list'),

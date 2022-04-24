@@ -35,11 +35,11 @@ describe("append-only-list", async () => {
       let info = await program.account.listInfo.fetch(list.info);
       let lastPage = await program.account.listChunk.fetch(list.lastPage);
 
-      assert.ok(info.owner.equals(payer.publicKey));
-      assert.equal(info.lastPage, 0);
+      assert.ok(info.owner.equals(payer.publicKey), "owner should be payer");
+      assert.equal(info.lastPage, 0, "last page should be zero");
 
       // @ts-ignore-error - cant infer type of lastPage.list
-      assert.equal(lastPage.list.length, 0);
+      assert.equal(lastPage.list.length, 0, "initial list chunk should have length zero");
 
       console.log("pop off an empty array")
       await program.methods.pop('test')
@@ -52,15 +52,22 @@ describe("append-only-list", async () => {
       .rpc();
 
       list = await getListKeys(program, 'test');
-      // console.dir(list.lastPage, { depth: null })
-
-      info = await program.account.listInfo.fetch(list.info);
       lastPage = await program.account.listChunk.fetch(list.lastPage);
+      assert.equal(info.lastPage, 0, "last page should remain zero after pop");
 
-      assert.equal(info.lastPage, 0);
 
-      // console.log("append stuff")
+      console.log("append stuff")
 
+      await program.methods.append('test', {
+        value: 0
+      })
+      .accounts({
+        payer: payer.publicKey,
+        listInfo: list.info,
+        list: list.lastPage
+      })
+      .signers([payer])
+      .rpc();
     });
   });
 });
