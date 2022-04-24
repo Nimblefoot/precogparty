@@ -57,17 +57,50 @@ describe("append-only-list", async () => {
 
 
       console.log("append stuff")
+      
+      const size = 7;
+      for (let i=0; i < size; i++) {
+        list = await getListKeys(program, 'test');
+        await program.methods.append('test', {
+          value: i
+        })
+        .accounts({
+          payer: payer.publicKey,
+          listInfo: list.info,
+          list: list.lastPage
+        })
+        .signers([payer])
+        .rpc(); 
+      }
+      list = await getListKeys(program, 'test');
+      info = await program.account.listInfo.fetch(list.info);
+      lastPage = await program.account.listChunk.fetch(list.lastPage);
+      assert.equal(info.length, size, "should be seven items")
+      assert.equal(info.lastPage, 2, "last page should be 2 after 7 appends");
+      assert.equal(lastPage.list.length, 1, "last chunk should have one element");
 
-      await program.methods.append('test', {
-        value: 0
-      })
-      .accounts({
-        payer: payer.publicKey,
-        listInfo: list.info,
-        list: list.lastPage
-      })
-      .signers([payer])
-      .rpc();
+
+      console.log("delete elements and check the sizes still work")
+      const pops = 2;
+      for (let i=0; i < pops; i++) {
+        list = await getListKeys(program, 'test');
+        info = await program.account.listInfo.fetch(list.info);
+
+        const popedValue = await program.methods.pop('test')
+        .accounts({
+          payer: payer.publicKey,
+          listInfo: list.info,
+          list: list.lastPage
+        })
+        .signers([payer])
+        .rpc(); 
+      }
+      list = await getListKeys(program, 'test');
+      info = await program.account.listInfo.fetch(list.info);
+      lastPage = await program.account.listChunk.fetch(list.lastPage);
+      assert.equal(info.length, size - pops, "items = size - pops")
+      assert.equal(info.lastPage, 1, "last page should be 2 after 7 appends and 2 pops");
+      assert.equal(lastPage.list.length, 2, "last chunk should have two elements");
     });
   });
 });
