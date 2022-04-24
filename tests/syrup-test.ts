@@ -100,7 +100,7 @@ describe("append-only-list", async () => {
       lastPage = await program.account.listChunk.fetch(list.lastPage);
       assert.equal(info.length, size - pops, "items = size - pops")
       assert.equal(info.lastPage, 2, "last page should be 2 after 10 appends and 2 pops");
-      assert.equal(lastPage.list.length, 2, "last chunk should have two elements");
+      assert.equal(JSON.stringify(lastPage.list), JSON.stringify([ { value: 6 }, { value: 7 } ]), "last chunk should have two elements with values 6 and 7");
     });
   });
 });
