@@ -34,6 +34,7 @@ describe("append-only-list", async () => {
 
       let info = await program.account.listInfo.fetch(list.info);
       let lastPage = await program.account.listChunk.fetch(list.lastPage);
+      let firstPage;
 
       assert.ok(info.owner.equals(payer.publicKey), "owner should be payer");
       assert.equal(info.lastPage, 0, "last page should be zero");
@@ -80,7 +81,7 @@ describe("append-only-list", async () => {
       assert.equal(lastPage.list.length, 1, "last chunk should have one element");
 
 
-      console.log("delete elements and check the sizes still work")
+      console.log("popping off multiple elements")
       const pops = 2;
       for (let i=0; i < pops; i++) {
         list = await getListKeys(program, 'test');
@@ -93,14 +94,40 @@ describe("append-only-list", async () => {
           list: list.lastPage
         })
         .signers([payer])
-        .rpc(); 
+        .rpc();
       }
       list = await getListKeys(program, 'test');
       info = await program.account.listInfo.fetch(list.info);
       lastPage = await program.account.listChunk.fetch(list.lastPage);
+      firstPage = await program.account.listChunk.fetch(list.firstPage);
+      console.log("first first first");
+      console.log(firstPage.list);
+
       assert.equal(info.length, size - pops, "items = size - pops")
       assert.equal(info.lastPage, 2, "last page should be 2 after 10 appends and 2 pops");
       assert.equal(JSON.stringify(lastPage.list), JSON.stringify([ { value: 6 }, { value: 7 } ]), "last chunk should have two elements with values 6 and 7");
+
+
+      console.log("Delete specific entries")
+      list = await getListKeys(program, 'test');
+      info = await program.account.listInfo.fetch(list.info);
+
+      await program.methods.delete('test', 1, 0)
+      .accounts({
+        payer: payer.publicKey,
+        listInfo: list.info,
+        list: list.firstPage,
+        lastPage: list.lastPage,
+      })
+      .signers([payer])
+      .rpc(); 
+
+      info = await program.account.listInfo.fetch(list.info);
+      lastPage = await program.account.listChunk.fetch(list.lastPage);
+      firstPage = await program.account.listChunk.fetch(list.firstPage);
+      assert.equal(JSON.stringify(lastPage.list), JSON.stringify([ { value: 6 } ]), "correct last chunk");
+      assert.equal(JSON.stringify(firstPage.list), JSON.stringify([ { value: 0 }, { value: 7 }, { value: 2} ]), "correct first chunk given implementation")
+
     });
   });
 });

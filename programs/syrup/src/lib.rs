@@ -55,9 +55,8 @@ pub mod syrup {
     pub fn delete(
         ctx: Context<Delete>,
         name: String,
-        chunk_number: u32,
         deletion_index: u32,
-        final_index: u32,
+        chunk_number: u32,
     ) -> Result<()> {
         let list: &mut Account<'_, ListChunk> = &mut ctx.accounts.list;
         let last_page: &mut Account<'_, ListChunk> = &mut ctx.accounts.last_page;
@@ -107,13 +106,13 @@ pub struct Pop<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: String, chunk_number: u32)]
+#[instruction(name: String, chunk_number: u32, last_chunk: u32)]
 pub struct Delete<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(mut, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], bump)]
     pub list_info: Account<'info, ListInfo>,
-    #[account(mut, seeds=["list".as_ref(), name.as_ref(), chunk_number.to_le_bytes().as_ref()], bump)]
+    #[account(mut)]
     pub list: Account<'info, ListChunk>,
     #[account(mut, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
     pub last_page: Account<'info, ListChunk>,

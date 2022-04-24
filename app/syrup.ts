@@ -5,7 +5,8 @@ import { Syrup, IDL } from "../target/types/syrup";
 
 interface ListKeys {
     info: PublicKey,
-    lastPage: PublicKey
+    lastPage: PublicKey,
+    firstPage: PublicKey
 }
 
 export const getListKeys = async (program: Program<Syrup>, name: string): Promise<ListKeys> => {
@@ -28,7 +29,16 @@ export const getListKeys = async (program: Program<Syrup>, name: string): Promis
         program.programId
     )
 
-    return { info: infoKey[0], lastPage: pageKey[0] };
+    const firstKey = await PublicKey.findProgramAddress(
+        [
+            utf8.encode('list'),
+            utf8.encode(name),
+            new BN(0).toArrayLike(Buffer, 'le', 4)
+        ],
+        program.programId
+    )
+
+    return { info: infoKey[0], lastPage: pageKey[0], firstPage: firstKey[0] };
 }
 
 export const makeListProgram = (provider: Provider): Program<Syrup> =>
