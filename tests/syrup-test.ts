@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
-import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { assert } from "chai";
 import { getListKeys } from "../app/syrup";
 import { Syrup } from "../target/types/syrup";
@@ -12,104 +12,55 @@ describe("append-only-list", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>;
   const payer = Keypair.generate();
 
-  describe("initialization", async () => {
-    let list
-    let info;
-
-    before(async () => {
-      list = await getListKeys(program, 'test');
+  describe("end-to-end", async () => {
+    it("works", async () => {
+      let list = await getListKeys(program, 'test');
+      // console.dir(list.lastPage, { depth: null })
       await program.provider.connection.confirmTransaction(
         await program.provider.connection.requestAirdrop(payer.publicKey, 1000000000),
         "finalized"
       );
 
-
+      console.log("initialization test")
       await program.methods.createList('test')
       .accounts({
         payer: payer.publicKey,
         listInfo: list.info,
-        systemProgram: SystemProgram.programId
+        systemProgram: SystemProgram.programId,
+        list: list.lastPage
       })
       .signers([payer])
       .rpc();
 
-      info = await program.account.listInfo.fetch(list.info);
-    });
+      let info = await program.account.listInfo.fetch(list.info);
+      let lastPage = await program.account.listChunk.fetch(list.lastPage);
 
-    it("is initialized", async () => {
       assert.ok(info.owner.equals(payer.publicKey));
       assert.equal(info.lastPage, 0);
-    })
-  });
 
-  describe("list check", async () => {
-    before(async () => {
-      await program.provider.connection.confirmTransaction(
-        await program.provider.connection.requestAirdrop(payer.publicKey, 1000000000),
-        "finalized"
-      );
-      const size = 7;
+      // @ts-ignore-error - cant infer type of lastPage.list
+      assert.equal(lastPage.list.length, 0);
 
-      const keys = Array.apply(null, Array(size)).map((i) => {
-        value: i
-      });
+      console.log("pop off an empty array")
+      await program.methods.pop('test')
+      .accounts({
+        payer: payer.publicKey,
+        listInfo: list.info,
+        list: list.lastPage
+      })
+      .signers([payer])
+      .rpc();
 
-      let list = await getListKeys(program, 'test2');
-      await program.methods.createList('test2')
-        .accounts({
-          payer: payer.publicKey,
-          listInfo: list.info,
-          systemProgram: SystemProgram.programId
-        })
-        .signers([payer])
-        .rpc();
+      list = await getListKeys(program, 'test');
+      // console.dir(list.lastPage, { depth: null })
 
-      for (const item in keys) {
-        if ((item as unknown as number % 10) == 0) {
-          console.log(`Appended ${item} keys.`)
-        }
-        list = await getListKeys(program, 'test2');
+      info = await program.account.listInfo.fetch(list.info);
+      lastPage = await program.account.listChunk.fetch(list.lastPage);
 
-        await program.methods.append(
-          'test2',
-          keys[item],
-        ).accounts(
-          {
-            payer: payer.publicKey,
-            listInfo: list.info,
-            list: list.lastPage,
-            systemProgram: SystemProgram.programId
-          }
-        ).signers([payer])
-        .rpc();
-      }
+      assert.equal(info.lastPage, 0);
 
-      for (let i=0; i < 2; i++) {
-        list = await getListKeys(program, 'test2');
+      // console.log("append stuff")
 
-        await program.methods.pop(
-          'test2',
-        ).accounts(
-          {
-            payer: payer.publicKey,
-            listInfo: list.info,
-            list: list.lastPage
-          }
-        ).signers([payer])
-        .rpc();
-      }
-
-    });
-
-    it("works", async () => {
-      const list = await getListKeys(program, 'test2');
-
-      const listInfo = await program.account.listInfo.fetch(list.info);
-      assert.equal(listInfo.lastPage, 1);
-      assert.equal(listInfo.length, 5 );
-
-      const page = await program.account.listChunk.fetch(list.lastPage);
-      // assert.equal(page.list.length, 2);
     });
   });
 });

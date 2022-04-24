@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use data::{ListChunk, ListEmpty, ListEntry, ListInfo};
-use std::cmp;
 pub mod data;
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
@@ -15,6 +14,11 @@ pub mod syrup {
         ctx.accounts.list_info.owner = ctx.accounts.payer.key();
         ctx.accounts.list_info.last_page = 0;
         ctx.accounts.list_info.length = 0;
+
+        msg!(
+            "created list: #{}",
+            ctx.accounts.list.to_account_info().key()
+        );
 
         Ok(())
     }
@@ -35,14 +39,21 @@ pub mod syrup {
 
     #[allow(unused_variables)] // #[instructions]
     pub fn pop(ctx: Context<Pop>, name: String) -> Result<Option<ListEntry>> {
+        msg!(
+            "popping off list #{}",
+            ctx.accounts.list.to_account_info().key()
+        );
+
         let list: &mut Account<'_, ListChunk> = &mut ctx.accounts.list;
         let result = list.pop();
 
-        if list.is_empty() {
-            ctx.accounts.list_info.last_page = cmp::max(ctx.accounts.list_info.last_page - 1, 0);
-        };
+        if list.is_empty() && ctx.accounts.list_info.last_page > 0 {
+            ctx.accounts.list_info.last_page -= 1;
+        }
 
-        ctx.accounts.list_info.length -= 1;
+        if ctx.accounts.list_info.length > 0 {
+            ctx.accounts.list_info.length -= 1;
+        }
 
         Ok(result)
     }
@@ -74,6 +85,8 @@ pub struct CreateList<'info> {
     pub payer: Signer<'info>,
     #[account(init, payer=payer, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], space=1000, bump)]
     pub list_info: Account<'info, ListInfo>,
+    #[account(init, payer=payer, space = 2000, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
+    pub list: Account<'info, ListChunk>,
     pub system_program: Program<'info, System>,
 }
 
@@ -84,7 +97,7 @@ pub struct Append<'info> {
     pub payer: Signer<'info>,
     #[account(mut, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], bump)]
     pub list_info: Account<'info, ListInfo>,
-    #[account(init, payer=payer, space = 10240, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
+    #[account(init_if_needed, payer=payer, space = 2000, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
     pub list: Account<'info, ListChunk>,
     pub system_program: Program<'info, System>,
 }

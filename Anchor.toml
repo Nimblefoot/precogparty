@@ -1,7 +1,10 @@
 [features]
 seeds = true
+init_if_needed = true 
+
 [programs.localnet]
 precog = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+syrup = "7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -11,7 +14,7 @@ cluster = "localnet"
 wallet = "./dev-wallet.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/precog.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/syrup-test.ts"
 
 [test.validator]
 url = "https://api.mainnet-beta.solana.com"
