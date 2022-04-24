@@ -9,7 +9,6 @@ pub mod syrup {
     use super::*;
 
     #[allow(unused_variables)]
-    // name variable is used as a seed in #[account...] instruction
     pub fn create_list(ctx: Context<CreateList>, name: String) -> Result<()> {
         ctx.accounts.list_info.owner = ctx.accounts.payer.key();
         ctx.accounts.list_info.last_page = 0;
@@ -24,7 +23,6 @@ pub mod syrup {
     }
 
     #[allow(unused_variables)]
-    // name variable is used as a seed in #[account...] instruction
     pub fn append(ctx: Context<Append>, name: String, item: ListEntry) -> Result<()> {
         ctx.accounts.list.try_push(item);
 
@@ -37,13 +35,8 @@ pub mod syrup {
         Ok(())
     }
 
-    #[allow(unused_variables)] // #[instructions]
+    #[allow(unused_variables)]
     pub fn pop(ctx: Context<Pop>, name: String) -> Result<Option<ListEntry>> {
-        msg!(
-            "popping off list #{}",
-            ctx.accounts.list.to_account_info().key()
-        );
-
         let list: &mut Account<'_, ListChunk> = &mut ctx.accounts.list;
         let result = list.pop();
 
@@ -58,7 +51,7 @@ pub mod syrup {
         Ok(result)
     }
 
-    #[allow(unused_variables)] // #[instructions]
+    #[allow(unused_variables)]
     pub fn delete(
         ctx: Context<Delete>,
         name: String,

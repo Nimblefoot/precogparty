@@ -15,7 +15,7 @@ describe("append-only-list", async () => {
   describe("end-to-end", async () => {
     it("works", async () => {
       let list = await getListKeys(program, 'test');
-      // console.dir(list.lastPage, { depth: null })
+
       await program.provider.connection.confirmTransaction(
         await program.provider.connection.requestAirdrop(payer.publicKey, 1000000000),
         "finalized"
@@ -58,7 +58,7 @@ describe("append-only-list", async () => {
 
       console.log("append stuff")
       
-      const size = 7;
+      const size = 10;
       for (let i=0; i < size; i++) {
         list = await getListKeys(program, 'test');
         await program.methods.append('test', {
@@ -75,8 +75,8 @@ describe("append-only-list", async () => {
       list = await getListKeys(program, 'test');
       info = await program.account.listInfo.fetch(list.info);
       lastPage = await program.account.listChunk.fetch(list.lastPage);
-      assert.equal(info.length, size, "should be seven items")
-      assert.equal(info.lastPage, 2, "last page should be 2 after 7 appends");
+      assert.equal(info.length, size, "should be $size items")
+      assert.equal(info.lastPage, 3, "last page should be 2 after 10 appends");
       assert.equal(lastPage.list.length, 1, "last chunk should have one element");
 
 
@@ -86,7 +86,7 @@ describe("append-only-list", async () => {
         list = await getListKeys(program, 'test');
         info = await program.account.listInfo.fetch(list.info);
 
-        const popedValue = await program.methods.pop('test')
+        await program.methods.pop('test')
         .accounts({
           payer: payer.publicKey,
           listInfo: list.info,
@@ -99,7 +99,7 @@ describe("append-only-list", async () => {
       info = await program.account.listInfo.fetch(list.info);
       lastPage = await program.account.listChunk.fetch(list.lastPage);
       assert.equal(info.length, size - pops, "items = size - pops")
-      assert.equal(info.lastPage, 1, "last page should be 2 after 7 appends and 2 pops");
+      assert.equal(info.lastPage, 2, "last page should be 2 after 10 appends and 2 pops");
       assert.equal(lastPage.list.length, 2, "last chunk should have two elements");
     });
   });
