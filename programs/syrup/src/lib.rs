@@ -117,3 +117,22 @@ pub struct Delete<'info> {
     #[account(mut, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
     pub last_page: Account<'info, ListChunk>,
 }
+
+pub struct CreateUser {}
+
+pub struct DepositFunds {}
+
+pub struct WithdrawFunds {}
+
+pub struct InitializeOrderbook {}
+
+pub struct PlaceBuyWatermelon {}
+
+pub struct PlaceSellWatermelon {}
+
+pub struct MarketBuyWatermelon {}
+pub struct MarketSellWatermelon {}
+
+pub struct CancelOrder {}
+
+pub struct ExecuteMatchingOrders {}

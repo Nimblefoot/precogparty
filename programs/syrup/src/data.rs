@@ -4,7 +4,9 @@ use anchor_lang::prelude::*;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct ListEntry {
-    value: u16,
+    size: u32,
+    buy: bool, // false for a sell order
+    user: Pubkey,
 }
 
 #[account]

@@ -5,7 +5,7 @@ import { assert } from "chai";
 import { getListKeys } from "../app/syrup";
 import { Syrup } from "../target/types/syrup";
 
-describe("append-only-list", async () => {
+describe("unordered list", async () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
 
@@ -60,11 +60,16 @@ describe("append-only-list", async () => {
       console.log("append stuff")
       
       const size = 10;
-      for (let i=0; i < size; i++) {
+      const mockData = [...Array(size).keys()].map(i => ({
+        user: Keypair.generate().publicKey,
+        size: i,
+        buy: true
+      }));
+
+
+      for (let data of mockData) {
         list = await getListKeys(program, 'test');
-        await program.methods.append('test', {
-          value: i
-        })
+        await program.methods.append('test', data)
         .accounts({
           payer: payer.publicKey,
           listInfo: list.info,
@@ -77,7 +82,8 @@ describe("append-only-list", async () => {
       info = await program.account.listInfo.fetch(list.info);
       lastPage = await program.account.listChunk.fetch(list.lastPage);
       assert.equal(info.length, size, "should be $size items")
-      assert.equal(info.lastPage, 3, "last page should be 2 after 10 appends");
+      assert.equal(info.lastPage, 3, "last page should be 3 after 10 appends");
+      // @ts-ignore cant derive type of lastPage.list
       assert.equal(lastPage.list.length, 1, "last chunk should have one element");
 
 
@@ -105,8 +111,12 @@ describe("append-only-list", async () => {
 
       assert.equal(info.length, size - pops, "items = size - pops")
       assert.equal(info.lastPage, 2, "last page should be 2 after 10 appends and 2 pops");
-      assert.equal(JSON.stringify(lastPage.list), JSON.stringify([ { value: 6 }, { value: 7 } ]), "last chunk should have two elements with values 6 and 7");
-
+      assert.equal(
+        // @ts-ignore cant derive type of lastPage.list
+        JSON.stringify(lastPage.list.map(data => data.size)), 
+        JSON.stringify([ 6, 7 ]), 
+        "last chunk should have two elements with values 6 and 7"
+      )
 
       console.log("Delete specific entries")
       list = await getListKeys(program, 'test');
@@ -125,8 +135,18 @@ describe("append-only-list", async () => {
       info = await program.account.listInfo.fetch(list.info);
       lastPage = await program.account.listChunk.fetch(list.lastPage);
       firstPage = await program.account.listChunk.fetch(list.firstPage);
-      assert.equal(JSON.stringify(lastPage.list), JSON.stringify([ { value: 6 } ]), "correct last chunk");
-      assert.equal(JSON.stringify(firstPage.list), JSON.stringify([ { value: 0 }, { value: 7 }, { value: 2} ]), "correct first chunk given implementation")
+      assert.equal(
+        // @ts-ignore cant derive type of lastPage.list
+        JSON.stringify(lastPage.list.map(data => data.size)), 
+        JSON.stringify([ 6 ]), 
+        "correct last chunk"
+      );
+      assert.equal(
+        // @ts-ignore cant derive type of firstPage.list
+        JSON.stringify(firstPage.list.map(data => data.size)), 
+        JSON.stringify([ 0, 7, 2 ]), 
+        "correct first chunk given implementation"
+      );
 
     });
   });
