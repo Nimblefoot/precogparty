@@ -9,8 +9,9 @@ import {
 import { assert } from "chai";
 import { getListKeys } from "../app/syrup";
 import { Syrup } from "../target/types/syrup";
+import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 
-describe("unordered list", async () => {
+describe("orderbook", async () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
 
@@ -33,6 +34,34 @@ describe("unordered list", async () => {
           1000000000
         ),
         "finalized"
+      );
+
+      console.log("create a user account and check initialize");
+      await program.methods
+        .createUserAccount()
+        .accounts({
+          user: user.publicKey,
+        })
+        .signers([user])
+        .rpc();
+
+      const [userAccountAddress] = await PublicKey.findProgramAddress(
+        [utf8.encode("user-account"), user.publicKey.toBuffer()],
+        program.programId
+      );
+      let userAccount = await program.account.userAccount.fetch(
+        userAccountAddress
+      );
+      assert.equal(
+        userAccount.user.toString(),
+        user.publicKey.toString(),
+        "user should match the creator"
+      );
+      assert.equal(
+        // @ts-ignore
+        userAccount.orders.length,
+        0,
+        "initially orders should be empty"
       );
     });
   });

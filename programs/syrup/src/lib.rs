@@ -138,7 +138,7 @@ pub struct Delete<'info> {
 pub struct CreateUserAccount<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
-    #[account(init, payer=user, seeds=["user-account".as_ref(), user.to_account_info().key().as_ref()], space=1000, bump)]
+    #[account(init, payer=user, seeds=["user-account".as_ref(), user.key().as_ref()], space=1000, bump)]
     pub user_account: Box<Account<'info, UserAccount>>,
     pub system_program: Program<'info, System>,
 }
