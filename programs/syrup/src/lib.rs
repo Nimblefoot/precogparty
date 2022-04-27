@@ -76,6 +76,14 @@ pub mod syrup {
 
         Ok(())
     }
+
+    pub fn create_user_account(ctx: Context<CreateUserAccount>) -> Result<()> {
+        ctx.accounts
+            .user_account
+            .initialize(ctx.accounts.user.key());
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -126,34 +134,44 @@ pub struct Delete<'info> {
     pub last_page: Account<'info, ListChunk>,
 }
 
-pub struct CreateUser {}
+#[derive(Accounts)]
+pub struct CreateUserAccount<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(init, payer=user, seeds=["user-account".as_ref(), user.to_account_info().key().as_ref()], space=1000, bump)]
+    pub user_account: Box<Account<'info, UserAccount>>,
+    pub system_program: Program<'info, System>,
+}
 
+#[derive(Accounts)]
 pub struct InitializeOrderbook<'info> {
     pub currency_denomination_mint: Box<Account<'info, Mint>>,
     pub currency_vault: Box<Account<'info, TokenAccount>>,
     pub token_mint: Box<Account<'info, Mint>>,
     pub token_vault: Box<Account<'info, Mint>>,
-    pub name: String,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
 
+#[derive(Accounts)]
+#[instruction(order: ListEntry, name: String)]
 pub struct PlaceOrder<'info> {
+    #[account(mut)]
     pub user: Signer<'info>,
     pub user_account: Box<Account<'info, UserAccount>>,
     pub vault: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
-    pub rent: Sysvar<'info, Rent>,
+    #[account(mut, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], bump)]
+    pub list_info: Account<'info, ListInfo>,
+    #[account(init_if_needed, payer=user, space = 2000, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
+    pub list_chunk: Account<'info, ListChunk>,
 }
 
-pub struct PlaceSellOrder {}
-
-pub struct MarketBuyWatermelon {}
-pub struct MarketSellWatermelon {}
+pub struct TakeOrder {}
 
 pub struct CancelOrder {}
 
