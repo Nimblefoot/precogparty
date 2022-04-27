@@ -15,15 +15,21 @@ describe("unordered list", async () => {
   anchor.setProvider(anchor.Provider.env());
 
   const program = anchor.workspace.Syrup as Program<Syrup>;
-  const payer = Keypair.generate();
+  const admin = Keypair.generate();
+  const user = Keypair.generate();
 
   describe("end-to-end", async () => {
     it("works", async () => {
-      let list = await getListKeys(program, "test");
-
       await program.provider.connection.confirmTransaction(
         await program.provider.connection.requestAirdrop(
-          payer.publicKey,
+          admin.publicKey,
+          1000000000
+        ),
+        "finalized"
+      );
+      await program.provider.connection.confirmTransaction(
+        await program.provider.connection.requestAirdrop(
+          user.publicKey,
           1000000000
         ),
         "finalized"
