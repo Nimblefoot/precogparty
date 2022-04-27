@@ -1,6 +1,14 @@
 use anchor_lang::prelude::*;
 use data::{ListChunk, ListEntry, ListInfo};
 pub mod data;
+use user_account::UserAccount;
+pub mod user_account;
+
+use anchor_spl::{
+    associated_token::{self, AssociatedToken},
+    mint,
+    token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
+};
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
@@ -120,15 +128,29 @@ pub struct Delete<'info> {
 
 pub struct CreateUser {}
 
-pub struct DepositFunds {}
+pub struct InitializeOrderbook<'info> {
+    pub currency_denomination_mint: Box<Account<'info, Mint>>,
+    pub currency_vault: Box<Account<'info, TokenAccount>>,
+    pub token_mint: Box<Account<'info, Mint>>,
+    pub token_vault: Box<Account<'info, Mint>>,
+    pub name: String,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
 
-pub struct WithdrawFunds {}
+pub struct PlaceOrder<'info> {
+    pub user: Signer<'info>,
+    pub user_account: Box<Account<'info, UserAccount>>,
+    pub vault: Box<Account<'info, TokenAccount>>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
 
-pub struct InitializeOrderbook {}
-
-pub struct PlaceBuyWatermelon {}
-
-pub struct PlaceSellWatermelon {}
+pub struct PlaceSellOrder {}
 
 pub struct MarketBuyWatermelon {}
 pub struct MarketSellWatermelon {}

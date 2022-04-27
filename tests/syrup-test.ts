@@ -106,8 +106,6 @@ describe("unordered list", async () => {
       info = await program.account.listInfo.fetch(list.info);
       lastPage = await program.account.listChunk.fetch(list.lastPage);
       firstPage = await program.account.listChunk.fetch(list.firstPage);
-      console.log("first first first");
-      console.log(firstPage.list);
 
       assert.equal(info.length, size - pops, "items = size - pops")
       assert.equal(info.lastPage, 2, "last page should be 2 after 10 appends and 2 pops");
