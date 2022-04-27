@@ -8,14 +8,14 @@ export interface PredictionMarketFields {
   descriptionUri: Array<number>
   bump: number
   yesMint: PublicKey
-  yesMarket: PublicKey
   noMint: PublicKey
+  yesMarket: PublicKey
   noMarket: PublicKey
+  usdcVault: PublicKey
   marketAuthority: PublicKey
   resolutionAuthority: PublicKey
   descriptionAuthority: PublicKey
   resolution: number
-  usdcVault: PublicKey
 }
 
 export interface PredictionMarketJSON {
@@ -23,14 +23,14 @@ export interface PredictionMarketJSON {
   descriptionUri: Array<number>
   bump: number
   yesMint: string
-  yesMarket: string
   noMint: string
+  yesMarket: string
   noMarket: string
+  usdcVault: string
   marketAuthority: string
   resolutionAuthority: string
   descriptionAuthority: string
   resolution: number
-  usdcVault: string
 }
 
 export class PredictionMarket {
@@ -38,14 +38,14 @@ export class PredictionMarket {
   readonly descriptionUri: Array<number>
   readonly bump: number
   readonly yesMint: PublicKey
-  readonly yesMarket: PublicKey
   readonly noMint: PublicKey
+  readonly yesMarket: PublicKey
   readonly noMarket: PublicKey
+  readonly usdcVault: PublicKey
   readonly marketAuthority: PublicKey
   readonly resolutionAuthority: PublicKey
   readonly descriptionAuthority: PublicKey
   readonly resolution: number
-  readonly usdcVault: PublicKey
 
   static readonly discriminator = Buffer.from([
     117, 150, 97, 152, 119, 58, 51, 58,
@@ -56,14 +56,14 @@ export class PredictionMarket {
     borsh.array(borsh.u8(), 32, "descriptionUri"),
     borsh.u8("bump"),
     borsh.publicKey("yesMint"),
-    borsh.publicKey("yesMarket"),
     borsh.publicKey("noMint"),
+    borsh.publicKey("yesMarket"),
     borsh.publicKey("noMarket"),
+    borsh.publicKey("usdcVault"),
     borsh.publicKey("marketAuthority"),
     borsh.publicKey("resolutionAuthority"),
     borsh.publicKey("descriptionAuthority"),
     borsh.u8("resolution"),
-    borsh.publicKey("usdcVault"),
   ])
 
   constructor(fields: PredictionMarketFields) {
@@ -71,14 +71,14 @@ export class PredictionMarket {
     this.descriptionUri = fields.descriptionUri
     this.bump = fields.bump
     this.yesMint = fields.yesMint
-    this.yesMarket = fields.yesMarket
     this.noMint = fields.noMint
+    this.yesMarket = fields.yesMarket
     this.noMarket = fields.noMarket
+    this.usdcVault = fields.usdcVault
     this.marketAuthority = fields.marketAuthority
     this.resolutionAuthority = fields.resolutionAuthority
     this.descriptionAuthority = fields.descriptionAuthority
     this.resolution = fields.resolution
-    this.usdcVault = fields.usdcVault
   }
 
   static async fetch(
@@ -127,14 +127,14 @@ export class PredictionMarket {
       descriptionUri: dec.descriptionUri,
       bump: dec.bump,
       yesMint: dec.yesMint,
-      yesMarket: dec.yesMarket,
       noMint: dec.noMint,
+      yesMarket: dec.yesMarket,
       noMarket: dec.noMarket,
+      usdcVault: dec.usdcVault,
       marketAuthority: dec.marketAuthority,
       resolutionAuthority: dec.resolutionAuthority,
       descriptionAuthority: dec.descriptionAuthority,
       resolution: dec.resolution,
-      usdcVault: dec.usdcVault,
     })
   }
 
@@ -144,14 +144,14 @@ export class PredictionMarket {
       descriptionUri: this.descriptionUri,
       bump: this.bump,
       yesMint: this.yesMint.toString(),
-      yesMarket: this.yesMarket.toString(),
       noMint: this.noMint.toString(),
+      yesMarket: this.yesMarket.toString(),
       noMarket: this.noMarket.toString(),
+      usdcVault: this.usdcVault.toString(),
       marketAuthority: this.marketAuthority.toString(),
       resolutionAuthority: this.resolutionAuthority.toString(),
       descriptionAuthority: this.descriptionAuthority.toString(),
       resolution: this.resolution,
-      usdcVault: this.usdcVault.toString(),
     }
   }
 
@@ -161,14 +161,14 @@ export class PredictionMarket {
       descriptionUri: obj.descriptionUri,
       bump: obj.bump,
       yesMint: new PublicKey(obj.yesMint),
-      yesMarket: new PublicKey(obj.yesMarket),
       noMint: new PublicKey(obj.noMint),
+      yesMarket: new PublicKey(obj.yesMarket),
       noMarket: new PublicKey(obj.noMarket),
+      usdcVault: new PublicKey(obj.usdcVault),
       marketAuthority: new PublicKey(obj.marketAuthority),
       resolutionAuthority: new PublicKey(obj.resolutionAuthority),
       descriptionAuthority: new PublicKey(obj.descriptionAuthority),
       resolution: obj.resolution,
-      usdcVault: new PublicKey(obj.usdcVault),
     })
   }
 }
