@@ -31,6 +31,11 @@ pub mod syrup {
     }
 
     #[allow(unused_variables)]
+    pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: String) -> Result<()> {
+        Ok(())
+    }
+
+    #[allow(unused_variables)]
     pub fn append(ctx: Context<Append>, name: String, item: ListEntry) -> Result<()> {
         ctx.accounts.list.try_push(item);
 
@@ -144,14 +149,33 @@ pub struct CreateUserAccount<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(name: String)]
 pub struct InitializeOrderbook<'info> {
-    pub currency_denomination_mint: Box<Account<'info, Mint>>,
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    #[account(init, payer=admin, seeds=["orderbook".as_ref(), name.as_ref(), "info".as_ref()], space=1000, bump)]
+    pub orderbook: Account<'info, ListInfo>,
+    #[account(init, payer=admin, space = 2000, seeds=["list".as_ref(), name.as_ref(), orderbook.last_page.to_le_bytes().as_ref()], bump)]
+    pub first_order_chunk: Account<'info, ListChunk>,
+    pub system_program: Program<'info, System>,
+    pub currency_mint: Box<Account<'info, Mint>>,
+    #[account(
+        init,
+        payer = admin,
+        associated_token::mint = currency_mint,
+        associated_token::authority = orderbook
+    )]
     pub currency_vault: Box<Account<'info, TokenAccount>>,
     pub token_mint: Box<Account<'info, Mint>>,
-    pub token_vault: Box<Account<'info, Mint>>,
+    #[account(
+        init,
+        payer = admin,
+        associated_token::mint = currency_mint,
+        associated_token::authority = orderbook
+    )]
+    pub token_vault: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-    pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
 
