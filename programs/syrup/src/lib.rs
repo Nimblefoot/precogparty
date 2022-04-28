@@ -184,7 +184,7 @@ pub struct CreateUserAccount<'info> {
 pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    #[account(init, payer=admin, seeds=["orderbook-info".as_ref()], space=1000, bump)]
+    #[account(init, payer=admin, seeds=["orderbook-info".as_ref(), name.as_ref()], space=1000, bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     // #[account(init, payer=admin, seeds=["order_chunk".as_ref()], space = 2000, bump)]
     // pub first_order_chunk: Account<'info, ListChunk>,

@@ -111,7 +111,7 @@ describe("orderbook", async () => {
       console.log("fake mint worked");
 
       const [orderbookInfo] = await PublicKey.findProgramAddress(
-        [utf8.encode("orderbook-info")],
+        [utf8.encode("orderbook-info"), utf8.encode("test")],
         program.programId
       );
       // const [orderbookInfo] = await PublicKey.findProgramAddress(
