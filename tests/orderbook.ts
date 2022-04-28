@@ -148,10 +148,13 @@ describe("orderbook", async () => {
       // console.log(tokenVault.toString());
 
       const [firstPage] = await PublicKey.findProgramAddress(
-        [utf8.encode("test"), utf8.encode("page")],
+        [
+          utf8.encode("test"),
+          utf8.encode("page"),
+          new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+        ],
         program.programId
       );
-      console.log(firstPage.toString());
 
       await program.methods
         .initializeOrderbook("test")
