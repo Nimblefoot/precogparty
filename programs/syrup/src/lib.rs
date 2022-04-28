@@ -27,11 +27,11 @@ pub mod syrup {
 
     #[allow(unused_variables)]
     pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: String) -> Result<()> {
-        // ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
-        // ctx.accounts.orderbook_info.last_page = 0;
-        // ctx.accounts.orderbook_info.length = 0;
-        // ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
-        // ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
+        ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
+        ctx.accounts.orderbook_info.last_page = 0;
+        ctx.accounts.orderbook_info.length = 0;
+        ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
+        ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
 
         Ok(())
     }

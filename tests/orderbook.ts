@@ -79,37 +79,7 @@ describe("orderbook", async () => {
         "initially orders should be empty"
       );
 
-      console.log("creating token accounts and setting up orderbook");
-      const [authority] = await PublicKey.findProgramAddress(
-        [utf8.encode("authority")],
-        program.programId
-      );
-
-      const usdcMint = await createMint(
-        program.provider.connection,
-        admin,
-        admin.publicKey,
-        null,
-        9
-      );
-
-      const usdcVault = await getAssociatedTokenAddress(
-        usdcMint,
-        authority,
-        true
-      );
-
-      await program.methods
-        .createVault()
-        .accounts({
-          payer: program.provider.wallet.publicKey,
-          usdcMint,
-          usdcVault,
-          authority,
-        })
-        .rpc();
-      console.log("fake mint worked");
-
+      console.log("creates two mints and initialize an orderbook");
       const [orderbookInfo] = await PublicKey.findProgramAddress(
         [utf8.encode("test"), utf8.encode("orderbook-info")],
         program.programId
@@ -122,14 +92,12 @@ describe("orderbook", async () => {
         null,
         9
       );
-      // console.log(currencyMint.toString());
 
       const currencyVault = await getAssociatedTokenAddress(
         currencyMint,
         orderbookInfo,
         true
       );
-      // console.log(currencyVault.toString());
 
       const tokenMint = await createMint(
         program.provider.connection,
@@ -138,14 +106,12 @@ describe("orderbook", async () => {
         null,
         9
       );
-      // console.log(tokenMint.toString());
 
       const tokenVault = await getAssociatedTokenAddress(
         tokenMint,
         orderbookInfo,
         true
       );
-      // console.log(tokenVault.toString());
 
       const [firstPage] = await PublicKey.findProgramAddress(
         [
@@ -169,79 +135,20 @@ describe("orderbook", async () => {
         })
         .rpc();
 
-      // orderbook_info.last_page.to_le_bytes().as_ref()
+      let orderbookData = await program.account.orderbookInfo.fetch(
+        orderbookInfo
+      );
 
-      // let tokenMintPubkey = await createMint(
-      //   program.provider.connection,
-      //   admin,
-      //   admin.publicKey,
-      //   admin.publicKey,
-      //   8,
-      //   admin
-      // );
-      // const tokenVault = await createAssociatedTokenAccount(
-      //   program.provider.connection, // connection
-      //   admin, // fee payer
-      //   tokenMintPubkey, // mint
-      //   admin.publicKey // owner,
-      // );
-
-      // console.log(orderbookInfo.toString());
-
-      // const { usdcMint, userUsdc, usdcMintKeypair } = await (async () => {
-      //   const usdcMintKeypair = new Keypair();
-      //   const usdcMint = usdcMintKeypair.publicKey;
-      //   const userUsdc = await getAssociatedTokenAddress(
-      //     usdcMint,
-      //     user.publicKey
-      //   );
-
-      //   const lamports = await getMinimumBalanceForRentExemptMint(
-      //     program.provider.connection
-      //   );
-
-      //   const IXcreateMintAccount = SystemProgram.createAccount({
-      //     fromPubkey: user.publicKey,
-      //     newAccountPubkey: usdcMint,
-      //     space: MINT_SIZE,
-      //     lamports,
-      //     programId: TOKEN_PROGRAM_ID,
-      //   });
-      //   const IXinitMint = createInitializeMintInstruction(
-      //     usdcMint,
-      //     6,
-      //     user.publicKey,
-      //     null
-      //   );
-      //   const IXcreateUserUsdc = createAssociatedTokenAccountInstruction(
-      //     user.publicKey,
-      //     userUsdc,
-      //     user.publicKey,
-      //     usdcMint
-      //   );
-      //   const IXmintUsdc = createMintToInstruction(
-      //     usdcMint,
-      //     userUsdc,
-      //     user.publicKey,
-      //     1000
-      //   );
-      //   const tx = new Transaction().add(
-      //     IXcreateMintAccount,
-      //     IXinitMint,
-      //     IXcreateUserUsdc,
-      //     IXmintUsdc
-      //   );
-
-      //   const sig = await program.provider
-      //     .send(tx, [usdcMintKeypair])
-      //     .catch((e) => {
-      //       console.log(e);
-      //       throw e;
-      //     });
-      //   console.log("set up fake usdc", sig);
-
-      //   return { usdcMint, userUsdc, usdcMintKeypair };
-      // })();
+      assert.equal(
+        orderbookData.currencyMint.toString(),
+        currencyMint.toString(),
+        "currency mints should match"
+      );
+      assert.equal(
+        orderbookData.tokenMint.toString(),
+        tokenMint.toString(),
+        "token mints should match"
+      );
     });
   });
 });
