@@ -186,6 +186,8 @@ pub struct InitializeOrderbook<'info> {
     pub admin: Signer<'info>,
     #[account(init, payer=admin, seeds=[name.as_ref(), "orderbook-info".as_ref()], space=1000, bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
+    #[account(init, payer=admin, seeds=[name.as_ref(), "page".as_ref()], space=500, bump)]
+    pub first_page: Account<'info, ListChunk>,
     pub currency_mint: Account<'info, Mint>,
     #[account(
         init,

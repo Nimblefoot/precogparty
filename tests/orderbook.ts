@@ -147,6 +147,12 @@ describe("orderbook", async () => {
       );
       // console.log(tokenVault.toString());
 
+      const [firstPage] = await PublicKey.findProgramAddress(
+        [utf8.encode("test"), utf8.encode("page")],
+        program.programId
+      );
+      console.log(firstPage.toString());
+
       await program.methods
         .initializeOrderbook("test")
         .accounts({
@@ -156,8 +162,11 @@ describe("orderbook", async () => {
           tokenMint,
           tokenVault,
           orderbookInfo,
+          firstPage,
         })
         .rpc();
+
+      // orderbook_info.last_page.to_le_bytes().as_ref()
 
       // let tokenMintPubkey = await createMint(
       //   program.provider.connection,
