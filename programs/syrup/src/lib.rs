@@ -186,9 +186,6 @@ pub struct InitializeOrderbook<'info> {
     pub admin: Signer<'info>,
     #[account(init, payer=admin, seeds=[name.as_ref(), "orderbook-info".as_ref()], space=1000, bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
-    // #[account(init, payer=admin, seeds=[name.as_ref(), "order-chunk".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], space = 2000, bump)]
-    // pub first_page: Account<'info, ListChunk>,
-    pub system_program: Program<'info, System>,
     pub currency_mint: Account<'info, Mint>,
     #[account(
         init,
@@ -197,24 +194,18 @@ pub struct InitializeOrderbook<'info> {
         associated_token::authority = orderbook_info
     )]
     pub currency_vault: Box<Account<'info, TokenAccount>>,
-    // #[account(
-    //     init,
-    //     payer = admin,
-    //     mint::decimals = TOKEN_DECIMALS,
-    //     mint::authority = admin,
-    //     mint::freeze_authority = admin
-    // )]
-    // pub token_mint: Box<Account<'info, Mint>>,
-    // #[account(
-    //     init,
-    //     payer = admin,
-    //     associated_token::mint = token_mint,
-    //     associated_token::authority = admin
-    // )]
-    // pub token_vault: Box<Account<'info, TokenAccount>>,
+    pub token_mint: Account<'info, Mint>,
+    #[account(
+        init,
+        payer = admin,
+        associated_token::mint = token_mint,
+        associated_token::authority = orderbook_info
+    )]
+    pub token_vault: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]

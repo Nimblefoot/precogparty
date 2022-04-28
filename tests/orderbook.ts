@@ -122,21 +122,30 @@ describe("orderbook", async () => {
         null,
         9
       );
+      // console.log(currencyMint.toString());
 
       const currencyVault = await getAssociatedTokenAddress(
         currencyMint,
         orderbookInfo,
         true
       );
+      // console.log(currencyVault.toString());
 
-      // const firstPage = await PublicKey.findProgramAddress(
-      //   [
-      //     utf8.encode("test"),
-      //     utf8.encode("order-chunk"),
-      //     new anchor.BN(0).toArrayLike(Buffer, "le", 4),
-      //   ],
-      //   program.programId
-      // );
+      const tokenMint = await createMint(
+        program.provider.connection,
+        admin,
+        admin.publicKey,
+        null,
+        9
+      );
+      // console.log(tokenMint.toString());
+
+      const tokenVault = await getAssociatedTokenAddress(
+        tokenMint,
+        orderbookInfo,
+        true
+      );
+      // console.log(tokenVault.toString());
 
       await program.methods
         .initializeOrderbook("test")
@@ -144,6 +153,8 @@ describe("orderbook", async () => {
           admin: program.provider.wallet.publicKey,
           currencyMint,
           currencyVault,
+          tokenMint,
+          tokenVault,
           orderbookInfo,
         })
         .rpc();
