@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use data::{ListChunk, ListEntry, ListInfo};
+use data::{ListChunk, ListEntry, ListInfo, OrderbookInfo};
 pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
@@ -22,16 +22,17 @@ pub mod syrup {
         ctx.accounts.list_info.last_page = 0;
         ctx.accounts.list_info.length = 0;
 
-        msg!(
-            "created list: #{}",
-            ctx.accounts.list.to_account_info().key()
-        );
-
         Ok(())
     }
 
     #[allow(unused_variables)]
     pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: String) -> Result<()> {
+        ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
+        ctx.accounts.orderbook_info.last_page = 0;
+        ctx.accounts.orderbook_info.length = 0;
+        ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
+        // ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
+
         Ok(())
     }
 
@@ -89,7 +90,13 @@ pub mod syrup {
 
         Ok(())
     }
+
+    pub fn create_vault(ctx: Context<CreateVault>) -> Result<()> {
+        Ok(())
+    }
 }
+
+// const TOKEN_DECIMALS: u8 = 6;
 
 #[derive(Accounts)]
 #[instruction(name: String)]
@@ -101,6 +108,30 @@ pub struct CreateList<'info> {
     #[account(init, payer=payer, space = 2000, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
     pub list: Account<'info, ListChunk>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CreateVault<'info> {
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub rent: Sysvar<'info, Rent>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account( init, payer=payer, space = 100, seeds=["authority".as_ref()], bump )]
+    pub authority: Account<'info, ListInfo>,
+    #[account(
+        init,
+        payer = payer,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = authority,
+    )]
+    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+
+    #[account(
+        // address = mint::USDC
+    )]
+    pub usdc_mint: Account<'info, Mint>,
 }
 
 #[derive(Accounts)]
@@ -154,26 +185,35 @@ pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(init, payer=admin, seeds=["orderbook".as_ref(), name.as_ref(), "info".as_ref()], space=1000, bump)]
-    pub orderbook: Account<'info, ListInfo>,
-    #[account(init, payer=admin, space = 2000, seeds=["list".as_ref(), name.as_ref(), orderbook.last_page.to_le_bytes().as_ref()], bump)]
+    pub orderbook_info: Account<'info, OrderbookInfo>,
+    #[account(init, payer=admin, space = 2000, seeds=["order_chunk".as_ref(), name.as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], bump)]
     pub first_order_chunk: Account<'info, ListChunk>,
     pub system_program: Program<'info, System>,
     pub currency_mint: Box<Account<'info, Mint>>,
     #[account(
         init,
         payer = admin,
+        seeds=["orderbook".as_ref(), name.as_ref(), "currency_vault".as_ref()],
+        bump,
         associated_token::mint = currency_mint,
-        associated_token::authority = orderbook
+        associated_token::authority = orderbook_info
     )]
-    pub currency_vault: Box<Account<'info, TokenAccount>>,
-    pub token_mint: Box<Account<'info, Mint>>,
-    #[account(
-        init,
-        payer = admin,
-        associated_token::mint = currency_mint,
-        associated_token::authority = orderbook
-    )]
-    pub token_vault: Box<Account<'info, TokenAccount>>,
+    pub currency_vault: Account<'info, TokenAccount>,
+    // #[account(
+    //     init,
+    //     payer = admin,
+    //     mint::decimals = TOKEN_DECIMALS,
+    //     mint::authority = admin,
+    //     mint::freeze_authority = admin
+    // )]
+    // pub token_mint: Box<Account<'info, Mint>>,
+    // #[account(
+    //     init,
+    //     payer = admin,
+    //     associated_token::mint = token_mint,
+    //     associated_token::authority = admin
+    // )]
+    // pub token_vault: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,

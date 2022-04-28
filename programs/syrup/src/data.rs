@@ -18,6 +18,16 @@ pub struct ListInfo {
 }
 
 #[account]
+#[derive(Default)]
+pub struct OrderbookInfo {
+    pub admin: Pubkey,
+    pub last_page: u32,
+    pub length: u32,
+    pub currency_mint: Pubkey,
+    pub token_mint: Pubkey,
+}
+
+#[account]
 pub struct ListChunk {
     list: Vec<ListEntry>,
 }

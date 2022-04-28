@@ -7,6 +7,7 @@ pub struct OrderRecord {
     buy: bool, // false for a sell order
     chunk_number: u32,
     index: u32,
+    price: u32,
 }
 
 #[account]

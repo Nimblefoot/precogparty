@@ -1,15 +1,30 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
+import { Program, splitArgsAndCtx } from "@project-serum/anchor";
 import {
   Keypair,
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  Transaction,
 } from "@solana/web3.js";
 import { assert } from "chai";
 import { getListKeys } from "../app/syrup";
 import { Syrup } from "../target/types/syrup";
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes";
+import * as spl from "@solana/spl-token";
+import {
+  createAssociatedTokenAccountInstruction,
+  createInitializeMintInstruction,
+  createMintToInstruction,
+  getAccount,
+  getAssociatedTokenAddress,
+  getMinimumBalanceForRentExemptMint,
+  MINT_SIZE,
+  TOKEN_PROGRAM_ID,
+  getMint,
+  createMint,
+  createAssociatedTokenAccount,
+} from "@solana/spl-token";
 
 describe("orderbook", async () => {
   // Configure the client to use the local cluster.
@@ -24,7 +39,7 @@ describe("orderbook", async () => {
       await program.provider.connection.confirmTransaction(
         await program.provider.connection.requestAirdrop(
           admin.publicKey,
-          1000000000
+          10000000000
         ),
         "finalized"
       );
@@ -63,6 +78,125 @@ describe("orderbook", async () => {
         0,
         "initially orders should be empty"
       );
+
+      console.log("creating token accounts and setting up orderbook");
+      const [authority] = await PublicKey.findProgramAddress(
+        [utf8.encode("authority")],
+        program.programId
+      );
+
+      const usdcMint = await createMint(
+        program.provider.connection,
+        admin,
+        admin.publicKey,
+        null,
+        9
+      );
+
+      const usdcVault = await getAssociatedTokenAddress(
+        usdcMint,
+        authority,
+        true
+      );
+
+      await program.methods
+        .createVault()
+        .accounts({
+          payer: program.provider.wallet.publicKey,
+          usdcMint,
+          usdcVault,
+          authority,
+        })
+        .rpc();
+
+      // const [currencyVault] = await PublicKey.findProgramAddress(
+      //   [
+      //     utf8.encode("orderbook"),
+      //     utf8.encode("test"),
+      //     utf8.encode("currency_mint"),
+      //   ],
+      //   program.programId
+      // );
+
+      // let tokenMintPubkey = await createMint(
+      //   program.provider.connection,
+      //   admin,
+      //   admin.publicKey,
+      //   admin.publicKey,
+      //   8,
+      //   admin
+      // );
+      // const tokenVault = await createAssociatedTokenAccount(
+      //   program.provider.connection, // connection
+      //   admin, // fee payer
+      //   tokenMintPubkey, // mint
+      //   admin.publicKey // owner,
+      // );
+      // const firstOrderChunk = await PublicKey.findProgramAddress(
+      //   [
+      //     utf8.encode("order_chunk"),
+      //     utf8.encode("test"),
+      //     new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+      //   ],
+      //   program.programId
+      // );
+
+      // console.log(orderbookInfo.toString());
+
+      // const { usdcMint, userUsdc, usdcMintKeypair } = await (async () => {
+      //   const usdcMintKeypair = new Keypair();
+      //   const usdcMint = usdcMintKeypair.publicKey;
+      //   const userUsdc = await getAssociatedTokenAddress(
+      //     usdcMint,
+      //     user.publicKey
+      //   );
+
+      //   const lamports = await getMinimumBalanceForRentExemptMint(
+      //     program.provider.connection
+      //   );
+
+      //   const IXcreateMintAccount = SystemProgram.createAccount({
+      //     fromPubkey: user.publicKey,
+      //     newAccountPubkey: usdcMint,
+      //     space: MINT_SIZE,
+      //     lamports,
+      //     programId: TOKEN_PROGRAM_ID,
+      //   });
+      //   const IXinitMint = createInitializeMintInstruction(
+      //     usdcMint,
+      //     6,
+      //     user.publicKey,
+      //     null
+      //   );
+      //   const IXcreateUserUsdc = createAssociatedTokenAccountInstruction(
+      //     user.publicKey,
+      //     userUsdc,
+      //     user.publicKey,
+      //     usdcMint
+      //   );
+      //   const IXmintUsdc = createMintToInstruction(
+      //     usdcMint,
+      //     userUsdc,
+      //     user.publicKey,
+      //     1000
+      //   );
+      //   const tx = new Transaction().add(
+      //     IXcreateMintAccount,
+      //     IXinitMint,
+      //     IXcreateUserUsdc,
+      //     IXmintUsdc
+      //   );
+
+      //   const sig = await program.provider
+      //     .send(tx, [usdcMintKeypair])
+      //     .catch((e) => {
+      //       console.log(e);
+      //       throw e;
+      //     });
+      //   console.log("set up fake usdc", sig);
+
+      //   return { usdcMint, userUsdc, usdcMintKeypair };
+      // })();
     });
   });
 });
