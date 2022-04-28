@@ -16,7 +16,7 @@ declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 pub mod syrup {
     use super::*;
 
-    #[allow(unused_variables)]
+    #[allow(unused_variables)] // already replaced with initialize - delete eventually
     pub fn create_list(ctx: Context<CreateList>, name: String) -> Result<()> {
         ctx.accounts.list_info.owner = ctx.accounts.payer.key();
         ctx.accounts.list_info.last_page = 0;
@@ -36,7 +36,7 @@ pub mod syrup {
         Ok(())
     }
 
-    #[allow(unused_variables)]
+    #[allow(unused_variables)] // replace eventually with place_order
     pub fn append(ctx: Context<Append>, name: String, item: ListEntry) -> Result<()> {
         ctx.accounts.list.try_push(item);
 
@@ -49,7 +49,7 @@ pub mod syrup {
         Ok(())
     }
 
-    #[allow(unused_variables)]
+    #[allow(unused_variables)] // delete eventually
     pub fn pop(ctx: Context<Pop>, name: String) -> Result<Option<ListEntry>> {
         let list: &mut Account<'_, ListChunk> = &mut ctx.accounts.list;
         let result = list.pop();
@@ -91,6 +91,7 @@ pub mod syrup {
         Ok(())
     }
 
+    // delete eventually. only used for testing.
     pub fn create_vault(ctx: Context<CreateVault>) -> Result<()> {
         Ok(())
     }
