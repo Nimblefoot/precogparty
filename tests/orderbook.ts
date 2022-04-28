@@ -108,15 +108,45 @@ describe("orderbook", async () => {
           authority,
         })
         .rpc();
+      console.log("fake mint worked");
 
-      // const [currencyVault] = await PublicKey.findProgramAddress(
-      //   [
-      //     utf8.encode("orderbook"),
-      //     utf8.encode("test"),
-      //     utf8.encode("currency_mint"),
-      //   ],
+      const [orderbookInfo] = await PublicKey.findProgramAddress(
+        [utf8.encode("orderbook-info")],
+        program.programId
+      );
+      // const [orderbookInfo] = await PublicKey.findProgramAddress(
+      //   [utf8.encode("orderbook-info"), utf8.encode("test"), utf8.encode("info")],
       //   program.programId
       // );
+
+      const currencyMint = await createMint(
+        program.provider.connection,
+        admin,
+        admin.publicKey,
+        null,
+        9
+      );
+
+      const currencyVault = await getAssociatedTokenAddress(
+        currencyMint,
+        orderbookInfo,
+        true
+      );
+
+      // const firstOrderChunk = await PublicKey.findProgramAddress(
+      //   [utf8.encode("order_chunk")],
+      //   program.programId
+      // );
+
+      await program.methods
+        .initializeOrderbook("test")
+        .accounts({
+          admin: program.provider.wallet.publicKey,
+          currencyMint,
+          currencyVault,
+          orderbookInfo,
+        })
+        .rpc();
 
       // let tokenMintPubkey = await createMint(
       //   program.provider.connection,
@@ -131,14 +161,6 @@ describe("orderbook", async () => {
       //   admin, // fee payer
       //   tokenMintPubkey, // mint
       //   admin.publicKey // owner,
-      // );
-      // const firstOrderChunk = await PublicKey.findProgramAddress(
-      //   [
-      //     utf8.encode("order_chunk"),
-      //     utf8.encode("test"),
-      //     new anchor.BN(0).toArrayLike(Buffer, "le", 4),
-      //   ],
-      //   program.programId
       // );
 
       // console.log(orderbookInfo.toString());

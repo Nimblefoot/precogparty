@@ -27,10 +27,10 @@ pub mod syrup {
 
     #[allow(unused_variables)]
     pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: String) -> Result<()> {
-        ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
-        ctx.accounts.orderbook_info.last_page = 0;
-        ctx.accounts.orderbook_info.length = 0;
-        ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
+        // ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
+        // ctx.accounts.orderbook_info.last_page = 0;
+        // ctx.accounts.orderbook_info.length = 0;
+        // ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
         // ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
 
         Ok(())
@@ -184,21 +184,19 @@ pub struct CreateUserAccount<'info> {
 pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    #[account(init, payer=admin, seeds=["orderbook".as_ref(), name.as_ref(), "info".as_ref()], space=1000, bump)]
+    #[account(init, payer=admin, seeds=["orderbook-info".as_ref()], space=1000, bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
-    #[account(init, payer=admin, space = 2000, seeds=["order_chunk".as_ref(), name.as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], bump)]
-    pub first_order_chunk: Account<'info, ListChunk>,
+    // #[account(init, payer=admin, seeds=["order_chunk".as_ref()], space = 2000, bump)]
+    // pub first_order_chunk: Account<'info, ListChunk>,
     pub system_program: Program<'info, System>,
-    pub currency_mint: Box<Account<'info, Mint>>,
+    pub currency_mint: Account<'info, Mint>,
     #[account(
         init,
         payer = admin,
-        seeds=["orderbook".as_ref(), name.as_ref(), "currency_vault".as_ref()],
-        bump,
         associated_token::mint = currency_mint,
         associated_token::authority = orderbook_info
     )]
-    pub currency_vault: Account<'info, TokenAccount>,
+    pub currency_vault: Box<Account<'info, TokenAccount>>,
     // #[account(
     //     init,
     //     payer = admin,
