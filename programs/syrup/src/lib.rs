@@ -184,10 +184,10 @@ pub struct CreateUserAccount<'info> {
 pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    #[account(init, payer=admin, seeds=["orderbook-info".as_ref(), name.as_ref()], space=1000, bump)]
+    #[account(init, payer=admin, seeds=[name.as_ref(), "orderbook-info".as_ref()], space=1000, bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
-    // #[account(init, payer=admin, seeds=["order_chunk".as_ref()], space = 2000, bump)]
-    // pub first_order_chunk: Account<'info, ListChunk>,
+    // #[account(init, payer=admin, seeds=[name.as_ref(), "order-chunk".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], space = 2000, bump)]
+    // pub first_page: Account<'info, ListChunk>,
     pub system_program: Program<'info, System>,
     pub currency_mint: Account<'info, Mint>,
     #[account(

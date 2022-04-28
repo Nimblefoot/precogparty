@@ -111,13 +111,9 @@ describe("orderbook", async () => {
       console.log("fake mint worked");
 
       const [orderbookInfo] = await PublicKey.findProgramAddress(
-        [utf8.encode("orderbook-info"), utf8.encode("test")],
+        [utf8.encode("test"), utf8.encode("orderbook-info")],
         program.programId
       );
-      // const [orderbookInfo] = await PublicKey.findProgramAddress(
-      //   [utf8.encode("orderbook-info"), utf8.encode("test"), utf8.encode("info")],
-      //   program.programId
-      // );
 
       const currencyMint = await createMint(
         program.provider.connection,
@@ -133,8 +129,12 @@ describe("orderbook", async () => {
         true
       );
 
-      // const firstOrderChunk = await PublicKey.findProgramAddress(
-      //   [utf8.encode("order_chunk")],
+      // const firstPage = await PublicKey.findProgramAddress(
+      //   [
+      //     utf8.encode("test"),
+      //     utf8.encode("order-chunk"),
+      //     new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+      //   ],
       //   program.programId
       // );
 
