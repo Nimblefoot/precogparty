@@ -24,6 +24,7 @@ import {
   getMint,
   createMint,
   createAssociatedTokenAccount,
+  mintToChecked,
 } from "@solana/spl-token";
 
 describe("orderbook", async () => {
@@ -90,7 +91,7 @@ describe("orderbook", async () => {
         admin,
         admin.publicKey,
         null,
-        9
+        6
       );
 
       const currencyVault = await getAssociatedTokenAddress(
@@ -99,56 +100,83 @@ describe("orderbook", async () => {
         true
       );
 
-      const tokenMint = await createMint(
+      // const tokenMint = await createMint(
+      //   program.provider.connection,
+      //   admin,
+      //   admin.publicKey,
+      //   null,
+      //   6
+      // );
+
+      // const tokenVault = await getAssociatedTokenAddress(
+      //   tokenMint,
+      //   orderbookInfo,
+      //   true
+      // );
+
+      // const [firstPage] = await PublicKey.findProgramAddress(
+      //   [
+      //     utf8.encode("test"),
+      //     utf8.encode("page"),
+      //     new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+      //   ],
+      //   program.programId
+      // );
+
+      // await program.methods
+      //   .initializeOrderbook("test")
+      //   .accounts({
+      //     admin: program.provider.wallet.publicKey,
+      //     currencyMint,
+      //     currencyVault,
+      //     tokenMint,
+      //     tokenVault,
+      //     orderbookInfo,
+      //     firstPage,
+      //   })
+      //   .rpc();
+
+      // let orderbookData = await program.account.orderbookInfo.fetch(
+      //   orderbookInfo
+      // );
+
+      // assert.equal(
+      //   orderbookData.currencyMint.toString(),
+      //   currencyMint.toString(),
+      //   "currency mints should match"
+      // );
+      // assert.equal(
+      //   orderbookData.tokenMint.toString(),
+      //   tokenMint.toString(),
+      //   "token mints should match"
+      // );
+
+      let mintAccount = await getMint(
         program.provider.connection,
-        admin,
-        admin.publicKey,
-        null,
-        9
+        currencyMint
       );
 
-      const tokenVault = await getAssociatedTokenAddress(
-        tokenMint,
-        orderbookInfo,
-        true
+      let ata = await createAssociatedTokenAccount(
+        program.provider.connection, // connection
+        user, // fee payer
+        currencyMint, // mint
+        user.publicKey // owner,
       );
 
-      const [firstPage] = await PublicKey.findProgramAddress(
-        [
-          utf8.encode("test"),
-          utf8.encode("page"),
-          new anchor.BN(0).toArrayLike(Buffer, "le", 4),
-        ],
-        program.programId
+      let txhash = await mintToChecked(
+        program.provider.connection, // connection
+        user, // fee payer
+        currencyMint, // mint
+        ata, // receiver (sholud be a token account)
+        admin, // mint authority
+        1e8, // amount. if your decimals is 8, you mint 10^8 for 1 token.
+        6 // decimals
       );
 
-      await program.methods
-        .initializeOrderbook("test")
-        .accounts({
-          admin: program.provider.wallet.publicKey,
-          currencyMint,
-          currencyVault,
-          tokenMint,
-          tokenVault,
-          orderbookInfo,
-          firstPage,
-        })
-        .rpc();
+      let tokenAmount =
+        await program.provider.connection.getTokenAccountBalance(ata);
 
-      let orderbookData = await program.account.orderbookInfo.fetch(
-        orderbookInfo
-      );
-
-      assert.equal(
-        orderbookData.currencyMint.toString(),
-        currencyMint.toString(),
-        "currency mints should match"
-      );
-      assert.equal(
-        orderbookData.tokenMint.toString(),
-        tokenMint.toString(),
-        "token mints should match"
-      );
+      console.log(tokenAmount);
     });
   });
 });

@@ -99,7 +99,7 @@ pub mod syrup {
 
 // const TOKEN_DECIMALS: u8 = 6;
 
-#[derive(Accounts)]
+#[derive(Accounts)] // Replaced with initializeOrderbook - delete eventually
 #[instruction(name: String)]
 pub struct CreateList<'info> {
     #[account(mut)]
@@ -135,7 +135,7 @@ pub struct CreateVault<'info> {
     pub usdc_mint: Account<'info, Mint>,
 }
 
-#[derive(Accounts)]
+#[derive(Accounts)] // Will get replaced by PlaceOrder
 #[instruction(name: String, item: ListEntry)]
 pub struct Append<'info> {
     #[account(mut)]
@@ -147,7 +147,7 @@ pub struct Append<'info> {
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
+#[derive(Accounts)] // delete eventually. Just for testing
 #[instruction(name: String)]
 pub struct Pop<'info> {
     #[account(mut)]
