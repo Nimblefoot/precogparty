@@ -31,7 +31,7 @@ pub mod syrup {
 
     #[allow(unused_variables)]
     pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: String) -> Result<()> {
-        // ToDo - insist names are unique
+        // ToDo - insist names are unique and max 16 characters
 
         ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
         ctx.accounts.orderbook_info.last_page = 0;
@@ -97,20 +97,6 @@ pub mod syrup {
         Ok(())
     }
 
-    // delete eventually. for testing
-    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let accounts = Transfer {
-            from: ctx.accounts.user_ata.to_account_info(),
-            to: ctx.accounts.vault.to_account_info(),
-            authority: ctx.accounts.user.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new(cpi_program, accounts);
-        token::transfer(cpi_ctx, amount)?;
-
-        Ok(())
-    }
-
     pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: ListEntry) -> Result<()> {
         // ToDo - Add check for if the user has space in their order vector
 
@@ -123,14 +109,6 @@ pub mod syrup {
         let cpi_ctx = CpiContext::new(cpi_program, accounts);
         token::transfer(cpi_ctx, order.size)?;
 
-        ctx.accounts.current_page.try_push(order);
-        if ctx.accounts.current_page.is_full() {
-            msg!("Full");
-            ctx.accounts.orderbook_info.last_page += 1;
-        };
-
-        ctx.accounts.orderbook_info.length += 1;
-
         // create and append order record
         let name_bytes = name.as_bytes();
         let mut name_data = [b' '; 16];
@@ -141,9 +119,18 @@ pub mod syrup {
             buy: order.buy,
             size: order.size,
             price: order.price,
-            page_number: 0,
-            index: 0,
+            page_number: ctx.accounts.orderbook_info.last_page,
+            index: ctx.accounts.current_page.len() as u32,
         };
+
+        // add to the list of offers
+        ctx.accounts.current_page.try_push(order);
+        if ctx.accounts.current_page.is_full() {
+            msg!("Full");
+            ctx.accounts.orderbook_info.last_page += 1;
+        };
+
+        ctx.accounts.orderbook_info.length += 1;
 
         ctx.accounts.user_account.orders.push(order_record);
 
@@ -157,17 +144,6 @@ pub mod syrup {
 }
 
 // const TOKEN_DECIMALS: u8 = 6;
-
-#[derive(Accounts)]
-pub struct Deposit<'info> {
-    #[account(mut)]
-    pub user: Signer<'info>,
-    #[account(mut)]
-    pub user_ata: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub vault: Box<Account<'info, TokenAccount>>,
-    pub token_program: Program<'info, Token>,
-}
 
 #[derive(Accounts)] // Replaced with initializeOrderbook - delete eventually
 #[instruction(name: String)]

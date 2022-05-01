@@ -50,6 +50,10 @@ impl ListChunk {
         3
     }
 
+    pub fn len(&self) -> usize {
+        self.list.len()
+    }
+
     pub fn is_full(&self) -> bool {
         self.list.len() == Self::max_size()
     }

@@ -176,22 +176,7 @@ describe("orderbook", async () => {
       let tokenAmount =
         await program.provider.connection.getTokenAccountBalance(ata);
 
-      // console.log("depositing into vault");
-      // let depositTx = await program.methods
-      //   .deposit(new anchor.BN(1e8))
-      //   .accounts({
-      //     user: user.publicKey,
-      //     vault: currencyVault,
-      //     userAta: ata,
-      //   })
-      //   .signers([user])
-      //   .rpc();
-
-      // const vaultBalance =
-      //   await program.provider.connection.getTokenAccountBalance(currencyVault);
-      // assert.equal(vaultBalance.value.amount, "100000000");
-
-      console.log("lets place an order!");
+      console.log("lets place some order!");
       const size = 10;
       const mockData = [...Array(size).keys()].map((i) => ({
         user: user.publicKey,
@@ -233,6 +218,10 @@ describe("orderbook", async () => {
         1,
         "correct length of final chunk"
       );
+      userAccount = await program.account.userAccount.fetch(userAccountAddress);
+      const seventhORder = userAccount.orders[7];
+      assert.equal(seventhORder.pageNumber, 2, "correct page number for order");
+      assert.equal(seventhORder.index, 1, "correct index for order");
     });
   });
 });
