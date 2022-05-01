@@ -176,20 +176,20 @@ describe("orderbook", async () => {
       let tokenAmount =
         await program.provider.connection.getTokenAccountBalance(ata);
 
-      console.log("depositing into vault");
-      let depositTx = await program.methods
-        .deposit(new anchor.BN(1e8))
-        .accounts({
-          user: user.publicKey,
-          vault: currencyVault,
-          userAta: ata,
-        })
-        .signers([user])
-        .rpc();
+      // console.log("depositing into vault");
+      // let depositTx = await program.methods
+      //   .deposit(new anchor.BN(1e8))
+      //   .accounts({
+      //     user: user.publicKey,
+      //     vault: currencyVault,
+      //     userAta: ata,
+      //   })
+      //   .signers([user])
+      //   .rpc();
 
-      const vaultBalance =
-        await program.provider.connection.getTokenAccountBalance(currencyVault);
-      assert.equal(vaultBalance.value.amount, "100000000");
+      // const vaultBalance =
+      //   await program.provider.connection.getTokenAccountBalance(currencyVault);
+      // assert.equal(vaultBalance.value.amount, "100000000");
 
       console.log("lets place an order!");
       const size = 10;
@@ -213,6 +213,14 @@ describe("orderbook", async () => {
         })
         .signers([user])
         .rpc();
+
+      const vaultBalance =
+        await program.provider.connection.getTokenAccountBalance(currencyVault);
+      assert.equal(
+        vaultBalance.value.amount,
+        "1000000",
+        "Vault Balance should match sum of orders"
+      );
     });
   });
 });

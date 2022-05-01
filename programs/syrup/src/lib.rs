@@ -109,6 +109,23 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: ListEntry) -> Result<()> {
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let accounts = Transfer {
+            from: ctx.accounts.user_ata.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
+            authority: ctx.accounts.user.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(cpi_program, accounts);
+        token::transfer(cpi_ctx, order.size)?;
+
+        ctx.accounts.current_page.try_push(order);
+        if ctx.accounts.current_page.is_full() {
+            msg!("Full");
+            ctx.accounts.orderbook_info.last_page += 1;
+        };
+
+        ctx.accounts.orderbook_info.length += 1;
+
         Ok(())
     }
 
