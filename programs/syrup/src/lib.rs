@@ -3,6 +3,7 @@ use data::{ListChunk, ListEntry, ListInfo, OrderbookInfo};
 pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
+use user_account::OrderRecord;
 
 pub mod transfer;
 use transfer::transfer_tokens;
@@ -30,6 +31,8 @@ pub mod syrup {
 
     #[allow(unused_variables)]
     pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: String) -> Result<()> {
+        // ToDo - insist names are unique
+
         ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
         ctx.accounts.orderbook_info.last_page = 0;
         ctx.accounts.orderbook_info.length = 0;
@@ -109,6 +112,8 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: ListEntry) -> Result<()> {
+        // ToDo - Add check for if the user has space in their order vector
+
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
             from: ctx.accounts.user_ata.to_account_info(),
@@ -125,6 +130,22 @@ pub mod syrup {
         };
 
         ctx.accounts.orderbook_info.length += 1;
+
+        // create and append order record
+        let name_bytes = name.as_bytes();
+        let mut name_data = [b' '; 16];
+        name_data[..name_bytes.len()].copy_from_slice(name_bytes);
+
+        let order_record = OrderRecord {
+            market: name_data,
+            buy: order.buy,
+            size: order.size,
+            price: order.price,
+            page_number: 0,
+            index: 0,
+        };
+
+        ctx.accounts.user_account.orders.push(order_record);
 
         Ok(())
     }

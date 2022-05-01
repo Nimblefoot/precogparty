@@ -228,13 +228,11 @@ describe("orderbook", async () => {
       const keysAndData = await getKeysAndData(program, "test");
       assert.equal(keysAndData.info.length, 10, "correct orderbook length");
       assert.equal(
+        // @ts-ignore
         keysAndData.lastPage.list.length,
         1,
         "correct length of final chunk"
       );
-      // console.log(keysAndData.info.length);
-      // console.log(keysAndData.info.length);
-      // console.log(keysAndData.info.length);
     });
   });
 });

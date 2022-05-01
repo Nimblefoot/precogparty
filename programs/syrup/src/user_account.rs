@@ -2,18 +2,18 @@ use anchor_lang::prelude::*;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct OrderRecord {
-    market: Pubkey,
-    size: u32,
-    buy: bool, // false for a sell order
-    chunk_number: u32,
-    index: u32,
-    price: u32,
+    pub market: [u8; 16],
+    pub size: u64,
+    pub buy: bool, // false for a sell order
+    pub page_number: u32,
+    pub index: u32,
+    pub price: u64,
 }
 
 #[account]
 pub struct UserAccount {
-    orders: Vec<OrderRecord>,
-    user: Pubkey,
+    pub orders: Vec<OrderRecord>,
+    pub user: Pubkey,
 }
 
 impl UserAccount {
