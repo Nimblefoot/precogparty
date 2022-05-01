@@ -136,11 +136,6 @@ pub mod syrup {
 
         Ok(())
     }
-
-    // delete eventually. only used for testing.
-    pub fn create_vault(ctx: Context<CreateVault>) -> Result<()> {
-        Ok(())
-    }
 }
 
 // const TOKEN_DECIMALS: u8 = 6;
@@ -155,30 +150,6 @@ pub struct CreateList<'info> {
     #[account(init, payer=payer, space = 2000, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
     pub list: Account<'info, ListChunk>,
     pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct CreateVault<'info> {
-    pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub rent: Sysvar<'info, Rent>,
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account( init, payer=payer, space = 100, seeds=["authority".as_ref()], bump )]
-    pub authority: Account<'info, ListInfo>,
-    #[account(
-        init,
-        payer = payer,
-        associated_token::mint = usdc_mint,
-        associated_token::authority = authority,
-    )]
-    pub usdc_vault: Box<Account<'info, TokenAccount>>,
-
-    #[account(
-        // address = mint::USDC
-    )]
-    pub usdc_mint: Account<'info, Mint>,
 }
 
 #[derive(Accounts)] // Will get replaced by PlaceOrder
