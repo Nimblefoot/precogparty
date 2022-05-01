@@ -5,8 +5,6 @@ pub struct OrderRecord {
     pub market: [u8; 16],
     pub size: u64,
     pub buy: bool, // false for a sell order
-    pub page_number: u32,
-    pub index: u32,
     pub price: u64,
 }
 

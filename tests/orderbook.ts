@@ -219,9 +219,13 @@ describe("orderbook", async () => {
         "correct length of final chunk"
       );
       userAccount = await program.account.userAccount.fetch(userAccountAddress);
-      const seventhORder = userAccount.orders[7];
-      assert.equal(seventhORder.pageNumber, 2, "correct page number for order");
-      assert.equal(seventhORder.index, 1, "correct index for order");
+      const seventhOrder = userAccount.orders[6];
+      assert.equal(
+        seventhOrder.size.toString(),
+        "7000000",
+        "correct price for order"
+      );
+      assert.equal(seventhOrder.price, 1, "correct index for order");
     });
   });
 });

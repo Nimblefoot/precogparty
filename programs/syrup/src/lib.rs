@@ -119,8 +119,6 @@ pub mod syrup {
             buy: order.buy,
             size: order.size,
             price: order.price,
-            page_number: ctx.accounts.orderbook_info.last_page,
-            index: ctx.accounts.current_page.len() as u32,
         };
 
         // add to the list of offers
@@ -134,6 +132,10 @@ pub mod syrup {
 
         ctx.accounts.user_account.orders.push(order_record);
 
+        Ok(())
+    }
+
+    pub fn take_order(ctx: Context<TakeOrder>) -> Result<()> {
         Ok(())
     }
 }
@@ -249,8 +251,37 @@ pub struct PlaceOrder<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub struct TakeOrder {}
+#[derive(Accounts)]
+#[instruction(name: String, order: ListEntry, page_number: u32, index: u32)]
+pub struct TakeOrder<'info> {
+    #[account(mut)]
+    pub taker: Signer<'info>,
+    #[account(mut, seeds=["user-account".as_ref(), taker.key().as_ref()], bump)]
+    pub taker_user_account: Box<Account<'info, UserAccount>>,
+    #[account(mut)]
+    pub taker_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub offerer: Signer<'info>,
+    #[account(mut, seeds=["user-account".as_ref(), offerer.key().as_ref()], bump)]
+    pub offerer_user_account: Box<Account<'info, UserAccount>>,
+    #[account(mut)]
+    pub offerer_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut, seeds=[name.as_ref(), "orderbook-info".as_ref()], bump)]
+    pub orderbook_info: Account<'info, OrderbookInfo>,
+    #[account(mut, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], bump)]
+    pub order_page: Account<'info, ListChunk>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub rent: Sysvar<'info, Rent>,
+    pub system_program: Program<'info, System>,
+}
 
-pub struct CancelOrder {}
+#[derive(Accounts)]
+pub struct CancelOrder<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+}
 
 pub struct ExecuteMatchingOrders {}
