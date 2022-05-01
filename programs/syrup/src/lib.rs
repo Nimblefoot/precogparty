@@ -4,6 +4,9 @@ pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
 
+pub mod transfer;
+use transfer::transfer_tokens;
+
 use anchor_spl::{
     associated_token::{self, AssociatedToken},
     mint,
@@ -91,6 +94,20 @@ pub mod syrup {
         Ok(())
     }
 
+    // delete eventually. for testing
+    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let accounts = Transfer {
+            from: ctx.accounts.user_ata.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
+            authority: ctx.accounts.user.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(cpi_program, accounts);
+        token::transfer(cpi_ctx, amount)?;
+
+        Ok(())
+    }
+
     // delete eventually. only used for testing.
     pub fn create_vault(ctx: Context<CreateVault>) -> Result<()> {
         Ok(())
@@ -98,6 +115,17 @@ pub mod syrup {
 }
 
 // const TOKEN_DECIMALS: u8 = 6;
+
+#[derive(Accounts)]
+pub struct Deposit<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(mut)]
+    pub user_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub vault: Box<Account<'info, TokenAccount>>,
+    pub token_program: Program<'info, Token>,
+}
 
 #[derive(Accounts)] // Replaced with initializeOrderbook - delete eventually
 #[instruction(name: String)]

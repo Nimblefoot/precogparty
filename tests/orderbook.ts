@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Program, splitArgsAndCtx } from "@project-serum/anchor";
+import { AnchorError, Program, splitArgsAndCtx } from "@project-serum/anchor";
 import {
   Keypair,
   PublicKey,
@@ -100,56 +100,56 @@ describe("orderbook", async () => {
         true
       );
 
-      // const tokenMint = await createMint(
-      //   program.provider.connection,
-      //   admin,
-      //   admin.publicKey,
-      //   null,
-      //   6
-      // );
+      const tokenMint = await createMint(
+        program.provider.connection,
+        admin,
+        admin.publicKey,
+        null,
+        6
+      );
 
-      // const tokenVault = await getAssociatedTokenAddress(
-      //   tokenMint,
-      //   orderbookInfo,
-      //   true
-      // );
+      const tokenVault = await getAssociatedTokenAddress(
+        tokenMint,
+        orderbookInfo,
+        true
+      );
 
-      // const [firstPage] = await PublicKey.findProgramAddress(
-      //   [
-      //     utf8.encode("test"),
-      //     utf8.encode("page"),
-      //     new anchor.BN(0).toArrayLike(Buffer, "le", 4),
-      //   ],
-      //   program.programId
-      // );
+      const [firstPage] = await PublicKey.findProgramAddress(
+        [
+          utf8.encode("test"),
+          utf8.encode("page"),
+          new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      );
 
-      // await program.methods
-      //   .initializeOrderbook("test")
-      //   .accounts({
-      //     admin: program.provider.wallet.publicKey,
-      //     currencyMint,
-      //     currencyVault,
-      //     tokenMint,
-      //     tokenVault,
-      //     orderbookInfo,
-      //     firstPage,
-      //   })
-      //   .rpc();
+      await program.methods
+        .initializeOrderbook("test")
+        .accounts({
+          admin: program.provider.wallet.publicKey,
+          currencyMint,
+          currencyVault,
+          tokenMint,
+          tokenVault,
+          orderbookInfo,
+          firstPage,
+        })
+        .rpc();
 
-      // let orderbookData = await program.account.orderbookInfo.fetch(
-      //   orderbookInfo
-      // );
+      let orderbookData = await program.account.orderbookInfo.fetch(
+        orderbookInfo
+      );
 
-      // assert.equal(
-      //   orderbookData.currencyMint.toString(),
-      //   currencyMint.toString(),
-      //   "currency mints should match"
-      // );
-      // assert.equal(
-      //   orderbookData.tokenMint.toString(),
-      //   tokenMint.toString(),
-      //   "token mints should match"
-      // );
+      assert.equal(
+        orderbookData.currencyMint.toString(),
+        currencyMint.toString(),
+        "currency mints should match"
+      );
+      assert.equal(
+        orderbookData.tokenMint.toString(),
+        tokenMint.toString(),
+        "token mints should match"
+      );
 
       let mintAccount = await getMint(
         program.provider.connection,
@@ -169,14 +169,27 @@ describe("orderbook", async () => {
         currencyMint, // mint
         ata, // receiver (sholud be a token account)
         admin, // mint authority
-        1e8, // amount. if your decimals is 8, you mint 10^8 for 1 token.
+        2e8, // amount. if your decimals is 8, you mint 10^8 for 1 token.
         6 // decimals
       );
 
       let tokenAmount =
         await program.provider.connection.getTokenAccountBalance(ata);
 
-      console.log(tokenAmount);
+      console.log("depositing into vault");
+      let depositTx = await program.methods
+        .deposit(new anchor.BN(1e8))
+        .accounts({
+          user: user.publicKey,
+          vault: currencyVault,
+          userAta: ata,
+        })
+        .signers([user])
+        .rpc();
+
+      const vaultBalance =
+        await program.provider.connection.getTokenAccountBalance(currencyVault);
+      assert.equal(vaultBalance.value.amount, "100000000");
     });
   });
 });
