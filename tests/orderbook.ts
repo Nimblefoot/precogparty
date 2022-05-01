@@ -8,7 +8,7 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { assert } from "chai";
-import { getListKeys } from "../app/syrup";
+import { getKeysAndData } from "../util/syrup";
 import { Syrup } from "../target/types/syrup";
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import * as spl from "@solana/spl-token";
@@ -199,28 +199,42 @@ describe("orderbook", async () => {
         buy: true,
         price: new anchor.BN(1),
       }));
-      console.log(mockData[0]);
 
-      await program.methods
-        .placeOrder("test", mockData[0])
-        .accounts({
-          user: user.publicKey,
-          userAta: ata,
-          vault: currencyVault,
-          orderbookInfo,
-          currentPage: firstPage,
-          userAccount: userAccountAddress,
-        })
-        .signers([user])
-        .rpc();
+      for (let i = 0; i < size; i++) {
+        const keysAndData = await getKeysAndData(program, "test");
+
+        await program.methods
+          .placeOrder("test", mockData[i])
+          .accounts({
+            user: user.publicKey,
+            userAta: ata,
+            vault: currencyVault,
+            orderbookInfo,
+            currentPage: keysAndData.pageKeys[keysAndData.info.lastPage],
+            userAccount: userAccountAddress,
+          })
+          .signers([user])
+          .rpc();
+      }
 
       const vaultBalance =
         await program.provider.connection.getTokenAccountBalance(currencyVault);
       assert.equal(
         vaultBalance.value.amount,
-        "1000000",
-        "Vault Balance should match sum of orders"
+        "55000000",
+        "Vault Balance should match sum of orders." // sum 1 to 10 = 55
       );
+
+      const keysAndData = await getKeysAndData(program, "test");
+      assert.equal(keysAndData.info.length, 10, "correct orderbook length");
+      assert.equal(
+        keysAndData.lastPage.list.length,
+        1,
+        "correct length of final chunk"
+      );
+      // console.log(keysAndData.info.length);
+      // console.log(keysAndData.info.length);
+      // console.log(keysAndData.info.length);
     });
   });
 });
