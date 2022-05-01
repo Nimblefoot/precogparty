@@ -190,6 +190,29 @@ describe("orderbook", async () => {
       const vaultBalance =
         await program.provider.connection.getTokenAccountBalance(currencyVault);
       assert.equal(vaultBalance.value.amount, "100000000");
+
+      console.log("lets place an order!");
+      const size = 10;
+      const mockData = [...Array(size).keys()].map((i) => ({
+        user: user.publicKey,
+        size: new anchor.BN((1e8 / 100) * (i + 1)),
+        buy: true,
+        price: new anchor.BN(1),
+      }));
+      console.log(mockData[0]);
+
+      await program.methods
+        .placeOrder("test", mockData[0])
+        .accounts({
+          user: user.publicKey,
+          userAta: ata,
+          vault: currencyVault,
+          orderbookInfo,
+          currentPage: firstPage,
+          userAccount: userAccountAddress,
+        })
+        .signers([user])
+        .rpc();
     });
   });
 });

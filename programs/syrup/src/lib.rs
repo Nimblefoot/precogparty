@@ -108,6 +108,10 @@ pub mod syrup {
         Ok(())
     }
 
+    pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: ListEntry) -> Result<()> {
+        Ok(())
+    }
+
     // delete eventually. only used for testing.
     pub fn create_vault(ctx: Context<CreateVault>) -> Result<()> {
         Ok(())
@@ -240,19 +244,24 @@ pub struct InitializeOrderbook<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(order: ListEntry, name: String)]
+#[instruction(name: String, order: ListEntry)]
 pub struct PlaceOrder<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
+    #[account(mut, seeds=["user-account".as_ref(), user.key().as_ref()], bump)]
     pub user_account: Box<Account<'info, UserAccount>>,
+    #[account(mut)]
+    pub user_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
     pub vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut, seeds=[name.as_ref(), "orderbook-info".as_ref()], bump)]
+    pub orderbook_info: Account<'info, OrderbookInfo>,
+    #[account(init_if_needed, payer=user, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], space=500, bump)]
+    pub current_page: Account<'info, ListChunk>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
-    #[account(mut, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], bump)]
-    pub list_info: Account<'info, ListInfo>,
-    #[account(init_if_needed, payer=user, space = 2000, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
-    pub list_chunk: Account<'info, ListChunk>,
 }
 
 pub struct TakeOrder {}

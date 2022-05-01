@@ -48,8 +48,8 @@ describe("unordered list", async () => {
       assert.ok(info.owner.equals(payer.publicKey), "owner should be payer");
       assert.equal(info.lastPage, 0, "last page should be zero");
 
-      // @ts-ignore-error - cant infer type of lastPage.list
       assert.equal(
+        // @ts-ignore-error - cant infer type of lastPage.list
         lastPage.list.length,
         0,
         "initial list chunk should have length zero"
@@ -97,8 +97,9 @@ describe("unordered list", async () => {
       lastPage = await program.account.listChunk.fetch(list.lastPage);
       assert.equal(info.length, size, "should be $size items");
       assert.equal(info.lastPage, 3, "last page should be 3 after 10 appends");
-      // @ts-ignore cant derive type of lastPage.list
+
       assert.equal(
+        // @ts-ignore-error - cant infer type of lastPage.list
         lastPage.list.length,
         1,
         "last chunk should have one element"
