@@ -14,9 +14,4 @@ cluster = "localnet"
 wallet = "./dev-wallet.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-
-[test.validator]
-url = "https://api.mainnet-beta.solana.com"
-[[test.validator.clone]]
-address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/orderbook.ts"
