@@ -43,6 +43,7 @@ describe("orderbook", async () => {
   let tokenVault: PublicKey;
   let currencyMint: PublicKey;
   let tokenMint: PublicKey;
+  let user_currency_ata: PublicKey;
 
   before(async () => {
     /** SETUP */
@@ -67,6 +68,13 @@ describe("orderbook", async () => {
       admin.publicKey,
       null,
       6
+    );
+
+    user_currency_ata = await createAssociatedTokenAccount(
+      program.provider.connection, // connection
+      user, // fee payer
+      currencyMint, // mint
+      user.publicKey // owner,
     );
 
     tokenMint = await createMint(
@@ -108,6 +116,14 @@ describe("orderbook", async () => {
       true
     );
   });
+
+  const size = 10;
+  const mockData = [...Array(size).keys()].map((i) => ({
+    user: user.publicKey,
+    size: new anchor.BN((1e8 / 100) * (i + 1)),
+    buy: true,
+    price: new anchor.BN(1),
+  }));
 
   it("creates a user account", async () => {
     await program.methods
@@ -167,30 +183,15 @@ describe("orderbook", async () => {
   it("places 10 orders", async () => {
     //let mintAccount = await getMint(program.provider.connection, currencyMint);
 
-    let ata = await createAssociatedTokenAccount(
-      program.provider.connection, // connection
-      user, // fee payer
-      currencyMint, // mint
-      user.publicKey // owner,
-    );
-
     let txhash = await mintToChecked(
       program.provider.connection, // connection
       user, // fee payer
       currencyMint, // mint
-      ata, // receiver (sholud be a token account)
+      user_currency_ata, // receiver (sholud be a token account)
       admin, // mint authority
       2e8, // amount. if your decimals is 8, you mint 10^8 for 1 token.
       6 // decimals
     );
-
-    const size = 10;
-    const mockData = [...Array(size).keys()].map((i) => ({
-      user: user.publicKey,
-      size: new anchor.BN((1e8 / 100) * (i + 1)),
-      buy: true,
-      price: new anchor.BN(1),
-    }));
 
     for (let i = 0; i < size; i++) {
       const keysAndData = await getKeysAndData(program, "test");
@@ -199,7 +200,7 @@ describe("orderbook", async () => {
         .placeOrder("test", mockData[i])
         .accounts({
           user: user.publicKey,
-          userAta: ata,
+          userAta: user_currency_ata,
           vault: currencyVault,
           orderbookInfo,
           currentPage: keysAndData.pageKeys[keysAndData.info.lastPage],
@@ -209,15 +210,16 @@ describe("orderbook", async () => {
         .rpc();
     }
 
-    const vaultBalance =
-      await program.provider.connection.getTokenAccountBalance(currencyVault);
+    let vaultBalance = await program.provider.connection.getTokenAccountBalance(
+      currencyVault
+    );
     assert.equal(
       vaultBalance.value.amount,
       "55000000",
       "Vault Balance should match sum of orders." // sum 1 to 10 = 55
     );
 
-    const keysAndData = await getKeysAndData(program, "test");
+    let keysAndData = await getKeysAndData(program, "test");
     assert.equal(keysAndData.info.length, 10, "correct orderbook length");
     assert.equal(
       // @ts-ignore
@@ -235,14 +237,17 @@ describe("orderbook", async () => {
       "correct size for order"
     );
     assert.equal(seventhOrder.price, 1, "correct price for order");
+  });
 
+  it("cancels an order", async () => {
+    const keysAndData = await getKeysAndData(program, "test");
     const firstOrder = mockData[0];
     await program.methods
       .cancelOrder("test", firstOrder, 0, 0)
       .accounts({
         user: user.publicKey,
         userAccount: userAccountAddress,
-        userAta: ata,
+        userAta: user_currency_ata,
         vault: currencyVault,
         orderbookInfo,
         orderPage: firstPage,
@@ -250,5 +255,27 @@ describe("orderbook", async () => {
       })
       .signers([user])
       .rpc();
+
+    const vaultBalance =
+      await program.provider.connection.getTokenAccountBalance(currencyVault);
+    assert.equal(
+      vaultBalance.value.amount,
+      "54000000",
+      "Vault Balance should be reduced to 54000000." // sum 2 to 10 = 54
+    );
+
+    const keysAndData2 = await getKeysAndData(program, "test");
+    assert.equal(keysAndData2.info.length, 9, "correct orderbook length");
+    assert.equal(
+      // @ts-ignore
+      keysAndData2.lastPage.list.length,
+      3,
+      "correct length of final chunk"
+    );
+    const userAccount = await program.account.userAccount.fetch(
+      userAccountAddress
+    );
+    // @ts-ignore
+    assert.equal(userAccount.orders.length, 9, "user should have nine orders");
   });
 });

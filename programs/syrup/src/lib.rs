@@ -101,7 +101,7 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: Order) -> Result<()> {
-        // ToDo - Add check for if the user has space in their order vector
+        // ToDo - Add check for if the user has space in their order vector. Maybe just have a length? Actually cleaner?
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
