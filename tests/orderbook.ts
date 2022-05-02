@@ -223,9 +223,24 @@ describe("orderbook", async () => {
       assert.equal(
         seventhOrder.size.toString(),
         "7000000",
-        "correct price for order"
+        "correct size for order"
       );
-      assert.equal(seventhOrder.price, 1, "correct index for order");
+      assert.equal(seventhOrder.price, 1, "correct price for order");
+
+      const firstOrder = mockData[0];
+      await program.methods
+        .cancelOrder("test", firstOrder, 0, 0)
+        .accounts({
+          user: user.publicKey,
+          userAccount: userAccountAddress,
+          userAta: ata,
+          vault: currencyVault,
+          orderbookInfo,
+          orderPage: firstPage,
+          lastPage: keysAndData.pageKeys[keysAndData.info.lastPage],
+        })
+        .signers([user])
+        .rpc();
     });
   });
 });

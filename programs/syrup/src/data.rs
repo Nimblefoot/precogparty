@@ -3,7 +3,7 @@
 use anchor_lang::prelude::*;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
-pub struct ListEntry {
+pub struct Order {
     pub size: u64,
     pub buy: bool, // false for a sell order
     pub user: Pubkey,
@@ -26,11 +26,12 @@ pub struct OrderbookInfo {
     pub length: u32,
     pub currency_mint: Pubkey,
     pub token_mint: Pubkey,
+    pub bump: u8,
 }
 
 #[account]
 pub struct ListChunk {
-    list: Vec<ListEntry>,
+    list: Vec<Order>,
 }
 
 impl Default for ListChunk {
@@ -62,7 +63,7 @@ impl ListChunk {
         self.list.len() == 0
     }
 
-    pub fn try_push(&mut self, value: ListEntry) {
+    pub fn try_push(&mut self, value: Order) {
         // if self.is_full() {
         //     return Err(ListFull);
         // }
@@ -70,17 +71,17 @@ impl ListChunk {
         self.list.push(value);
     }
 
-    pub fn set(&mut self, index: u32, data: ListEntry) {
+    pub fn set(&mut self, index: u32, data: Order) {
         let idx = index as usize;
         self.list[idx] = data;
     }
 
-    pub fn get(&mut self, index: u32) -> ListEntry {
+    pub fn get(&mut self, index: u32) -> Order {
         let idx = index as usize;
         self.list[idx]
     }
 
-    pub fn pop(&mut self) -> Option<ListEntry> {
+    pub fn pop(&mut self) -> Option<Order> {
         if self.is_empty() {
             return None;
         }

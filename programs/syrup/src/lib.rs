@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use data::{ListChunk, ListEntry, ListInfo, OrderbookInfo};
+use data::{ListChunk, ListInfo, Order, OrderbookInfo};
 pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
@@ -13,6 +13,8 @@ use anchor_spl::{
     mint,
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
+
+// Todos: Dont pass in name, last page empty issues
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
@@ -38,12 +40,13 @@ pub mod syrup {
         ctx.accounts.orderbook_info.length = 0;
         ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
         ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
+        ctx.accounts.orderbook_info.bump = *ctx.bumps.get("orderbook_info").unwrap();
 
         Ok(())
     }
 
     #[allow(unused_variables)] // replace eventually with place_order
-    pub fn append(ctx: Context<Append>, name: String, item: ListEntry) -> Result<()> {
+    pub fn append(ctx: Context<Append>, name: String, item: Order) -> Result<()> {
         ctx.accounts.list.try_push(item);
 
         if ctx.accounts.list.is_full() {
@@ -56,7 +59,7 @@ pub mod syrup {
     }
 
     #[allow(unused_variables)] // delete eventually
-    pub fn pop(ctx: Context<Pop>, name: String) -> Result<Option<ListEntry>> {
+    pub fn pop(ctx: Context<Pop>, name: String) -> Result<Option<Order>> {
         let list: &mut Account<'_, ListChunk> = &mut ctx.accounts.list;
         let result = list.pop();
 
@@ -97,7 +100,7 @@ pub mod syrup {
         Ok(())
     }
 
-    pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: ListEntry) -> Result<()> {
+    pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: Order) -> Result<()> {
         // ToDo - Add check for if the user has space in their order vector
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -138,6 +141,53 @@ pub mod syrup {
     pub fn take_order(ctx: Context<TakeOrder>) -> Result<()> {
         Ok(())
     }
+
+    pub fn cancel_order(ctx: Context<CancelOrder>, name: String, order: Order, page_number: u32, index: u32) -> Result<()> {
+        let order_page = &mut ctx.accounts.order_page;
+        let last_page = &mut ctx.accounts.last_page;
+        let orderbook_info = &mut ctx.accounts.orderbook_info;
+        let user_account = &mut ctx.accounts.user_account;
+
+        /** Refund order */
+        let seeds = &[
+            name.as_bytes(),
+            "orderbook-info".as_bytes(),
+            &[orderbook_info.bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let accounts = Transfer {
+            from: ctx.accounts.vault.to_account_info(),
+            to: ctx.accounts.user_ata.to_account_info(),
+            authority: orderbook_info.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
+        token::transfer(cpi_ctx, order.size)?;
+
+        /** Delete from orderbook */
+        // overwrite the cancelled order with the last order on the book
+        if let Some(last_order) = last_page.pop() {
+            order_page.set(index, last_order);
+        } else {
+            // TODO: throw some error cause last page should not be empty
+        }
+
+        if last_page.is_empty() && orderbook_info.last_page > 0 {
+            orderbook_info.last_page -= 1;
+        }
+        orderbook_info.length -= 1;
+
+        /** Delete from user account */
+        if let Some(deletion_index) = user_account.find_order(order) {
+            user_account.delete(deletion_index);
+        }
+        else {
+        // ToDo: add error if we can't find the order.
+        }
+
+        Ok(())
+    }
 }
 
 // const TOKEN_DECIMALS: u8 = 6;
@@ -155,7 +205,7 @@ pub struct CreateList<'info> {
 }
 
 #[derive(Accounts)] // Will get replaced by PlaceOrder
-#[instruction(name: String, item: ListEntry)]
+#[instruction(name: String, item: Order)]
 pub struct Append<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -231,11 +281,15 @@ pub struct InitializeOrderbook<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: String, order: ListEntry)]
+#[instruction(name: String, order: Order)]
 pub struct PlaceOrder<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
-    #[account(mut, seeds=["user-account".as_ref(), user.key().as_ref()], bump)]
+    #[account(
+        mut, 
+        seeds=["user-account".as_ref(), user.key().as_ref()], 
+        bump
+    )]
     pub user_account: Box<Account<'info, UserAccount>>,
     #[account(mut)]
     pub user_ata: Box<Account<'info, TokenAccount>>,
@@ -243,7 +297,13 @@ pub struct PlaceOrder<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(mut, seeds=[name.as_ref(), "orderbook-info".as_ref()], bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
-    #[account(init_if_needed, payer=user, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], space=500, bump)]
+    #[account(
+        init_if_needed, 
+        payer=user, 
+        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], 
+        space=500, 
+        bump
+    )]
     pub current_page: Account<'info, ListChunk>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -252,25 +312,41 @@ pub struct PlaceOrder<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: String, order: ListEntry, page_number: u32, index: u32)]
+#[instruction(name: String, order: Order, page_number: u32, index: u32)]
 pub struct TakeOrder<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
-    #[account(mut, seeds=["user-account".as_ref(), taker.key().as_ref()], bump)]
+    #[account(
+        mut, 
+        seeds=["user-account".as_ref(), taker.key().as_ref()], 
+        bump
+    )]
     pub taker_user_account: Box<Account<'info, UserAccount>>,
     #[account(mut)]
     pub taker_ata: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub offerer: Signer<'info>,
-    #[account(mut, seeds=["user-account".as_ref(), offerer.key().as_ref()], bump)]
+    #[account(
+        mut, 
+        seeds=["user-account".as_ref(), offerer.key().as_ref()], 
+        bump
+    )]
     pub offerer_user_account: Box<Account<'info, UserAccount>>,
     #[account(mut)]
     pub offerer_ata: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut, seeds=[name.as_ref(), "orderbook-info".as_ref()], bump)]
+    #[account(
+        mut, 
+        seeds=[name.as_ref(), "orderbook-info".as_ref()], 
+        bump
+    )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
-    #[account(mut, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], bump)]
+    #[account(
+        mut, 
+        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], 
+        bump
+    )]
     pub order_page: Account<'info, ListChunk>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -279,9 +355,38 @@ pub struct TakeOrder<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(name: String, order: Order, page_number: u32, index: u32)]
 pub struct CancelOrder<'info> {
-    #[account(mut)]
     pub user: Signer<'info>,
+    #[account(
+        mut,
+        seeds = ["user-account".as_ref(), user.key().as_ref()],
+        bump
+    )]
+    pub user_account: Box<Account<'info, UserAccount>>,
+    #[account(mut)]
+    pub user_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut, 
+        seeds=[name.as_ref(), "orderbook-info".as_ref()], 
+        bump
+    )]
+    pub orderbook_info: Account<'info, OrderbookInfo>,
+    #[account(
+        mut, 
+        seeds=[name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        bump
+    )]
+    pub order_page: Account<'info, ListChunk>,
+    #[account(
+        mut, 
+        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], 
+        bump
+    )]
+    pub last_page: Account<'info, ListChunk>,
+    pub token_program: Program<'info, Token>,
 }
 
 pub struct ExecuteMatchingOrders {}
