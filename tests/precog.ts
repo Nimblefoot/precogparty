@@ -2,8 +2,6 @@ import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { Precog } from "../target/types/precog";
 
-import * as instructions from "@/generated/client/instructions";
-import * as accounts from "@/generated/client/accounts";
 import {
   Keypair,
   PublicKey,

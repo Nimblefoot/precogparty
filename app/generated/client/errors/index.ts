@@ -1,8 +1,11 @@
 import { PROGRAM_ID } from "../programId"
 import * as anchor from "./anchor"
+import * as custom from "./custom"
 
-export function fromCode(code: number): anchor.AnchorError | null {
-  return anchor.fromCode(code)
+export function fromCode(
+  code: number
+): custom.CustomError | anchor.AnchorError | null {
+  return code >= 6000 ? custom.fromCode(code) : anchor.fromCode(code)
 }
 
 function hasOwnProperty<X extends object, Y extends PropertyKey>(
@@ -14,7 +17,9 @@ function hasOwnProperty<X extends object, Y extends PropertyKey>(
 
 const errorRe = /Program (\w+) failed: custom program error: (\w+)/
 
-export function fromTxError(err: unknown): anchor.AnchorError | null {
+export function fromTxError(
+  err: unknown
+): custom.CustomError | anchor.AnchorError | null {
   if (
     typeof err !== "object" ||
     err === null ||
