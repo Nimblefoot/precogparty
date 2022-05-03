@@ -8,7 +8,6 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { assert } from "chai";
-import { getKeysAndData } from "../util/syrup";
 import { Syrup } from "../target/types/syrup";
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import * as spl from "@solana/spl-token";
