@@ -137,6 +137,11 @@ describe("end-to-end", async () => {
 
     console.log("createMarket", sig);
 
+    const marketData = await program.account.predictionMarket.fetch(
+      marketAccount
+    );
+    console.log(marketData);
+
     const userNo = await getAssociatedTokenAddress(noMint, user);
     const userYes = await getAssociatedTokenAddress(yesMint, user);
 

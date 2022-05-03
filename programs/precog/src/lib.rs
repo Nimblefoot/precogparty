@@ -38,9 +38,9 @@ pub mod precog {
             bump: *ctx.bumps.get("market_account").unwrap(),
             description_uri: desc_data,
             yes_mint: ctx.accounts.yes_mint.key(),
-            yes_market: ctx.accounts.yes_market.key(),
+            yes_market: Pubkey::default(),
             no_mint: ctx.accounts.no_mint.key(),
-            no_market: ctx.accounts.no_market.key(),
+            no_market: Pubkey::default(),
             market_authority: ctx.accounts.market_authority.key(),
             resolution_authority: ctx.accounts.resolution_authority.key(),
             description_authority: ctx.accounts.description_authority.key(),
@@ -282,10 +282,6 @@ pub struct CreateMarket<'info> {
         // address = mint::USDC
     )]
     pub usdc_mint: Account<'info, Mint>,
-
-    pub yes_market: SystemAccount<'info>, //Account<'info, Orderbook>,
-    pub no_market: SystemAccount<'info>,  // Account<'info, Orderbook>,
-
     pub resolution_authority: SystemAccount<'info>,
     pub description_authority: SystemAccount<'info>,
     pub token_program: Program<'info, Token>,

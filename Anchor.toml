@@ -1,6 +1,6 @@
 [features]
 seeds = true
-init_if_needed = true 
+init_if_needed = true
 
 [programs.localnet]
 precog = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
@@ -14,4 +14,4 @@ cluster = "localnet"
 wallet = "./dev-wallet.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/orderbook.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/precog.ts"
