@@ -123,8 +123,6 @@ describe("end-to-end", async () => {
         noMint,
         marketAuthority: program.provider.wallet.publicKey,
         usdcMint,
-        yesMarket: Keypair.generate().publicKey,
-        noMarket: Keypair.generate().publicKey,
         resolutionAuthority: program.provider.wallet.publicKey,
         descriptionAuthority: program.provider.wallet.publicKey,
         usdcVault,

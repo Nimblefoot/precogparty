@@ -13,6 +13,6 @@
         "typescript": "^4.3.5"
     },
     "scripts": {
-        "generate": "anchor-client-gen --program-id Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS target/idl/a.json app/generated/client"
+        "generate": "anchor-client-gen --program-id Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS target/idl/precog.json app/generated/client"
     }
 }

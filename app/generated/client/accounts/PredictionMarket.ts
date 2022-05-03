@@ -9,8 +9,6 @@ export interface PredictionMarketFields {
   bump: number
   yesMint: PublicKey
   noMint: PublicKey
-  yesMarket: PublicKey
-  noMarket: PublicKey
   usdcVault: PublicKey
   marketAuthority: PublicKey
   resolutionAuthority: PublicKey
@@ -24,8 +22,6 @@ export interface PredictionMarketJSON {
   bump: number
   yesMint: string
   noMint: string
-  yesMarket: string
-  noMarket: string
   usdcVault: string
   marketAuthority: string
   resolutionAuthority: string
@@ -39,8 +35,6 @@ export class PredictionMarket {
   readonly bump: number
   readonly yesMint: PublicKey
   readonly noMint: PublicKey
-  readonly yesMarket: PublicKey
-  readonly noMarket: PublicKey
   readonly usdcVault: PublicKey
   readonly marketAuthority: PublicKey
   readonly resolutionAuthority: PublicKey
@@ -57,8 +51,6 @@ export class PredictionMarket {
     borsh.u8("bump"),
     borsh.publicKey("yesMint"),
     borsh.publicKey("noMint"),
-    borsh.publicKey("yesMarket"),
-    borsh.publicKey("noMarket"),
     borsh.publicKey("usdcVault"),
     borsh.publicKey("marketAuthority"),
     borsh.publicKey("resolutionAuthority"),
@@ -72,8 +64,6 @@ export class PredictionMarket {
     this.bump = fields.bump
     this.yesMint = fields.yesMint
     this.noMint = fields.noMint
-    this.yesMarket = fields.yesMarket
-    this.noMarket = fields.noMarket
     this.usdcVault = fields.usdcVault
     this.marketAuthority = fields.marketAuthority
     this.resolutionAuthority = fields.resolutionAuthority
@@ -128,8 +118,6 @@ export class PredictionMarket {
       bump: dec.bump,
       yesMint: dec.yesMint,
       noMint: dec.noMint,
-      yesMarket: dec.yesMarket,
-      noMarket: dec.noMarket,
       usdcVault: dec.usdcVault,
       marketAuthority: dec.marketAuthority,
       resolutionAuthority: dec.resolutionAuthority,
@@ -145,8 +133,6 @@ export class PredictionMarket {
       bump: this.bump,
       yesMint: this.yesMint.toString(),
       noMint: this.noMint.toString(),
-      yesMarket: this.yesMarket.toString(),
-      noMarket: this.noMarket.toString(),
       usdcVault: this.usdcVault.toString(),
       marketAuthority: this.marketAuthority.toString(),
       resolutionAuthority: this.resolutionAuthority.toString(),
@@ -162,8 +148,6 @@ export class PredictionMarket {
       bump: obj.bump,
       yesMint: new PublicKey(obj.yesMint),
       noMint: new PublicKey(obj.noMint),
-      yesMarket: new PublicKey(obj.yesMarket),
-      noMarket: new PublicKey(obj.noMarket),
       usdcVault: new PublicKey(obj.usdcVault),
       marketAuthority: new PublicKey(obj.marketAuthority),
       resolutionAuthority: new PublicKey(obj.resolutionAuthority),

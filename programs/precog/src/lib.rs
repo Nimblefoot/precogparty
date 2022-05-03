@@ -21,7 +21,7 @@ pub mod precog {
     pub fn create_market<'info>(
         ctx: Context<CreateMarket>,
         market_name: String,
-        market_description_uri: String,
+        market_description: String,
     ) -> Result<()> {
         // initialize market_account
 
@@ -29,7 +29,7 @@ pub mod precog {
         let mut name_data = [b' '; 16];
         name_data[..name_bytes.len()].copy_from_slice(name_bytes);
 
-        let desc_bytes = market_description_uri.as_bytes();
+        let desc_bytes = market_description.as_bytes();
         let mut desc_data = [b' '; 32];
         desc_data[..desc_bytes.len()].copy_from_slice(desc_bytes);
 
@@ -38,9 +38,7 @@ pub mod precog {
             bump: *ctx.bumps.get("market_account").unwrap(),
             description_uri: desc_data,
             yes_mint: ctx.accounts.yes_mint.key(),
-            yes_market: Pubkey::default(),
             no_mint: ctx.accounts.no_mint.key(),
-            no_market: Pubkey::default(),
             market_authority: ctx.accounts.market_authority.key(),
             resolution_authority: ctx.accounts.resolution_authority.key(),
             description_authority: ctx.accounts.description_authority.key(),
@@ -199,9 +197,9 @@ pub mod precog {
 
     pub fn update_market_description(
         ctx: Context<UpdateMarketDescription>,
-        market_description_uri: String,
+        market_description: String,
     ) -> Result<()> {
-        let desc_bytes = market_description_uri.as_bytes();
+        let desc_bytes = market_description.as_bytes();
         let mut desc_data = [b' '; 32];
         desc_data[..desc_bytes.len()].copy_from_slice(desc_bytes);
 
@@ -213,13 +211,12 @@ pub mod precog {
 #[account]
 #[derive(Default)]
 pub struct PredictionMarket {
-    name: [u8; 16],                // 16
+    name: [u8; 16], // 16
+    // TODO embiggen
     description_uri: [u8; 32],     // 32
     bump: u8,                      // 1
     yes_mint: Pubkey,              // 32
     no_mint: Pubkey,               // 32
-    yes_market: Pubkey,            // 32
-    no_market: Pubkey,             // 32
     usdc_vault: Pubkey,            // 32
     market_authority: Pubkey,      // 32
     resolution_authority: Pubkey,  // 32
@@ -228,7 +225,7 @@ pub struct PredictionMarket {
 }
 
 impl PredictionMarket {
-    pub const LEN: usize = 16 + 32 + 1 + (32 * 8) + 1;
+    pub const LEN: usize = 16 + 32 + 1 + (32 * 6) + 1;
 }
 
 #[account]
@@ -236,7 +233,7 @@ impl PredictionMarket {
 pub struct Orderbook {}
 
 #[derive(Accounts)]
-#[instruction(market_name: String, market_description_uri: String)]
+#[instruction(market_name: String, market_description: String)]
 pub struct CreateMarket<'info> {
     #[account(mut)]
     pub market_authority: Signer<'info>,
@@ -414,7 +411,7 @@ pub struct UpdateResolutionAuthority {}
 pub struct UpdateDescriptionAuthority {}
 
 #[derive(Accounts)]
-#[instruction(market_description_uri: String)]
+#[instruction(market_description: String)]
 pub struct UpdateMarketDescription<'info> {
     pub description_authority: Signer<'info>,
     #[account(

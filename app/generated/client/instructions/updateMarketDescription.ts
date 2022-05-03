@@ -4,7 +4,7 @@ import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript
 import { PROGRAM_ID } from "../programId"
 
 export interface UpdateMarketDescriptionArgs {
-  marketDescriptionUri: string
+  marketDescription: string
 }
 
 export interface UpdateMarketDescriptionAccounts {
@@ -12,7 +12,7 @@ export interface UpdateMarketDescriptionAccounts {
   marketAccount: PublicKey
 }
 
-export const layout = borsh.struct([borsh.str("marketDescriptionUri")])
+export const layout = borsh.struct([borsh.str("marketDescription")])
 
 export function updateMarketDescription(
   args: UpdateMarketDescriptionArgs,
@@ -30,7 +30,7 @@ export function updateMarketDescription(
   const buffer = Buffer.alloc(1000)
   const len = layout.encode(
     {
-      marketDescriptionUri: args.marketDescriptionUri,
+      marketDescription: args.marketDescription,
     },
     buffer
   )
