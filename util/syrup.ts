@@ -37,8 +37,6 @@ export const getKeysAndData = async (program: Program<Syrup>, name: string) => {
     pageKeys[lastPageIndex]
   );
 
-  console.log("line 40");
-
   return {
     infoKey: infoKey[0],
     pageKeys,
