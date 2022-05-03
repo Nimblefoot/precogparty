@@ -65,6 +65,24 @@ const New = ({}) => {
                 {desc.length} / {descriptionMaxLength}
               </p>
             </div>
+            <div className="sm:col-span-6">
+              <label
+                htmlFor="about"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Market closing datetime (local)
+              </label>
+              <div className="mt-1">
+                <input
+                  type="datetime-local"
+                  id="closing-time"
+                  name="closing-time"
+                  className="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"
+                  defaultValue={Date.now()}
+                  min={Date.now()}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
