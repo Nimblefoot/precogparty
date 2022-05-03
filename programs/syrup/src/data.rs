@@ -2,7 +2,7 @@
 
 use anchor_lang::prelude::*;
 
-const max_size: usize = 3; // max size is fixed.
+const MAX_SIZE: usize = 3; // max size is fixed.
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
@@ -20,7 +20,6 @@ pub struct OrderbookInfo {
     pub currency_mint: Pubkey,
     pub token_mint: Pubkey,
     pub bump: u8,
-    pub last_page: u32,
 }
 
 impl OrderbookInfo {
@@ -28,12 +27,12 @@ impl OrderbookInfo {
         if self.length == 0u32 {
             0
         } else {
-            (self.length - 1) / (max_size as u32)
+            (self.length - 1) / (MAX_SIZE as u32)
         }
     }
 
     pub fn next_open_page(&self) -> u32 {
-        (self.length) / (max_size as u32)
+        (self.length) / (MAX_SIZE as u32)
     }
 }
 
@@ -55,7 +54,7 @@ pub struct ListEmpty;
 
 impl ListChunk {
     pub fn max_size() -> usize {
-        max_size
+        MAX_SIZE
     }
 
     pub fn len(&self) -> usize {

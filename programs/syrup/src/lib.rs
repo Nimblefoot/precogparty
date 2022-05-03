@@ -11,7 +11,7 @@ use anchor_spl::{
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
 
-// Todos: Dont pass in name, last page empty issues, actually compute space reuqirements, 
+// Todos: Dont pass in name, last page empty issues, actually compute space reuqirements, try_push should have an error.
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
@@ -24,7 +24,6 @@ pub mod syrup {
         // ToDo - insist names are unique and max 16 characters
 
         ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
-        ctx.accounts.orderbook_info.last_page = 0;
         ctx.accounts.orderbook_info.length = 0;
         ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
         ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
@@ -65,12 +64,8 @@ pub mod syrup {
             price: order.price,
         };
 
-        // add to the list of offers
+        // add to the lists of offers
         ctx.accounts.current_page.try_push(order);
-        if ctx.accounts.current_page.is_full() {
-            msg!("Full");
-            ctx.accounts.orderbook_info.last_page += 1;
-        };
 
         ctx.accounts.orderbook_info.length += 1;
 
@@ -114,9 +109,6 @@ pub mod syrup {
             // TODO: throw some error cause last page should not be empty
         }
 
-        if last_page.is_empty() && orderbook_info.last_page > 0 {
-            orderbook_info.last_page -= 1;
-        }
         orderbook_info.length -= 1;
 
         /** Delete from user account */

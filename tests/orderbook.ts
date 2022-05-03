@@ -203,7 +203,7 @@ describe("orderbook", async () => {
           userAta: user_currency_ata,
           vault: currencyVault,
           orderbookInfo,
-          currentPage: keysAndData.pageKeys[keysAndData.info.lastPage],
+          currentPage: keysAndData.pageKeys[keysAndData.nextOpenPageIndex],
           userAccount: userAccountAddress,
         })
         .signers([user])
@@ -251,7 +251,7 @@ describe("orderbook", async () => {
         vault: currencyVault,
         orderbookInfo,
         orderPage: firstPage,
-        lastPage: keysAndData.pageKeys[keysAndData.info.lastPage],
+        lastPage: keysAndData.pageKeys[keysAndData.lastPageIndex],
       })
       .signers([user])
       .rpc();
