@@ -27,6 +27,8 @@ import {
   mintToChecked,
 } from "@solana/spl-token";
 
+const maxLength = 3;
+
 describe("orderbook", async () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
@@ -181,8 +183,6 @@ describe("orderbook", async () => {
   });
 
   it("places 10 orders", async () => {
-    //let mintAccount = await getMint(program.provider.connection, currencyMint);
-
     let txhash = await mintToChecked(
       program.provider.connection, // connection
       user, // fee payer
@@ -194,7 +194,20 @@ describe("orderbook", async () => {
     );
 
     for (let i = 0; i < size; i++) {
-      const keysAndData = await getKeysAndData(program, "test");
+      const [infoKey] = await PublicKey.findProgramAddress(
+        [utf8.encode("test"), utf8.encode("orderbook-info")],
+        program.programId
+      );
+      const info = await program.account.orderbookInfo.fetchNullable(infoKey);
+      const nextOpenPageIndex = Math.floor(info.length / maxLength);
+      const [currentPageKey] = await PublicKey.findProgramAddress(
+        [
+          utf8.encode("test"),
+          utf8.encode("page"),
+          new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      );
 
       await program.methods
         .placeOrder("test", mockData[i])
@@ -203,7 +216,7 @@ describe("orderbook", async () => {
           userAta: user_currency_ata,
           vault: currencyVault,
           orderbookInfo,
-          currentPage: keysAndData.pageKeys[keysAndData.nextOpenPageIndex],
+          currentPage: currentPageKey,
           userAccount: userAccountAddress,
         })
         .signers([user])
@@ -219,11 +232,26 @@ describe("orderbook", async () => {
       "Vault Balance should match sum of orders." // sum 1 to 10 = 55
     );
 
-    let keysAndData = await getKeysAndData(program, "test");
-    assert.equal(keysAndData.info.length, 10, "correct orderbook length");
+    const [infoKey] = await PublicKey.findProgramAddress(
+      [utf8.encode("test"), utf8.encode("orderbook-info")],
+      program.programId
+    );
+    const info = await program.account.orderbookInfo.fetchNullable(infoKey);
+    const lastPageIndex = Math.floor((info.length - 1) / maxLength);
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode("test"),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    );
+    const lastPage = await program.account.listChunk.fetch(lastPageKey);
+
+    assert.equal(info.length, 10, "correct orderbook length");
     assert.equal(
       // @ts-ignore
-      keysAndData.lastPage.list.length,
+      lastPage.list.length,
       1,
       "correct length of final chunk"
     );
@@ -240,7 +268,20 @@ describe("orderbook", async () => {
   });
 
   it("cancels an order", async () => {
-    const keysAndData = await getKeysAndData(program, "test");
+    const [infoKey] = await PublicKey.findProgramAddress(
+      [utf8.encode("test"), utf8.encode("orderbook-info")],
+      program.programId
+    );
+    const info = await program.account.orderbookInfo.fetchNullable(infoKey);
+    const lastPageIndex = Math.floor((info.length - 1) / maxLength);
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode("test"),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    );
     const firstOrder = mockData[0];
     await program.methods
       .cancelOrder("test", firstOrder, 0, 0)
@@ -251,7 +292,7 @@ describe("orderbook", async () => {
         vault: currencyVault,
         orderbookInfo,
         orderPage: firstPage,
-        lastPage: keysAndData.pageKeys[keysAndData.lastPageIndex],
+        lastPage: lastPageKey,
       })
       .signers([user])
       .rpc();
@@ -264,11 +305,22 @@ describe("orderbook", async () => {
       "Vault Balance should be reduced to 54000000." // sum 2 to 10 = 54
     );
 
-    const keysAndData2 = await getKeysAndData(program, "test");
-    assert.equal(keysAndData2.info.length, 9, "correct orderbook length");
+    const info2 = await program.account.orderbookInfo.fetchNullable(infoKey);
+    const lastPageIndex2 = Math.floor((info2.length - 1) / maxLength);
+    const [lastPageKey2] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode("test"),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex2).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    );
+    const lastPage2 = await program.account.listChunk.fetch(lastPageKey2);
+
+    assert.equal(info2.length, 9, "correct orderbook length");
     assert.equal(
       // @ts-ignore
-      keysAndData2.lastPage.list.length,
+      lastPage2.list.length,
       3,
       "correct length of final chunk"
     );
