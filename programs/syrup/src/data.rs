@@ -37,11 +37,11 @@ impl OrderbookInfo {
 }
 
 #[account]
-pub struct ListChunk {
+pub struct OrderbookPage {
     list: Vec<Order>,
 }
 
-impl Default for ListChunk {
+impl Default for OrderbookPage {
     fn default() -> Self {
         Self {
             list: Vec::with_capacity(Self::max_size()),
@@ -52,7 +52,7 @@ impl Default for ListChunk {
 pub struct ListFull;
 pub struct ListEmpty;
 
-impl ListChunk {
+impl OrderbookPage {
     pub fn max_size() -> usize {
         MAX_SIZE
     }

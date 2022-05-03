@@ -246,7 +246,7 @@ describe("orderbook", async () => {
       ],
       program.programId
     );
-    const lastPage = await program.account.listChunk.fetch(lastPageKey);
+    const lastPage = await program.account.orderbookPage.fetch(lastPageKey);
 
     assert.equal(info.length, 10, "correct orderbook length");
     assert.equal(
@@ -315,7 +315,7 @@ describe("orderbook", async () => {
       ],
       program.programId
     );
-    const lastPage2 = await program.account.listChunk.fetch(lastPageKey2);
+    const lastPage2 = await program.account.orderbookPage.fetch(lastPageKey2);
 
     assert.equal(info2.length, 9, "correct orderbook length");
     assert.equal(

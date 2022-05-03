@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use data::{ListChunk, Order, OrderbookInfo};
+use data::{OrderbookPage, Order, OrderbookInfo};
 pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
@@ -142,7 +142,7 @@ pub struct InitializeOrderbook<'info> {
     #[account(init, payer=admin, seeds=[name.as_ref(), "orderbook-info".as_ref()], space=1000, bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(init, payer=admin, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], space=500, bump)]
-    pub first_page: Account<'info, ListChunk>,
+    pub first_page: Account<'info, OrderbookPage>,
     pub currency_mint: Account<'info, Mint>,
     #[account(
         init,
@@ -189,7 +189,7 @@ pub struct PlaceOrder<'info> {
         space=500, 
         bump
     )]
-    pub current_page: Account<'info, ListChunk>,
+    pub current_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
@@ -232,7 +232,7 @@ pub struct TakeOrder<'info> {
         seeds=[name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
-    pub order_page: Account<'info, ListChunk>,
+    pub order_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
@@ -264,13 +264,13 @@ pub struct CancelOrder<'info> {
         seeds=[name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
-    pub order_page: Account<'info, ListChunk>,
+    pub order_page: Account<'info, OrderbookPage>,
     #[account(
         mut, 
         seeds=[name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
         bump
     )]
-    pub last_page: Account<'info, ListChunk>,
+    pub last_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
 }
 
