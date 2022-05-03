@@ -118,8 +118,8 @@ describe("end-to-end", async () => {
     const sig = await program.methods
       .createMarket(marketName, "fart")
       .accounts({
-        marketAccount,
-        yesMint,
+        //marketAccount,
+        //yesMint,
         noMint,
         marketAuthority: program.provider.wallet.publicKey,
         usdcMint,
