@@ -1,5 +1,8 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
+import Blockies from "react-blockies";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 /* This example requires Tailwind CSS v2.0+ */
 import { Fragment, useState } from "react";
@@ -14,6 +17,59 @@ import {
   UsersIcon,
   XIcon,
 } from "@heroicons/react/outline";
+
+import React, { FC, useMemo } from "react";
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from "@solana/wallet-adapter-react";
+import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import {
+  LedgerWalletAdapter,
+  PhantomWalletAdapter,
+  SlopeWalletAdapter,
+  SolflareWalletAdapter,
+  SolletExtensionWalletAdapter,
+  SolletWalletAdapter,
+  TorusWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import { clusterApiUrl } from "@solana/web3.js";
+
+const WalletConnectionProvider: FC<{}> = ({ children }) => {
+  // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
+  const network =
+    process.env.NEXT_PUBLIC_CLUSTER === "mainnet-beta"
+      ? WalletAdapterNetwork.Mainnet
+      : WalletAdapterNetwork.Devnet;
+
+  // You can also provide a custom RPC endpoint.
+  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+
+  // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
+  // Only the wallets you configure here will be compiled into your application, and only the dependencies
+  // of wallets that your users connect to will be loaded.
+  const wallets = useMemo(
+    () => [
+      new PhantomWalletAdapter(),
+      new SlopeWalletAdapter(),
+      new SolflareWalletAdapter(),
+      new TorusWalletAdapter(),
+      new LedgerWalletAdapter(),
+      new SolletWalletAdapter({ network }),
+      new SolletExtensionWalletAdapter({ network }),
+    ],
+    [network]
+  );
+
+  return (
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>{children}</WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  );
+};
 
 const navigation = [
   { name: "Home", href: "#", icon: HomeIcon, current: true },
@@ -116,27 +172,7 @@ const Layout = ({ Component, pageProps }: AppProps) => {
                     ))}
                   </nav>
                 </div>
-                <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-                  <a href="#" className="flex-shrink-0 group block">
-                    <div className="flex items-center">
-                      <div>
-                        <img
-                          className="inline-block h-10 w-10 rounded-full"
-                          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                          alt=""
-                        />
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-base font-medium text-gray-700 group-hover:text-gray-900">
-                          Tom Cook
-                        </p>
-                        <p className="text-sm font-medium text-gray-500 group-hover:text-gray-700">
-                          View profile
-                        </p>
-                      </div>
-                    </div>
-                  </a>
-                </div>
+                <UserInfoMobile />
               </div>
             </Transition.Child>
             <div className="flex-shrink-0 w-14">
@@ -149,7 +185,7 @@ const Layout = ({ Component, pageProps }: AppProps) => {
         <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
-            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+            <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto gap-5">
               <div className="flex items-center flex-shrink-0 px-4">
                 <img
                   className="h-8 w-auto"
@@ -157,7 +193,9 @@ const Layout = ({ Component, pageProps }: AppProps) => {
                   alt="Workflow"
                 />
               </div>
-              <nav className="mt-5 flex-1 px-2 bg-white space-y-1">
+              <UserInfoDesktop />
+
+              <nav className="flex-1 px-2 bg-white space-y-1">
                 {navigation.map((item) => (
                   <a
                     key={item.name}
@@ -182,27 +220,6 @@ const Layout = ({ Component, pageProps }: AppProps) => {
                   </a>
                 ))}
               </nav>
-            </div>
-            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-              <a href="#" className="flex-shrink-0 w-full group block">
-                <div className="flex items-center">
-                  <div>
-                    <img
-                      className="inline-block h-9 w-9 rounded-full"
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                      alt=""
-                    />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                      Tom Cook
-                    </p>
-                    <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
-                      View profile
-                    </p>
-                  </div>
-                </div>
-              </a>
             </div>
           </div>
         </div>
@@ -231,3 +248,78 @@ const Layout = ({ Component, pageProps }: AppProps) => {
 };
 
 export default Layout;
+
+const ConnectWallet = () => {};
+
+function UserInfoDesktop({}) {
+  const { publicKey } = useWallet();
+
+  return (
+    <>
+      {/* @ts-ignore this error is fake :o */}
+      <WalletMultiButton
+        startIcon={undefined}
+        endIcon={undefined}
+        style={{
+          lineHeight: "0px",
+        }}
+        className="h-auto inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+      >
+        {publicKey ? publicKey.toString().substring(0, 4) + ".." : undefined}
+      </WalletMultiButton>
+      <div className="flex-shrink-0 flex border-t border-b border-gray-200 p-4">
+        <a href="#" className="flex-shrink-0 w-full group block">
+          <div className="flex items-center">
+            <div
+              className="inline-block h-10 w-10 rounded-full overflow-hidden" /* optional class name for the canvas element; "identicon" by default */
+            >
+              <Blockies
+                seed="Jeremeeeey" /* the only required prop; determines how the image is generated */
+                size={10}
+                scale={
+                  4
+                } /* width/height of each square in pixels; default = 4 */
+                spotColor="#abc" /* color of the more notable features; random by default */
+                //className="inline-block h-8 w-8 rounded-full"
+              />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                Tom Cook
+              </p>
+              <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
+                View profile
+              </p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </>
+  );
+}
+
+function UserInfoMobile({}) {
+  return (
+    <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+      <a href="#" className="flex-shrink-0 group block">
+        <div className="flex items-center">
+          <div>
+            <img
+              className="inline-block h-10 w-10 rounded-full"
+              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+              alt=""
+            />
+          </div>
+          <div className="ml-3">
+            <p className="text-base font-medium text-gray-700 group-hover:text-gray-900">
+              Tom Cook
+            </p>
+            <p className="text-sm font-medium text-gray-500 group-hover:text-gray-700">
+              View profile
+            </p>
+          </div>
+        </div>
+      </a>
+    </div>
+  );
+}
