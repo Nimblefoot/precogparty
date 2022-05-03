@@ -1,12 +1,9 @@
 use anchor_lang::prelude::*;
-use data::{ListChunk, ListInfo, Order, OrderbookInfo};
+use data::{OrderbookPage, Order, OrderbookInfo};
 pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
 use user_account::OrderRecord;
-
-pub mod transfer;
-use transfer::transfer_tokens;
 
 use anchor_spl::{
     associated_token::{self, AssociatedToken},
@@ -14,7 +11,7 @@ use anchor_spl::{
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
 
-// Todos: Dont pass in name, last page empty issues
+// Todos: Dont pass in name, last page empty issues, actually compute space reuqirements, try_push should have an error.
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
@@ -22,72 +19,15 @@ declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 pub mod syrup {
     use super::*;
 
-    #[allow(unused_variables)] // already replaced with initialize - delete eventually
-    pub fn create_list(ctx: Context<CreateList>, name: String) -> Result<()> {
-        ctx.accounts.list_info.owner = ctx.accounts.payer.key();
-        ctx.accounts.list_info.last_page = 0;
-        ctx.accounts.list_info.length = 0;
-
-        Ok(())
-    }
-
     #[allow(unused_variables)]
     pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: String) -> Result<()> {
         // ToDo - insist names are unique and max 16 characters
 
         ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
-        ctx.accounts.orderbook_info.last_page = 0;
         ctx.accounts.orderbook_info.length = 0;
         ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
         ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
         ctx.accounts.orderbook_info.bump = *ctx.bumps.get("orderbook_info").unwrap();
-
-        Ok(())
-    }
-
-    #[allow(unused_variables)] // replace eventually with place_order
-    pub fn append(ctx: Context<Append>, name: String, item: Order) -> Result<()> {
-        ctx.accounts.list.try_push(item);
-
-        if ctx.accounts.list.is_full() {
-            msg!("Full");
-            ctx.accounts.list_info.last_page += 1;
-        }
-
-        ctx.accounts.list_info.length += 1;
-        Ok(())
-    }
-
-    #[allow(unused_variables)] // delete eventually
-    pub fn pop(ctx: Context<Pop>, name: String) -> Result<Option<Order>> {
-        let list: &mut Account<'_, ListChunk> = &mut ctx.accounts.list;
-        let result = list.pop();
-
-        if list.is_empty() && ctx.accounts.list_info.last_page > 0 {
-            ctx.accounts.list_info.last_page -= 1;
-        }
-
-        if ctx.accounts.list_info.length > 0 {
-            ctx.accounts.list_info.length -= 1;
-        }
-
-        Ok(result)
-    }
-
-    #[allow(unused_variables)]
-    pub fn delete(
-        ctx: Context<Delete>,
-        name: String,
-        deletion_index: u32,
-        chunk_number: u32,
-    ) -> Result<()> {
-        let list: &mut Account<'_, ListChunk> = &mut ctx.accounts.list;
-        let last_page: &mut Account<'_, ListChunk> = &mut ctx.accounts.last_page;
-        let list_info: &mut Account<'_, ListInfo> = &mut ctx.accounts.list_info;
-
-        if let Some(key) = last_page.pop() {
-            list.set(deletion_index, key);
-        }
 
         Ok(())
     }
@@ -101,7 +41,7 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: Order) -> Result<()> {
-        // ToDo - Add check for if the user has space in their order vector
+        // ToDo - Add check for if the user has space in their order vector. Maybe just have a length? Actually cleaner?
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
@@ -124,12 +64,8 @@ pub mod syrup {
             price: order.price,
         };
 
-        // add to the list of offers
+        // add to the lists of offers
         ctx.accounts.current_page.try_push(order);
-        if ctx.accounts.current_page.is_full() {
-            msg!("Full");
-            ctx.accounts.orderbook_info.last_page += 1;
-        };
 
         ctx.accounts.orderbook_info.length += 1;
 
@@ -173,9 +109,6 @@ pub mod syrup {
             // TODO: throw some error cause last page should not be empty
         }
 
-        if last_page.is_empty() && orderbook_info.last_page > 0 {
-            orderbook_info.last_page -= 1;
-        }
         orderbook_info.length -= 1;
 
         /** Delete from user account */
@@ -191,54 +124,6 @@ pub mod syrup {
 }
 
 // const TOKEN_DECIMALS: u8 = 6;
-
-#[derive(Accounts)] // Replaced with initializeOrderbook - delete eventually
-#[instruction(name: String)]
-pub struct CreateList<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account(init, payer=payer, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], space=1000, bump)]
-    pub list_info: Account<'info, ListInfo>,
-    #[account(init, payer=payer, space = 2000, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
-    pub list: Account<'info, ListChunk>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)] // Will get replaced by PlaceOrder
-#[instruction(name: String, item: Order)]
-pub struct Append<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account(mut, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], bump)]
-    pub list_info: Account<'info, ListInfo>,
-    #[account(init_if_needed, payer=payer, space = 2000, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
-    pub list: Account<'info, ListChunk>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)] // delete eventually. Just for testing
-#[instruction(name: String)]
-pub struct Pop<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account(mut, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], bump)]
-    pub list_info: Account<'info, ListInfo>,
-    #[account(mut, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
-    pub list: Account<'info, ListChunk>,
-}
-
-#[derive(Accounts)]
-#[instruction(name: String, chunk_number: u32, last_chunk: u32)]
-pub struct Delete<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account(mut, seeds=["list".as_ref(), name.as_ref(), "info".as_ref()], bump)]
-    pub list_info: Account<'info, ListInfo>,
-    #[account(mut)]
-    pub list: Account<'info, ListChunk>,
-    #[account(mut, seeds=["list".as_ref(), name.as_ref(), list_info.last_page.to_le_bytes().as_ref()], bump)]
-    pub last_page: Account<'info, ListChunk>,
-}
 
 #[derive(Accounts)]
 pub struct CreateUserAccount<'info> {
@@ -256,8 +141,8 @@ pub struct InitializeOrderbook<'info> {
     pub admin: Signer<'info>,
     #[account(init, payer=admin, seeds=[name.as_ref(), "orderbook-info".as_ref()], space=1000, bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
-    #[account(init, payer=admin, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], space=500, bump)]
-    pub first_page: Account<'info, ListChunk>,
+    #[account(init, payer=admin, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], space=500, bump)]
+    pub first_page: Account<'info, OrderbookPage>,
     pub currency_mint: Account<'info, Mint>,
     #[account(
         init,
@@ -300,11 +185,11 @@ pub struct PlaceOrder<'info> {
     #[account(
         init_if_needed, 
         payer=user, 
-        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], 
+        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
         space=500, 
         bump
     )]
-    pub current_page: Account<'info, ListChunk>,
+    pub current_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
@@ -344,10 +229,10 @@ pub struct TakeOrder<'info> {
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], 
+        seeds=[name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
-    pub order_page: Account<'info, ListChunk>,
+    pub order_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
@@ -379,13 +264,13 @@ pub struct CancelOrder<'info> {
         seeds=[name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
-    pub order_page: Account<'info, ListChunk>,
+    pub order_page: Account<'info, OrderbookPage>,
     #[account(
         mut, 
-        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.last_page.to_le_bytes().as_ref()], 
+        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
         bump
     )]
-    pub last_page: Account<'info, ListChunk>,
+    pub last_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
 }
 

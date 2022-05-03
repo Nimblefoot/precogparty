@@ -2,6 +2,8 @@
 
 use anchor_lang::prelude::*;
 
+const MAX_SIZE: usize = 3; // max size is fixed.
+
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
     pub size: u64,
@@ -12,29 +14,34 @@ pub struct Order {
 
 #[account]
 #[derive(Default)]
-pub struct ListInfo {
-    pub owner: Pubkey,
-    pub last_page: u32,
-    pub length: u32,
-}
-
-#[account]
-#[derive(Default)]
 pub struct OrderbookInfo {
     pub admin: Pubkey,
-    pub last_page: u32,
     pub length: u32,
     pub currency_mint: Pubkey,
     pub token_mint: Pubkey,
     pub bump: u8,
 }
 
+impl OrderbookInfo {
+    pub fn get_last_page(&self) -> u32 {
+        if self.length == 0u32 {
+            0
+        } else {
+            (self.length - 1) / (MAX_SIZE as u32)
+        }
+    }
+
+    pub fn next_open_page(&self) -> u32 {
+        (self.length) / (MAX_SIZE as u32)
+    }
+}
+
 #[account]
-pub struct ListChunk {
+pub struct OrderbookPage {
     list: Vec<Order>,
 }
 
-impl Default for ListChunk {
+impl Default for OrderbookPage {
     fn default() -> Self {
         Self {
             list: Vec::with_capacity(Self::max_size()),
@@ -45,10 +52,9 @@ impl Default for ListChunk {
 pub struct ListFull;
 pub struct ListEmpty;
 
-impl ListChunk {
+impl OrderbookPage {
     pub fn max_size() -> usize {
-        // (10240 - 8 - 4) / size_of::<Pubkey>()
-        3
+        MAX_SIZE
     }
 
     pub fn len(&self) -> usize {
