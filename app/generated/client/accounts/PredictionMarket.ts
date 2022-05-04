@@ -4,8 +4,8 @@ import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript
 import { PROGRAM_ID } from "../programId"
 
 export interface PredictionMarketFields {
-  name: Array<number>
-  descriptionUri: Array<number>
+  name: string
+  description: string
   bump: number
   yesMint: PublicKey
   noMint: PublicKey
@@ -17,8 +17,8 @@ export interface PredictionMarketFields {
 }
 
 export interface PredictionMarketJSON {
-  name: Array<number>
-  descriptionUri: Array<number>
+  name: string
+  description: string
   bump: number
   yesMint: string
   noMint: string
@@ -30,8 +30,8 @@ export interface PredictionMarketJSON {
 }
 
 export class PredictionMarket {
-  readonly name: Array<number>
-  readonly descriptionUri: Array<number>
+  readonly name: string
+  readonly description: string
   readonly bump: number
   readonly yesMint: PublicKey
   readonly noMint: PublicKey
@@ -46,8 +46,8 @@ export class PredictionMarket {
   ])
 
   static readonly layout = borsh.struct([
-    borsh.array(borsh.u8(), 16, "name"),
-    borsh.array(borsh.u8(), 32, "descriptionUri"),
+    borsh.str("name"),
+    borsh.str("description"),
     borsh.u8("bump"),
     borsh.publicKey("yesMint"),
     borsh.publicKey("noMint"),
@@ -60,7 +60,7 @@ export class PredictionMarket {
 
   constructor(fields: PredictionMarketFields) {
     this.name = fields.name
-    this.descriptionUri = fields.descriptionUri
+    this.description = fields.description
     this.bump = fields.bump
     this.yesMint = fields.yesMint
     this.noMint = fields.noMint
@@ -114,7 +114,7 @@ export class PredictionMarket {
 
     return new PredictionMarket({
       name: dec.name,
-      descriptionUri: dec.descriptionUri,
+      description: dec.description,
       bump: dec.bump,
       yesMint: dec.yesMint,
       noMint: dec.noMint,
@@ -129,7 +129,7 @@ export class PredictionMarket {
   toJSON(): PredictionMarketJSON {
     return {
       name: this.name,
-      descriptionUri: this.descriptionUri,
+      description: this.description,
       bump: this.bump,
       yesMint: this.yesMint.toString(),
       noMint: this.noMint.toString(),
@@ -144,7 +144,7 @@ export class PredictionMarket {
   static fromJSON(obj: PredictionMarketJSON): PredictionMarket {
     return new PredictionMarket({
       name: obj.name,
-      descriptionUri: obj.descriptionUri,
+      description: obj.description,
       bump: obj.bump,
       yesMint: new PublicKey(obj.yesMint),
       noMint: new PublicKey(obj.noMint),

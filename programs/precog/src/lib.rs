@@ -25,18 +25,12 @@ pub mod precog {
     ) -> Result<()> {
         // initialize market_account
 
-        let name_bytes = market_name.as_bytes();
-        let mut name_data = [b' '; 16];
-        name_data[..name_bytes.len()].copy_from_slice(name_bytes);
-
-        let desc_bytes = market_description.as_bytes();
-        let mut desc_data = [b' '; 32];
-        desc_data[..desc_bytes.len()].copy_from_slice(desc_bytes);
+        // TODO enforce max length
 
         **ctx.accounts.market_account = PredictionMarket {
-            name: name_data,
+            name: market_name,
             bump: *ctx.bumps.get("market_account").unwrap(),
-            description_uri: desc_data,
+            description: market_description,
             yes_mint: ctx.accounts.yes_mint.key(),
             no_mint: ctx.accounts.no_mint.key(),
             market_authority: ctx.accounts.market_authority.key(),
@@ -53,10 +47,10 @@ pub mod precog {
         ctx: Context<MintMergeContingentSet>,
         amount: u64,
     ) -> Result<()> {
-        let market_name = ctx.accounts.market_account.name.as_ref();
+        let market_name = &ctx.accounts.market_account.name;
         let seeds = &[
             "market_account".as_bytes(),
-            market_name.trim_ascii_whitespace(),
+            market_name.as_bytes(),
             &[ctx.accounts.market_account.bump],
         ];
         let signer = &[&seeds[..]];
@@ -96,10 +90,10 @@ pub mod precog {
         ctx: Context<MintMergeContingentSet>,
         amount: u64,
     ) -> Result<()> {
-        let market_name = ctx.accounts.market_account.name.as_ref();
+        let market_name = &ctx.accounts.market_account.name;
         let seeds = &[
             "market_account".as_bytes(),
-            market_name.trim_ascii_whitespace(),
+            market_name.as_bytes(),
             &[ctx.accounts.market_account.bump],
         ];
         let signer = &[&seeds[..]];
@@ -158,10 +152,10 @@ pub mod precog {
             return err!(ErrorCode::ContingencyNotMet);
         }
 
-        let market_name = ctx.accounts.market_account.name.as_ref();
+        let market_name = &ctx.accounts.market_account.name;
         let seeds = &[
             "market_account".as_bytes(),
-            market_name.trim_ascii_whitespace(),
+            market_name.as_bytes(),
             &[ctx.accounts.market_account.bump],
         ];
         let signer = &[&seeds[..]];
@@ -199,11 +193,7 @@ pub mod precog {
         ctx: Context<UpdateMarketDescription>,
         market_description: String,
     ) -> Result<()> {
-        let desc_bytes = market_description.as_bytes();
-        let mut desc_data = [b' '; 32];
-        desc_data[..desc_bytes.len()].copy_from_slice(desc_bytes);
-
-        ctx.accounts.market_account.description_uri = desc_data;
+        ctx.accounts.market_account.description = market_description;
 
         Ok(())
     }
@@ -211,9 +201,8 @@ pub mod precog {
 #[account]
 #[derive(Default)]
 pub struct PredictionMarket {
-    name: [u8; 16], // 16
-    // TODO embiggen
-    description_uri: [u8; 32],     // 32
+    name: String,                  // 100
+    description: String,           // 512
     bump: u8,                      // 1
     yes_mint: Pubkey,              // 32
     no_mint: Pubkey,               // 32
@@ -225,7 +214,7 @@ pub struct PredictionMarket {
 }
 
 impl PredictionMarket {
-    pub const LEN: usize = 16 + 32 + 1 + (32 * 6) + 1;
+    pub const LEN: usize = 100 + 512 + 1 + (32 * 6) + 1;
 }
 
 #[account]
@@ -295,7 +284,7 @@ pub struct MintMergeContingentSet<'info> {
     #[account(
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
     )]
@@ -346,7 +335,7 @@ pub struct RedeemContingentCoin<'info> {
     #[account(
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
     )]
@@ -381,7 +370,7 @@ pub struct ResolveMarket<'info> {
         mut,
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
         has_one = resolution_authority,
@@ -397,7 +386,7 @@ pub struct UpdateMarketAuthority<'info> {
         mut,
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
         has_one = market_authority,
@@ -418,7 +407,7 @@ pub struct UpdateMarketDescription<'info> {
         mut,
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
         has_one = description_authority,

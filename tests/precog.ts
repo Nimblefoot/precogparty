@@ -34,8 +34,8 @@ const assertThrowsAsync = async (fn: () => Promise<any>, msg?: string) => {
 
 describe("end-to-end", async () => {
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.Provider.env());
-  const provider = anchor.getProvider();
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
   const connection = provider.connection;
   const program = anchor.workspace.Precog as Program<Precog>;
 
@@ -100,10 +100,12 @@ describe("end-to-end", async () => {
         IXmintUsdc
       );
 
-      const sig = await provider.send(tx, [usdcMintKeypair]).catch((e) => {
-        console.log(e);
-        throw e;
-      });
+      const sig = await provider
+        .sendAndConfirm(tx, [usdcMintKeypair])
+        .catch((e) => {
+          console.log(e);
+          throw e;
+        });
       console.log("set up fake usdc", sig);
 
       return { usdcMint, userUsdc };
@@ -121,10 +123,10 @@ describe("end-to-end", async () => {
         //marketAccount,
         //yesMint,
         noMint,
-        marketAuthority: program.provider.wallet.publicKey,
+        marketAuthority: user,
         usdcMint,
-        resolutionAuthority: program.provider.wallet.publicKey,
-        descriptionAuthority: program.provider.wallet.publicKey,
+        resolutionAuthority: user,
+        descriptionAuthority: user,
         usdcVault,
       })
       .rpc()
@@ -373,7 +375,7 @@ describe("end-to-end", async () => {
     console.log("updated description", sig);
     const onchainDescription = (
       await program.account.predictionMarket.fetch(marketAccount)
-    ).descriptionUri;
+    ).description;
     const s = Buffer.from(onchainDescription).toString().trimEnd();
     assert.strictEqual(desc, s, "description uri updated");
   });
