@@ -1,11 +1,36 @@
-import React, { useState } from "react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { Transaction } from "@solana/web3.js";
+import React, { useEffect, useState } from "react";
+import useCreateMarket from "./hooks/useCreateMarket";
 
 const descriptionMaxLength = parseInt(
   process.env.NEXT_PUBLIC_MARKET_DESCRIPTION_CHARLIMIT as string
 );
+const nameMaxLength = 100;
+
+const useTransactionCallback = () => {
+  const [status, setStatus] = useState("none");
+  const { wallet } = useWallet();
+  const { connection } = useConnection();
+
+  const callback = (txn: Transaction) => {
+    //const sig = wallet.
+  };
+  return callback;
+};
 
 const New = ({}) => {
+  const { publicKey } = useWallet();
   const [desc, setDesc] = useState("");
+  const [name, setName] = useState("");
+  const [resolutionAuthority, setResolutionAuthority] = useState("");
+  const [closing, setClosing] = useState<string>(
+    new Date(Date.now()).toISOString()
+  );
+
+  const callback = useCreateMarket();
+
+  const submit = async () => {};
 
   return (
     <form className="space-y-8 divide-y divide-gray-200">
@@ -28,13 +53,24 @@ const New = ({}) => {
               <div className="mt-1 flex rounded-md shadow-sm">
                 <input
                   type="text"
-                  name="username"
-                  id="username"
-                  autoComplete="username"
+                  name="name"
+                  id="name"
+                  maxLength={nameMaxLength}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"
                   placeholder="eg. Will the sun be visible from Earth on January 1st, 2023?"
                 />
               </div>
+              <p
+                className={`mt-2 text-sm text-gray-500 ${
+                  name.length == nameMaxLength
+                    ? "text-red-500 font-semibold"
+                    : ""
+                }`}
+              >
+                {name.length} / {nameMaxLength}
+              </p>
             </div>
 
             <div className="sm:col-span-6">
@@ -46,8 +82,8 @@ const New = ({}) => {
               </label>
               <div className="mt-1">
                 <textarea
-                  id="about"
-                  name="about"
+                  id="description"
+                  name="description"
                   rows={3}
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md"
                   value={desc}
@@ -65,7 +101,7 @@ const New = ({}) => {
                 {desc.length} / {descriptionMaxLength}
               </p>
             </div>
-            <div className="sm:col-span-6">
+            <div className="sm:col-span-4">
               <label
                 htmlFor="about"
                 className="block text-sm font-medium text-gray-700"
@@ -77,9 +113,31 @@ const New = ({}) => {
                   type="datetime-local"
                   id="closing-time"
                   name="closing-time"
-                  className="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"
-                  defaultValue={Date.now()}
+                  className="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block min-w-0 rounded-md sm:text-sm border-gray-300"
+                  onChange={(e) => setClosing(e.target.value)}
+                  value={closing}
                   min={Date.now()}
+                />
+              </div>
+            </div>
+            <div className="sm:col-span-4">
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Resolution Authority
+              </label>
+              <div className="mt-1 flex rounded-md shadow-sm">
+                <input
+                  type="text"
+                  name="authority"
+                  id="authority"
+                  value={resolutionAuthority}
+                  placeholder={
+                    publicKey ? publicKey?.toString() + " (yourself)" : ""
+                  }
+                  onChange={(e) => setResolutionAuthority(e.target.value)}
+                  className="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"
                 />
               </div>
             </div>

@@ -74,6 +74,8 @@ const useCreateMarket = () => {
     },
     []
   );
+
+  return callback;
 };
 
 export default useCreateMarket;
