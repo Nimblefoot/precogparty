@@ -5,6 +5,14 @@ const nextConfig = {
   images: {
     domains: ["www.arweave.net"],
   },
+  webpack: (config, { isServer }) => {
+    config.module.rules.push({
+      test: /\.mjs$/,
+      include: /node_modules/,
+      type: "javascript/auto",
+    });
+    return config;
+  },
 };
 
 module.exports = nextConfig;
