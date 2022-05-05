@@ -209,7 +209,7 @@ describe("orderbook", async () => {
       );
 
       await program.methods
-        .placeOrder("test", mockData[i])
+        .placeOrder(mockData[i])
         .accounts({
           user: user.publicKey,
           userAta: user_currency_ata,
@@ -283,7 +283,7 @@ describe("orderbook", async () => {
     );
     const firstOrder = mockData[0];
     await program.methods
-      .cancelOrder("test", firstOrder, 0, 0)
+      .cancelOrder(firstOrder, 0, 0)
       .accounts({
         user: user.publicKey,
         userAccount: userAccountAddress,

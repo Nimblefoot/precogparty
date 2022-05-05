@@ -20,6 +20,7 @@ pub struct OrderbookInfo {
     pub currency_mint: Pubkey,
     pub token_mint: Pubkey,
     pub bump: u8,
+    pub name: String,
 }
 
 impl OrderbookInfo {

@@ -11,7 +11,7 @@ use anchor_spl::{
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
 
-// Todos: Dont pass in name, last page empty issues, actually compute space reuqirements, try_push should have an error.
+// TodoDont pass in name, last page empty issues, actually compute space reuqirements, try_push should have an error.
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
@@ -28,6 +28,7 @@ pub mod syrup {
         ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
         ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
         ctx.accounts.orderbook_info.bump = *ctx.bumps.get("orderbook_info").unwrap();
+        ctx.accounts.orderbook_info.name = name;
 
         Ok(())
     }
@@ -40,7 +41,7 @@ pub mod syrup {
         Ok(())
     }
 
-    pub fn place_order(ctx: Context<PlaceOrder>, name: String, order: Order) -> Result<()> {
+    pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
         // ToDo - Add check for if the user has space in their order vector. Maybe just have a length? Actually cleaner?
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -53,7 +54,7 @@ pub mod syrup {
         token::transfer(cpi_ctx, order.size)?;
 
         // create and append order record
-        let name_bytes = name.as_bytes();
+        let name_bytes = ctx.accounts.orderbook_info.name.as_bytes();
         let mut name_data = [b' '; 16];
         name_data[..name_bytes.len()].copy_from_slice(name_bytes);
 
@@ -78,17 +79,22 @@ pub mod syrup {
         Ok(())
     }
 
-    pub fn cancel_order(ctx: Context<CancelOrder>, name: String, order: Order, page_number: u32, index: u32) -> Result<()> {
+    pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
         let order_page = &mut ctx.accounts.order_page;
         let last_page = &mut ctx.accounts.last_page;
-        let orderbook_info = &mut ctx.accounts.orderbook_info;
         let user_account = &mut ctx.accounts.user_account;
 
-        /** Refund order */
+        // need to split up variables to avoid borrower check errors
+        let orderbook_name = ctx.accounts.orderbook_info.name.clone();
+        let orderbook_bump = ctx.accounts.orderbook_info.bump;
+        let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
+        let orderbook_length = &mut ctx.accounts.orderbook_info.length;
+
+        // Refund order
         let seeds = &[
-            name.as_bytes(),
+            orderbook_name.as_bytes(),
             "orderbook-info".as_bytes(),
-            &[orderbook_info.bump],
+            &[orderbook_bump],
         ];
         let signer = &[&seeds[..]];
 
@@ -96,12 +102,12 @@ pub mod syrup {
         let accounts = Transfer {
             from: ctx.accounts.vault.to_account_info(),
             to: ctx.accounts.user_ata.to_account_info(),
-            authority: orderbook_info.to_account_info(),
+            authority: orderbook_account_info,
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
         token::transfer(cpi_ctx, order.size)?;
 
-        /** Delete from orderbook */
+        // Delete from the orderbook
         // overwrite the cancelled order with the last order on the book
         if let Some(last_order) = last_page.pop() {
             order_page.set(index, last_order);
@@ -109,7 +115,7 @@ pub mod syrup {
             // TODO: throw some error cause last page should not be empty
         }
 
-        orderbook_info.length -= 1;
+        *orderbook_length -= 1;
 
         /** Delete from user account */
         if let Some(deletion_index) = user_account.find_order(order) {
@@ -166,7 +172,7 @@ pub struct InitializeOrderbook<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: String, order: Order)]
+#[instruction(order: Order)]
 pub struct PlaceOrder<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -180,12 +186,12 @@ pub struct PlaceOrder<'info> {
     pub user_ata: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut, seeds=[name.as_ref(), "orderbook-info".as_ref()], bump)]
+    #[account(mut, seeds=[orderbook_info.name.as_ref(), "orderbook-info".as_ref()], bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         init_if_needed, 
         payer=user, 
-        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
         space=500, 
         bump
     )]
@@ -240,7 +246,7 @@ pub struct TakeOrder<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: String, order: Order, page_number: u32, index: u32)]
+#[instruction(order: Order, page_number: u32, index: u32)]
 pub struct CancelOrder<'info> {
     pub user: Signer<'info>,
     #[account(
@@ -255,19 +261,19 @@ pub struct CancelOrder<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
-        seeds=[name.as_ref(), "orderbook-info".as_ref()], 
+        seeds=[orderbook_info.name.as_ref(), "orderbook-info".as_ref()], 
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
     #[account(
         mut, 
-        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
         bump
     )]
     pub last_page: Account<'info, OrderbookPage>,
