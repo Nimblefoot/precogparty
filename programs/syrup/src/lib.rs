@@ -80,6 +80,12 @@ pub mod syrup {
     }
 
     pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
+
+        let order_data: Order = ctx.accounts.order_page.get(index);
+        if ctx.accounts.user.key() != order_data.user {
+            return err!(ErrorCode::IncorrectUser);
+        };
+
         let order_page = &mut ctx.accounts.order_page;
         let last_page = &mut ctx.accounts.last_page;
         let user_account = &mut ctx.accounts.user_account;
@@ -281,3 +287,9 @@ pub struct CancelOrder<'info> {
 }
 
 pub struct ExecuteMatchingOrders {}
+
+#[error_code]
+pub enum ErrorCode {
+    #[msg("User on the order must match the user invoking the cancel method")]
+    IncorrectUser,
+}
