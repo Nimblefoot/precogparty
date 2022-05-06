@@ -213,6 +213,16 @@ pub struct PredictionMarket {
     resolution: u8,                // 1 /* 1 -> yes, 2 -> no */
 }
 
+#[account]
+pub struct MarketList {
+    // TODO use a better data structure
+    markets: Vec<Pubkey>, // 32 * 100
+}
+
+impl MarketList {
+    pub const LEN: usize = 32 * 100;
+}
+
 impl PredictionMarket {
     pub const LEN: usize = 100 + 512 + 1 + (32 * 6) + 1;
 }
@@ -413,23 +423,6 @@ pub struct UpdateMarketDescription<'info> {
         has_one = description_authority,
     )]
     pub market_account: Account<'info, PredictionMarket>,
-}
-
-/// Trait to allow trimming ascii whitespace from a &[u8].
-pub trait TrimAsciiWhitespace {
-    /// Trim ascii whitespace (based on `is_ascii_whitespace()`) from the
-    /// start and end of a slice.
-    fn trim_ascii_whitespace(&self) -> &[u8];
-}
-impl<T: Deref<Target = [u8]>> TrimAsciiWhitespace for T {
-    fn trim_ascii_whitespace(&self) -> &[u8] {
-        let from = match self.iter().position(|x| !x.is_ascii_whitespace()) {
-            Some(i) => i,
-            None => return &self[0..0],
-        };
-        let to = self.iter().rposition(|x| !x.is_ascii_whitespace()).unwrap();
-        &self[from..=to]
-    }
 }
 
 #[error_code]

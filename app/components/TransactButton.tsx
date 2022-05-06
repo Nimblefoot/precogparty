@@ -5,15 +5,10 @@ import { useState } from "react";
 import ReactCanvasConfetti from "react-canvas-confetti";
 
 export type Status = "initial" | "signing" | "sending" | "confirming" | "done";
-type Props = {
-  verb: string;
-  disabled?: boolean;
-  getTxn: () => Promise<Transaction>;
-};
 
 //TODO lazy load canvas-confetti
 
-const useTransact = () => {
+export const useTransact = () => {
   const [status, setStatus] = useState<Status>("initial");
   const { sendTransaction, signTransaction, publicKey } = useWallet();
   const { connection } = useConnection();
@@ -111,6 +106,12 @@ export function StatelessTransactButton({
     </>
   );
 }
+
+type Props = {
+  verb: string;
+  disabled?: boolean;
+  getTxn: () => Promise<Transaction>;
+};
 
 export default function TransactButton({ getTxn, ...props }: Props) {
   const { callback, status } = useTransact();

@@ -143,6 +143,7 @@ describe("end-to-end", async () => {
     const marketData = await program.account.predictionMarket.fetch(
       marketAccount
     );
+
     console.log(marketData);
 
     const userNo = await getAssociatedTokenAddress(noMint, user);

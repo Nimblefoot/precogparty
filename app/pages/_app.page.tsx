@@ -24,6 +24,8 @@ import Providers from "./providers";
 const navigation = [
   { name: "Home", href: "#", icon: HomeIcon, current: true },
   { name: "Markets", href: "#", icon: ChartBarIcon, current: false },
+  { name: "New", href: "/markets/new", icon: ChartBarIcon, current: false },
+
   { name: "Account", href: "#", icon: FolderIcon, current: false },
   { name: "About", href: "#", icon: CalendarIcon, current: false },
 ];
@@ -187,10 +189,8 @@ const Layout = ({ Component, pageProps }: AppProps) => {
             </div>
             <main className="flex-1">
               <div className="py-6">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-                  {/* @ts-ignore  */}
-                  <Component {...pageProps} />
-                </div>
+                {/* @ts-ignore  */}
+                <Component {...pageProps} />
               </div>
             </main>
           </div>
