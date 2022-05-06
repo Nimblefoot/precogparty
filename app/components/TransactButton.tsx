@@ -1,5 +1,6 @@
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Transaction } from "@solana/web3.js";
+import { connect } from "http2";
 import { useState } from "react";
 import ReactCanvasConfetti from "react-canvas-confetti";
 
@@ -14,16 +15,27 @@ type Props = {
 
 const useTransact = () => {
   const [status, setStatus] = useState<Status>("initial");
-  const { sendTransaction } = useWallet();
+  const { sendTransaction, signTransaction, publicKey } = useWallet();
   const { connection } = useConnection();
 
   const callback = async (txn: Transaction) => {
+    if (!signTransaction || !publicKey) {
+      return;
+    }
+
+    setStatus("signing");
+    const recentbhash = await connection.getLatestBlockhash();
+    txn.recentBlockhash = recentbhash.blockhash;
+    txn.feePayer = publicKey;
+
+    const signed = await signTransaction(txn);
+
     setStatus("sending");
     // this combines sending and signing steps for now
     console.log(txn);
     console.log(JSON.stringify(txn));
     try {
-      const sig = await sendTransaction(txn, connection, {
+      const sig = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: true,
       });
 

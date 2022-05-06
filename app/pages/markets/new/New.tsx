@@ -34,7 +34,7 @@ const New = ({}) => {
   };
 
   return (
-    <form className="space-y-8 divide-y divide-gray-200">
+    <div className="space-y-8 divide-y divide-gray-200">
       <div className="space-y-8 divide-y divide-gray-200">
         <div>
           <div>
@@ -157,7 +157,7 @@ const New = ({}) => {
           <TransactButton verb="Create Market" getTxn={getTxn} />
         </div>
       </div>
-    </form>
+    </div>
   );
 };
 
