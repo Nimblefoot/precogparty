@@ -10,6 +10,8 @@ import {
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import { QueryClient, QueryClientProvider } from "react-query";
+import { ReactQueryDevtools } from "react-query/devtools";
 
 const WalletConnectionProvider: FC = ({ children }) => {
   // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
@@ -37,7 +39,12 @@ const WalletConnectionProvider: FC = ({ children }) => {
   );
 };
 
+const queryClient = new QueryClient();
+
 const Providers: FC = ({ children }) => (
-  <WalletConnectionProvider>{children}</WalletConnectionProvider>
+  <QueryClientProvider client={queryClient}>
+    <ReactQueryDevtools />
+    <WalletConnectionProvider>{children}</WalletConnectionProvider>
+  </QueryClientProvider>
 );
 export default Providers;
