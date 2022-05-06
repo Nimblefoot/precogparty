@@ -1,51 +1,51 @@
 import {
   PredictionMarket,
   PredictionMarketJSON,
-} from "@/generated/client/accounts";
-import { PROGRAM_ID } from "@/generated/client/programId";
-import { ClockIcon } from "@heroicons/react/outline";
-import { useConnection } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
-import { useRouter } from "next/router";
-import React, { useCallback, useEffect, useState } from "react";
-import User from "./User";
+} from "@/generated/client/accounts"
+import { PROGRAM_ID } from "@/generated/client/programId"
+import { ClockIcon } from "@heroicons/react/outline"
+import { useConnection } from "@solana/wallet-adapter-react"
+import { PublicKey } from "@solana/web3.js"
+import { useRouter } from "next/router"
+import React, { useCallback, useEffect, useState } from "react"
+import User from "./User"
 
 const useMarketData = (name: string | undefined) => {
-  const { connection } = useConnection();
-  const [data, setData] = useState<PredictionMarketJSON | undefined>();
+  const { connection } = useConnection()
+  const [data, setData] = useState<PredictionMarketJSON | undefined>()
 
   const getMarketData = useCallback(async () => {
-    if (name === undefined) return undefined;
+    if (name === undefined) return undefined
 
     const [marketAccount] = await PublicKey.findProgramAddress(
       [Buffer.from("market_account"), Buffer.from(name)],
       PROGRAM_ID
-    );
-    const market = await PredictionMarket.fetch(connection, marketAccount);
-    return market ? market.toJSON() : undefined;
-  }, [connection, name]);
+    )
+    const market = await PredictionMarket.fetch(connection, marketAccount)
+    return market ? market.toJSON() : undefined
+  }, [connection, name])
 
   useEffect(() => {
-    (async () => {
-      setData(await getMarketData());
-    })();
-  }, [getMarketData, data]);
+    ;(async () => {
+      setData(await getMarketData())
+    })()
+  }, [getMarketData, data])
 
-  return data;
-};
+  return data
+}
 
 const Market = ({}) => {
-  const router = useRouter();
-  const marketName = router.query.m;
+  const router = useRouter()
+  const marketName = router.query.m
   const market = useMarketData(
     typeof marketName === "string" ? marketName : undefined
-  );
+  )
 
   return market ? (
     <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         {/* Replace with your content */}
-        <div className="py-4 border-4 border-dashed border-gray-200 rounded-lg h-96">
+        <div className="py-4 shadow bg-white rounded-lg h-96">
           <div className="">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <h1 className="text-2xl font-semibold text-gray-900">
@@ -73,7 +73,7 @@ const Market = ({}) => {
     </>
   ) : (
     <div>market does not exist</div>
-  );
-};
+  )
+}
 
-export default Market;
+export default Market
