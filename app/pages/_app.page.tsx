@@ -1,14 +1,14 @@
 // These are customized
-import "@/styles/solanaWalletAdapter.css";
-import "../styles/globals.css";
-import type { AppProps } from "next/app";
-import Blockies from "react-blockies";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { useWallet } from "@solana/wallet-adapter-react";
+import "@/styles/solanaWalletAdapter.css"
+import "../styles/globals.css"
+import type { AppProps } from "next/app"
+import Blockies from "react-blockies"
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
+import { useWallet } from "@solana/wallet-adapter-react"
 
 /* This example requires Tailwind CSS v2.0+ */
-import { Fragment, useState } from "react";
-import { Dialog, Transition } from "@headlessui/react";
+import { Fragment, useState } from "react"
+import { Dialog, Transition } from "@headlessui/react"
 import {
   CalendarIcon,
   ChartBarIcon,
@@ -18,8 +18,8 @@ import {
   MenuIcon,
   UsersIcon,
   XIcon,
-} from "@heroicons/react/outline";
-import Providers from "./providers";
+} from "@heroicons/react/outline"
+import Providers from "./providers"
 
 const navigation = [
   { name: "Home", href: "#", icon: HomeIcon, current: true },
@@ -28,14 +28,14 @@ const navigation = [
 
   { name: "Account", href: "#", icon: FolderIcon, current: false },
   { name: "About", href: "#", icon: CalendarIcon, current: false },
-];
+]
 
 function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(" ")
 }
 
 const Layout = ({ Component, pageProps }: AppProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <>
@@ -197,15 +197,15 @@ const Layout = ({ Component, pageProps }: AppProps) => {
         </div>
       </Providers>
     </>
-  );
-};
+  )
+}
 
-export default Layout;
+export default Layout
 
-const ConnectWallet = () => {};
+const ConnectWallet = () => {}
 
 function UserInfoDesktop({}) {
-  const { publicKey } = useWallet();
+  const { publicKey } = useWallet()
 
   return (
     <>
@@ -231,7 +231,6 @@ function UserInfoDesktop({}) {
                   scale={
                     4
                   } /* width/height of each square in pixels; default = 4 */
-                  spotColor="#abc" /* color of the more notable features; random by default */
                   //className="inline-block h-8 w-8 rounded-full"
                 />
               </div>
@@ -252,7 +251,7 @@ function UserInfoDesktop({}) {
         )}
       </div>
     </>
-  );
+  )
 }
 
 function UserInfoMobile({}) {
@@ -278,5 +277,5 @@ function UserInfoMobile({}) {
         </div>
       </a>
     </div>
-  );
+  )
 }

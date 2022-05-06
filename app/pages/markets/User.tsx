@@ -1,7 +1,7 @@
-import { PublicKey } from "@solana/web3.js";
-import React, { FC } from "react";
+import { PublicKey } from "@solana/web3.js"
+import React, { FC } from "react"
 // TODO lazy load
-import Blockies from "react-blockies";
+import Blockies from "react-blockies"
 
 const User: FC<{ publicKey: PublicKey }> = ({ publicKey }) => {
   return (
@@ -14,7 +14,6 @@ const User: FC<{ publicKey: PublicKey }> = ({ publicKey }) => {
             seed={publicKey.toString()} /* the only required prop; determines how the image is generated */
             size={10}
             scale={3} /* width/height of each square in pixels; default = 4 */
-            spotColor="#abc" /* color of the more notable features; random by default */
           />
         </div>
         <div className="ml-1.5">
@@ -26,7 +25,7 @@ const User: FC<{ publicKey: PublicKey }> = ({ publicKey }) => {
         </div>
       </div>
     </a>
-  );
-};
+  )
+}
 
-export default User;
+export default User
