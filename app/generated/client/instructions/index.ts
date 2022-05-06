@@ -28,3 +28,5 @@ export {
   UpdateMarketDescriptionArgs,
   UpdateMarketDescriptionAccounts,
 } from "./updateMarketDescription"
+export { initMarketList, InitMarketListAccounts } from "./initMarketList"
+export { listMarket, ListMarketAccounts } from "./listMarket"

@@ -197,6 +197,15 @@ pub mod precog {
 
         Ok(())
     }
+
+    pub fn init_market_list(_ctx: Context<InitMarketList>) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn list_market(ctx: Context<ListMarket>) -> Result<()> {
+        ctx.accounts.list.markets.push(ctx.accounts.market.key());
+        Ok(())
+    }
 }
 #[account]
 #[derive(Default)]
@@ -220,16 +229,12 @@ pub struct MarketList {
 }
 
 impl MarketList {
-    pub const LEN: usize = 32 * 100;
+    pub const LEN: usize = 4 + 32 * 100;
 }
 
 impl PredictionMarket {
-    pub const LEN: usize = 100 + 512 + 1 + (32 * 6) + 1;
+    pub const LEN: usize = 4 + 100 + 4 + 512 + 1 + (32 * 6) + 1;
 }
-
-#[account]
-#[derive(Default)]
-pub struct Orderbook {}
 
 #[derive(Accounts)]
 #[instruction(market_name: String, market_description: String)]
@@ -282,6 +287,33 @@ pub struct CreateMarket<'info> {
     pub description_authority: SystemAccount<'info>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct ListMarket<'info> {
+    #[account(
+        mut,
+        seeds = ["list".as_bytes()],
+        bump
+    )]
+    pub list: Account<'info, MarketList>,
+    pub market: Box<Account<'info, PredictionMarket>>,
+}
+
+#[derive(Accounts)]
+pub struct InitMarketList<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        init,
+        payer = payer,
+        seeds = ["list".as_bytes()],
+        bump,
+        space = 8 + MarketList::LEN
+    )]
+    pub list: Account<'info, MarketList>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }

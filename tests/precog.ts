@@ -30,10 +30,9 @@ const assertThrowsAsync = async (fn: () => Promise<any>, msg?: string) => {
   assert.instanceOf(error, Error, msg);
 };
 
-//const COLLATERAL = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
-
 describe("end-to-end", async () => {
   // Configure the client to use the local cluster.
+
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
   const connection = provider.connection;
@@ -42,10 +41,13 @@ describe("end-to-end", async () => {
   const user = provider.wallet.publicKey;
   const marketName = "test market";
 
-  const [marketAccount] = await PublicKey.findProgramAddress(
-    [Buffer.from("market_account"), Buffer.from(marketName)],
-    program.programId
-  );
+  let marketAccount: PublicKey;
+  before(async () => {
+    [marketAccount] = await PublicKey.findProgramAddress(
+      [Buffer.from("market_account"), Buffer.from(marketName)],
+      program.programId
+    );
+  });
 
   it("end-to-end", async () => {
     const [noMint] = await PublicKey.findProgramAddress(
