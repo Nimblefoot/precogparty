@@ -11,7 +11,7 @@ import useCreateMarket from "./hooks/useCreateMarket"
 const descriptionMaxLength = parseInt(
   process.env.NEXT_PUBLIC_MARKET_DESCRIPTION_CHARLIMIT as string
 )
-const nameMaxLength = 100
+const nameMaxLength = 32
 
 const New = ({}) => {
   const router = useRouter()
