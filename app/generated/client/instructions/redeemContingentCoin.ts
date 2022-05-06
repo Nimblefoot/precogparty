@@ -11,9 +11,9 @@ export interface RedeemContingentCoinAccounts {
   user: PublicKey
   marketAccount: PublicKey
   contingentCoinMint: PublicKey
-  usdcVault: PublicKey
+  collateralVault: PublicKey
   userContingentCoin: PublicKey
-  userUsdc: PublicKey
+  userCollateral: PublicKey
   tokenProgram: PublicKey
 }
 
@@ -27,9 +27,9 @@ export function redeemContingentCoin(
     { pubkey: accounts.user, isSigner: true, isWritable: false },
     { pubkey: accounts.marketAccount, isSigner: false, isWritable: false },
     { pubkey: accounts.contingentCoinMint, isSigner: false, isWritable: true },
-    { pubkey: accounts.usdcVault, isSigner: false, isWritable: true },
+    { pubkey: accounts.collateralVault, isSigner: false, isWritable: true },
     { pubkey: accounts.userContingentCoin, isSigner: false, isWritable: true },
-    { pubkey: accounts.userUsdc, isSigner: false, isWritable: true },
+    { pubkey: accounts.userCollateral, isSigner: false, isWritable: true },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
   ]
   const identifier = Buffer.from([211, 65, 155, 27, 50, 143, 98, 14])

@@ -30,7 +30,7 @@ const assertThrowsAsync = async (fn: () => Promise<any>, msg?: string) => {
   assert.instanceOf(error, Error, msg);
 };
 
-//const USDC = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+//const COLLATERAL = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 describe("end-to-end", async () => {
   // Configure the client to use the local cluster.
@@ -58,11 +58,14 @@ describe("end-to-end", async () => {
       program.programId
     );
 
-    /* SET UP USDC */
-    const { usdcMint, userUsdc } = await (async () => {
-      const usdcMintKeypair = new Keypair();
-      const usdcMint = usdcMintKeypair.publicKey;
-      const userUsdc = await getAssociatedTokenAddress(usdcMint, user);
+    /* SET UP COLLATERAL */
+    const { collateralMint, userCollateral } = await (async () => {
+      const collateralMintKeypair = new Keypair();
+      const collateralMint = collateralMintKeypair.publicKey;
+      const userCollateral = await getAssociatedTokenAddress(
+        collateralMint,
+        user
+      );
 
       const lamports = await getMinimumBalanceForRentExemptMint(
         provider.connection
@@ -70,49 +73,49 @@ describe("end-to-end", async () => {
 
       const IXcreateMintAccount = SystemProgram.createAccount({
         fromPubkey: user,
-        newAccountPubkey: usdcMint,
+        newAccountPubkey: collateralMint,
         space: MINT_SIZE,
         lamports,
         programId: TOKEN_PROGRAM_ID,
       });
       const IXinitMint = createInitializeMintInstruction(
-        usdcMint,
+        collateralMint,
         6,
         user,
         null
       );
-      const IXcreateUserUsdc = createAssociatedTokenAccountInstruction(
+      const IXcreateUserCollateral = createAssociatedTokenAccountInstruction(
         user,
-        userUsdc,
+        userCollateral,
         user,
-        usdcMint
+        collateralMint
       );
-      const IXmintUsdc = createMintToInstruction(
-        usdcMint,
-        userUsdc,
+      const IXmintCollateral = createMintToInstruction(
+        collateralMint,
+        userCollateral,
         user,
         1000
       );
       const tx = new Transaction().add(
         IXcreateMintAccount,
         IXinitMint,
-        IXcreateUserUsdc,
-        IXmintUsdc
+        IXcreateUserCollateral,
+        IXmintCollateral
       );
 
       const sig = await provider
-        .sendAndConfirm(tx, [usdcMintKeypair])
+        .sendAndConfirm(tx, [collateralMintKeypair])
         .catch((e) => {
           console.log(e);
           throw e;
         });
-      console.log("set up fake usdc", sig);
+      console.log("set up fake collateral", sig);
 
-      return { usdcMint, userUsdc };
+      return { collateralMint, userCollateral };
     })();
 
-    const usdcVault = await getAssociatedTokenAddress(
-      usdcMint,
+    const collateralVault = await getAssociatedTokenAddress(
+      collateralMint,
       marketAccount,
       true
     );
@@ -124,10 +127,10 @@ describe("end-to-end", async () => {
         //yesMint,
         noMint,
         marketAuthority: user,
-        usdcMint,
+        collateralMint,
         resolutionAuthority: user,
         descriptionAuthority: user,
-        usdcVault,
+        collateralVault,
       })
       .rpc()
       .catch((e) => {
@@ -153,13 +156,13 @@ describe("end-to-end", async () => {
       marketAccount: marketAccount.toString(),
       yesMint: yesMint.toString(),
       noMint: noMint.toString(),
-      usdcVault: usdcVault.toString(),
-      userUsdc: userUsdc.toString(),
+      collateralVault: collateralVault.toString(),
+      userCollateral: userCollateral.toString(),
     };
     console.log(accounts); */
 
-    const startingUsdcAmount = parseInt(
-      (await getAccount(connection, userUsdc)).amount.toString()
+    const startingCollateralAmount = parseInt(
+      (await getAccount(connection, userCollateral)).amount.toString()
     );
 
     /* TEST MINT SET */
@@ -178,8 +181,8 @@ describe("end-to-end", async () => {
           marketAccount,
           yesMint,
           noMint,
-          usdcVault,
-          userUsdc,
+          collateralVault,
+          userCollateral,
         })
         .preInstructions(userAtaIxs)
         .rpc()
@@ -188,7 +191,7 @@ describe("end-to-end", async () => {
       assert.equal(
         expectedFailure,
         "fail",
-        "can't mint more than you have in USDC"
+        "can't mint more than you have in COLLATERAL"
       );
  */
       const sig = await program.methods
@@ -200,8 +203,8 @@ describe("end-to-end", async () => {
           marketAccount,
           yesMint,
           noMint,
-          usdcVault,
-          userUsdc,
+          collateralVault,
+          userCollateral,
         })
         .preInstructions(userAtaIxs)
         .rpc()
@@ -217,10 +220,10 @@ describe("end-to-end", async () => {
       const userYesAccount = await getAccount(connection, userYes);
       assert.equal(userYesAccount.amount.toString(), "10");
 
-      const endingUsdcAmount = parseInt(
-        (await getAccount(connection, userUsdc)).amount.toString()
+      const endingCollateralAmount = parseInt(
+        (await getAccount(connection, userCollateral)).amount.toString()
       );
-      assert.equal(endingUsdcAmount, startingUsdcAmount - 10);
+      assert.equal(endingCollateralAmount, startingCollateralAmount - 10);
     })();
 
     /* TEST MERGE SET */
@@ -234,8 +237,8 @@ describe("end-to-end", async () => {
           marketAccount,
           yesMint,
           noMint,
-          usdcVault,
-          userUsdc,
+          collateralVault,
+          userCollateral,
         })
         .rpc()
         .catch((e) => {
@@ -244,15 +247,15 @@ describe("end-to-end", async () => {
         });
       console.log("merge set", sig3);
 
-      const postMergeUsdc = parseInt(
-        (await getAccount(connection, userUsdc)).amount.toString()
+      const postMergeCollateral = parseInt(
+        (await getAccount(connection, userCollateral)).amount.toString()
       );
       const userNoAccount = await getAccount(connection, userNo);
       const userYesAccount = await getAccount(connection, userYes);
 
       assert.equal(userNoAccount.amount.toString(), "0");
       assert.equal(userYesAccount.amount.toString(), "0");
-      assert.equal(postMergeUsdc, startingUsdcAmount);
+      assert.equal(postMergeCollateral, startingCollateralAmount);
     })();
 
     /* RESOLVE MARKET */
@@ -302,8 +305,8 @@ describe("end-to-end", async () => {
           marketAccount,
           yesMint,
           noMint,
-          usdcVault,
-          userUsdc,
+          collateralVault,
+          userCollateral,
         })
         .rpc()
         .catch((e) => {
@@ -320,8 +323,8 @@ describe("end-to-end", async () => {
               marketAccount,
               contingentCoinMint: noMint,
               userContingentCoin: userNo,
-              usdcVault,
-              userUsdc,
+              collateralVault,
+              userCollateral,
             })
             .rpc(),
         "can't redeem more than you have"
@@ -335,8 +338,8 @@ describe("end-to-end", async () => {
               marketAccount,
               contingentCoinMint: yesMint,
               userContingentCoin: userYes,
-              usdcVault,
-              userUsdc,
+              collateralVault,
+              userCollateral,
             })
             .rpc(),
         "can't redeem when outcome is not met"
@@ -348,18 +351,18 @@ describe("end-to-end", async () => {
           marketAccount,
           contingentCoinMint: noMint,
           userContingentCoin: userNo,
-          usdcVault,
-          userUsdc,
+          collateralVault,
+          userCollateral,
         })
         .rpc();
       console.log("redeemed NO coin", sig);
 
       const userNoAccount = await getAccount(connection, userNo);
-      const postRedemptionUsdc = parseInt(
-        (await getAccount(connection, userUsdc)).amount.toString()
+      const postRedemptionCollateral = parseInt(
+        (await getAccount(connection, userCollateral)).amount.toString()
       );
       assert.equal(userNoAccount.amount.toString(), "0");
-      assert.equal(postRedemptionUsdc, startingUsdcAmount);
+      assert.equal(postRedemptionCollateral, startingCollateralAmount);
     })();
   });
 

@@ -13,8 +13,8 @@ export interface CreateMarketAccounts {
   marketAccount: PublicKey
   yesMint: PublicKey
   noMint: PublicKey
-  usdcVault: PublicKey
-  usdcMint: PublicKey
+  collateralVault: PublicKey
+  collateralMint: PublicKey
   resolutionAuthority: PublicKey
   descriptionAuthority: PublicKey
   tokenProgram: PublicKey
@@ -37,8 +37,8 @@ export function createMarket(
     { pubkey: accounts.marketAccount, isSigner: false, isWritable: true },
     { pubkey: accounts.yesMint, isSigner: false, isWritable: true },
     { pubkey: accounts.noMint, isSigner: false, isWritable: true },
-    { pubkey: accounts.usdcVault, isSigner: false, isWritable: true },
-    { pubkey: accounts.usdcMint, isSigner: false, isWritable: false },
+    { pubkey: accounts.collateralVault, isSigner: false, isWritable: true },
+    { pubkey: accounts.collateralMint, isSigner: false, isWritable: false },
     {
       pubkey: accounts.resolutionAuthority,
       isSigner: false,

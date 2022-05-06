@@ -36,7 +36,7 @@ pub mod precog {
             market_authority: ctx.accounts.market_authority.key(),
             resolution_authority: ctx.accounts.resolution_authority.key(),
             description_authority: ctx.accounts.description_authority.key(),
-            usdc_vault: ctx.accounts.usdc_vault.key(),
+            collateral_vault: ctx.accounts.collateral_vault.key(),
             resolution: 0,
         };
 
@@ -57,8 +57,8 @@ pub mod precog {
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
-            from: ctx.accounts.user_usdc.to_account_info(),
-            to: ctx.accounts.usdc_vault.to_account_info(),
+            from: ctx.accounts.user_collateral.to_account_info(),
+            to: ctx.accounts.collateral_vault.to_account_info(),
             authority: ctx.accounts.user.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, accounts);
@@ -100,8 +100,8 @@ pub mod precog {
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
-            from: ctx.accounts.usdc_vault.to_account_info(),
-            to: ctx.accounts.user_usdc.to_account_info(),
+            from: ctx.accounts.collateral_vault.to_account_info(),
+            to: ctx.accounts.user_collateral.to_account_info(),
             authority: ctx.accounts.market_account.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
@@ -162,8 +162,8 @@ pub mod precog {
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
-            from: ctx.accounts.usdc_vault.to_account_info(),
-            to: ctx.accounts.user_usdc.to_account_info(),
+            from: ctx.accounts.collateral_vault.to_account_info(),
+            to: ctx.accounts.user_collateral.to_account_info(),
             authority: ctx.accounts.market_account.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
@@ -206,7 +206,7 @@ pub struct PredictionMarket {
     bump: u8,                      // 1
     yes_mint: Pubkey,              // 32
     no_mint: Pubkey,               // 32
-    usdc_vault: Pubkey,            // 32
+    collateral_vault: Pubkey,      // 32
     market_authority: Pubkey,      // 32
     resolution_authority: Pubkey,  // 32
     description_authority: Pubkey, // 32
@@ -259,15 +259,15 @@ pub struct CreateMarket<'info> {
     #[account(
         init,
         payer = market_authority,
-        associated_token::mint = usdc_mint,
+        associated_token::mint = collateral_mint,
         associated_token::authority = market_account,
     )]
-    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+    pub collateral_vault: Box<Account<'info, TokenAccount>>,
 
     #[account(
-        // address = mint::USDC
+        // address = mint::COLLATERAL
     )]
-    pub usdc_mint: Account<'info, Mint>,
+    pub collateral_mint: Account<'info, Mint>,
     pub resolution_authority: SystemAccount<'info>,
     pub description_authority: SystemAccount<'info>,
     pub token_program: Program<'info, Token>,
@@ -301,9 +301,9 @@ pub struct MintMergeContingentSet<'info> {
     pub no_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
-        address = market_account.usdc_vault
+        address = market_account.collateral_vault
     )]
-    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+    pub collateral_vault: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -319,9 +319,9 @@ pub struct MintMergeContingentSet<'info> {
     #[account(
         mut,
         associated_token::authority = user,
-        associated_token::mint = usdc_vault.mint,
+        associated_token::mint = collateral_vault.mint,
     )]
-    pub user_usdc: Account<'info, TokenAccount>,
+    pub user_collateral: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
 }
@@ -344,9 +344,9 @@ pub struct RedeemContingentCoin<'info> {
     pub contingent_coin_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
-        address = market_account.usdc_vault
+        address = market_account.collateral_vault
     )]
-    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+    pub collateral_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::authority = user,
@@ -355,9 +355,9 @@ pub struct RedeemContingentCoin<'info> {
     #[account(
         mut,
         associated_token::authority = user,
-        associated_token::mint = usdc_vault.mint,
+        associated_token::mint = collateral_vault.mint,
     )]
-    pub user_usdc: Account<'info, TokenAccount>,
+    pub user_collateral: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
 }
@@ -434,8 +434,8 @@ impl<T: Deref<Target = [u8]>> TrimAsciiWhitespace for T {
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Insufficient USDC")]
-    LowUsdc,
+    #[msg("Insufficient COLLATERAL")]
+    LowCollateral,
     #[msg("Unrecognized resolution; 1 -> yes, 2 -> no")]
     InvalidResolution,
     #[msg("Contingent coin mint supplied is not equal to the market's yes_mint or no_mint")]

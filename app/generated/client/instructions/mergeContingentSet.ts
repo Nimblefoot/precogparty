@@ -12,10 +12,10 @@ export interface MergeContingentSetAccounts {
   marketAccount: PublicKey
   yesMint: PublicKey
   noMint: PublicKey
-  usdcVault: PublicKey
+  collateralVault: PublicKey
   userYes: PublicKey
   userNo: PublicKey
-  userUsdc: PublicKey
+  userCollateral: PublicKey
   tokenProgram: PublicKey
 }
 
@@ -30,10 +30,10 @@ export function mergeContingentSet(
     { pubkey: accounts.marketAccount, isSigner: false, isWritable: false },
     { pubkey: accounts.yesMint, isSigner: false, isWritable: true },
     { pubkey: accounts.noMint, isSigner: false, isWritable: true },
-    { pubkey: accounts.usdcVault, isSigner: false, isWritable: true },
+    { pubkey: accounts.collateralVault, isSigner: false, isWritable: true },
     { pubkey: accounts.userYes, isSigner: false, isWritable: true },
     { pubkey: accounts.userNo, isSigner: false, isWritable: true },
-    { pubkey: accounts.userUsdc, isSigner: false, isWritable: true },
+    { pubkey: accounts.userCollateral, isSigner: false, isWritable: true },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
   ]
   const identifier = Buffer.from([57, 87, 72, 54, 81, 72, 123, 132])
