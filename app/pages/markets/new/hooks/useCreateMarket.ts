@@ -29,7 +29,7 @@ const useCreateMarket = () => {
       description: string;
       authority: PublicKey;
     }) => {
-      const usdcMint = new PublicKey(0);
+      const collateralMint = new PublicKey(0);
 
       const [marketAccount] = await PublicKey.findProgramAddress(
         [Buffer.from("market_account"), Buffer.from(name)],
@@ -46,8 +46,8 @@ const useCreateMarket = () => {
         PROGRAM_ID
       );
 
-      const usdcVault = await getAssociatedTokenAddress(
-        usdcMint,
+      const collateralVault = await getAssociatedTokenAddress(
+        collateralMint,
         marketAccount,
         true
       );
@@ -64,8 +64,8 @@ const useCreateMarket = () => {
           marketAuthority: authority,
           resolutionAuthority: authority,
           descriptionAuthority: authority,
-          usdcVault,
-          usdcMint,
+          collateralVault,
+          collateralMint,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
