@@ -1,6 +1,6 @@
 import TransactButton from "@/components/TransactButton";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { Transaction } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import React, { useEffect, useState } from "react";
 import useCreateMarket from "./hooks/useCreateMarket";
 
@@ -8,17 +8,6 @@ const descriptionMaxLength = parseInt(
   process.env.NEXT_PUBLIC_MARKET_DESCRIPTION_CHARLIMIT as string
 );
 const nameMaxLength = 100;
-
-const useTransactionCallback = () => {
-  const [status, setStatus] = useState("none");
-  const { wallet } = useWallet();
-  const { connection } = useConnection();
-
-  const callback = (txn: Transaction) => {
-    //const sig = wallet.
-  };
-  return callback;
-};
 
 const New = ({}) => {
   const { publicKey } = useWallet();
@@ -29,9 +18,20 @@ const New = ({}) => {
     new Date(Date.now()).toISOString()
   );
 
-  const callback = useCreateMarket();
-
-  const submit = async () => {};
+  const getCreateMarketTxn = useCreateMarket();
+  const getTxn = async () => {
+    const authority =
+      resolutionAuthority !== ""
+        ? new PublicKey(resolutionAuthority)
+        : publicKey!;
+    console.log("aaa", authority);
+    const txn = await getCreateMarketTxn({
+      name,
+      description: desc,
+      authority,
+    });
+    return txn;
+  };
 
   return (
     <form className="space-y-8 divide-y divide-gray-200">
@@ -154,7 +154,7 @@ const New = ({}) => {
           >
             Cancel
           </button>
-          <TransactButton verb="Create Market" status="confirming" />
+          <TransactButton verb="Create Market" getTxn={getTxn} />
         </div>
       </div>
     </form>

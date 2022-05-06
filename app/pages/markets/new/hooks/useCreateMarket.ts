@@ -2,7 +2,12 @@ import { useCallback } from "react";
 import { createMarket } from "@/generated/client/instructions";
 import { PROGRAM_ID } from "@/generated/client/programId";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import {
+  PublicKey,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+  Transaction,
+} from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   AuthorityType,
@@ -68,9 +73,12 @@ const useCreateMarket = () => {
         }
       );
 
-      // upload description to arweave if it is > char limit
+      // TODO upload description to arweave
       // instructions: create orderbooks
       // instruction: create market
+
+      const txn = new Transaction().add(x);
+      return txn;
     },
     []
   );

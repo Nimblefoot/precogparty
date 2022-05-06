@@ -34,7 +34,6 @@ const WalletConnectionProvider: FC = ({ children }) => {
       new PhantomWalletAdapter(),
       new SlopeWalletAdapter(),
       new SolflareWalletAdapter(),
-      new TorusWalletAdapter(),
       new LedgerWalletAdapter(),
       new SolletWalletAdapter({ network }),
       new SolletExtensionWalletAdapter({ network }),
