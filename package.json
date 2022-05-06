@@ -14,6 +14,6 @@
     },
     "scripts": {
         "generate": "anchor-client-gen --program-id Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS target/idl/precog.json app/generated/client",
-        "build": "anchor build && yarn run generate"
+        "build": "anchor build && yarn run generate && cp ./target/types/precog.ts ./app/generated/idl/precog.ts"
     }
 }

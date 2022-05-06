@@ -1,10 +1,11 @@
 import { PredictionMarket } from "@/generated/client/accounts";
 import { useConnection } from "@solana/wallet-adapter-react";
+import useWalletlessProgram from "./new/hooks/useWalletlessProgram";
 
 const useMarkets = () => {
-  const { connection } = useConnection();
+  const program = useWalletlessProgram();
 
-  const fuckos = PredictionMarket;
+  const fetchData = () => program.account.predictionMarket.all();
 };
 
 export default function Browse() {
@@ -15,7 +16,7 @@ export default function Browse() {
       role="list"
       className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
     >
-      {people.map((person) => (
+      {[].map((person: any) => (
         <li
           key={person.email}
           className="col-span-1 bg-white rounded-lg shadow divide-y divide-gray-200"
