@@ -14,6 +14,7 @@ import {
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { COLLATERAL_MINT } from "config";
 
 const useCreateMarket = () => {
   const { wallet, publicKey } = useWallet();
@@ -29,7 +30,7 @@ const useCreateMarket = () => {
       description: string;
       authority: PublicKey;
     }) => {
-      const collateralMint = new PublicKey(0);
+      const collateralMint = COLLATERAL_MINT;
 
       const [marketAccount] = await PublicKey.findProgramAddress(
         [Buffer.from("market_account"), Buffer.from(name)],
