@@ -175,6 +175,7 @@ const New = ({}) => {
               verb="Create Market"
               onClick={onClick}
               status={status}
+              className="ml-3"
             />
           </div>
         </div>
