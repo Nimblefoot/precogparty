@@ -161,23 +161,8 @@ pub mod syrup {
         };
         token::transfer(cpi_ctx, transfer_amount)?;
 
-        // Delete from the orderbook
-        // overwrite the cancelled order with the last order on the book
-        if let Some(last_order) = last_page.pop() {
-            order_page.set(index, last_order);
-        } else {
-            // TODO: throw some error cause last page should not be empty
-        }
+        delete_order(index, order, last_page, order_page, offerer_user_account, orderbook_length);
 
-        *orderbook_length -= 1;
-
-        /** Delete from user account */
-        if let Some(deletion_index) = offerer_user_account.find_order(order) {
-            offerer_user_account.delete(deletion_index);
-        }
-        else {
-        // ToDo: add error if we can't find the order.
-        }
         Ok(())
     }
 
