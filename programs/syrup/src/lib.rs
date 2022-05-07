@@ -20,6 +20,23 @@ Todos:
 -- Execute MAtching Orders
 */
 
+pub fn delete_order(index: u32, order: Order, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) {
+    if let Some(last_order) = last_page.pop() {
+        order_page.set(index, last_order);
+    } else {
+        // TODO: throw some error cause last page should not be empty
+    }
+
+    *orderbook_length -= 1;
+
+    /** Delete from user account */
+    if let Some(deletion_index) = user_account.find_order(order) {
+        user_account.delete(deletion_index);
+    }
+    else {
+    // ToDo: add error if we can't find the order.
+    }
+}
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
@@ -95,8 +112,6 @@ pub mod syrup {
         if ctx.accounts.offerer_user_account.user != order_data.user {
             return err!(ErrorCode::IncorrectUser);
         };
-        msg!(&order_data.size.to_string()[..]);
-        msg!(&order_data.price.to_string()[..]);
 
         let order_page = &mut ctx.accounts.order_page;
         let last_page = &mut ctx.accounts.last_page;
@@ -207,23 +222,7 @@ pub mod syrup {
         };
         token::transfer(cpi_ctx, amount)?;
 
-        // Delete from the orderbook
-        // overwrite the cancelled order with the last order on the book
-        if let Some(last_order) = last_page.pop() {
-            order_page.set(index, last_order);
-        } else {
-            // TODO: throw some error cause last page should not be empty
-        }
-
-        *orderbook_length -= 1;
-
-        /** Delete from user account */
-        if let Some(deletion_index) = user_account.find_order(order) {
-            user_account.delete(deletion_index);
-        }
-        else {
-        // ToDo: add error if we can't find the order.
-        }
+        delete_order(index, order, last_page, order_page, user_account, orderbook_length);
 
         Ok(())
     }
