@@ -267,8 +267,8 @@ describe("orderbook", async () => {
     );
     assert.equal(
       vaultBalance.value.amount,
-      "55000000",
-      "Vault Balance should match sum of orders." // sum 1 to 10 = 55
+      "110000000",
+      "Vault Balance should match sum of orders." // sum 1 to 10 = 55. 55x 2 = 110.
     );
 
     const [infoKey] = await PublicKey.findProgramAddress(
@@ -340,8 +340,8 @@ describe("orderbook", async () => {
       await program.provider.connection.getTokenAccountBalance(currencyVault);
     assert.equal(
       vaultBalance.value.amount,
-      "54000000",
-      "Vault Balance should be reduced to 54000000." // sum 2 to 10 = 54
+      "108000000",
+      "Vault Balance should be reduced to 108000000." // sum 2 to 10 = 54. 54*2 = 108
     );
 
     const info2 = await program.account.orderbookInfo.fetchNullable(infoKey);
@@ -407,8 +407,25 @@ describe("orderbook", async () => {
       await program.provider.connection.getTokenAccountBalance(currencyVault);
     assert.equal(
       vaultBalance.value.amount,
-      "45000000",
-      "Vault Balance should be reduced to 54000000." // sum 2 to 10 = 54
+      "90000000",
+      "Vault Balance should be reduced to 90000000." // (sum 2 to 10) - 9 = 45. 45 x 2 = 90
+    );
+    const userTokenBalance =
+      await program.provider.connection.getTokenAccountBalance(user_token_ata);
+    assert.equal(
+      userTokenBalance.value.amount,
+      "9000000",
+      "User should have bought 9 tokens at a price of 2 usdc" //
+    );
+
+    const adminCurrencyBalance =
+      await program.provider.connection.getTokenAccountBalance(
+        admin_currency_ata
+      );
+    assert.equal(
+      adminCurrencyBalance.value.amount,
+      "18000000",
+      "Admin sold 9 tokens for 2usdc each."
     );
   });
 });

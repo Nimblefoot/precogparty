@@ -59,7 +59,12 @@ pub mod syrup {
             authority: ctx.accounts.user.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, accounts);
-        token::transfer(cpi_ctx, order.size)?;
+
+        if order.buy {
+            token::transfer(cpi_ctx, order.size * order.price)?;
+        } else {
+            token::transfer(cpi_ctx, order.size)?;
+        }
 
         // create and append order record
         let name_bytes = ctx.accounts.orderbook_info.name.as_bytes();
@@ -118,7 +123,12 @@ pub mod syrup {
             authority: orderbook_account_info,
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
-        token::transfer(cpi_ctx, order_data.size)?;
+        let vault_outgoing_amount = if order_data.buy { 
+            order_data.size * order_data.price 
+        } else { 
+            order_data.size
+        };
+        token::transfer(cpi_ctx, vault_outgoing_amount)?;
 
         //Transfer from the taker to the offerer
         let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -129,8 +139,12 @@ pub mod syrup {
         };
         let cpi_ctx = CpiContext::new(cpi_program, accounts);
 
-        let amount = order.size * order.price;
-        token::transfer(cpi_ctx, amount)?; 
+        let transfer_amount = if order_data.buy { 
+            order_data.size 
+        } else { 
+            order_data.size * order_data.price 
+        };
+        token::transfer(cpi_ctx, transfer_amount)?;
 
         // Delete from the orderbook
         // overwrite the cancelled order with the last order on the book
@@ -185,7 +199,13 @@ pub mod syrup {
             authority: orderbook_account_info,
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
-        token::transfer(cpi_ctx, order.size)?;
+
+        let amount = if order_data.buy { 
+            order_data.size * order_data.price 
+        } else { 
+            order_data.size
+        };
+        token::transfer(cpi_ctx, amount)?;
 
         // Delete from the orderbook
         // overwrite the cancelled order with the last order on the book
