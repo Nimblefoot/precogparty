@@ -84,10 +84,14 @@ pub mod syrup {
     }
 
     pub fn take_order(ctx: Context<TakeOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
+        msg!("taking an order!");
+
         let order_data: Order = ctx.accounts.order_page.get(index);
         if ctx.accounts.offerer_user_account.user != order_data.user {
             return err!(ErrorCode::IncorrectUser);
         };
+        msg!(&order_data.size.to_string()[..]);
+        msg!(&order_data.price.to_string()[..]);
 
         let order_page = &mut ctx.accounts.order_page;
         let last_page = &mut ctx.accounts.last_page;
@@ -114,7 +118,7 @@ pub mod syrup {
             authority: orderbook_account_info,
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
-        token::transfer(cpi_ctx, order.size)?;
+        token::transfer(cpi_ctx, order_data.size)?;
 
         //Transfer from the taker to the offerer
         let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -149,6 +153,7 @@ pub mod syrup {
     }
 
     pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
+        msg!("cancelling an order!");
 
         let order_data: Order = ctx.accounts.order_page.get(index);
         if ctx.accounts.user.key() != order_data.user {
@@ -278,16 +283,10 @@ pub struct PlaceOrder<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: String, order: Order, page_number: u32, index: u32)]
+#[instruction(order: Order, page_number: u32, index: u32)]
 pub struct TakeOrder<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
-    #[account(
-        mut, 
-        seeds=["user-account".as_ref(), taker.key().as_ref()], 
-        bump
-    )]
-    pub taker_user_account: Box<Account<'info, UserAccount>>,
     #[account(mut)]
     pub taker_sending_ata: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
@@ -300,13 +299,13 @@ pub struct TakeOrder<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
-        seeds=[name.as_ref(), "orderbook-info".as_ref()], 
+        seeds=[orderbook_info.name.as_ref(), "orderbook-info".as_ref()], 
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,

@@ -388,18 +388,27 @@ describe("orderbook", async () => {
     const lastOrder = mockData[8];
 
     await program.methods
-      .takeOrder(lastOrder, 3, 3)
+      .takeOrder(lastOrder, 2, 2)
       .accounts({
         taker: admin.publicKey,
-        takerUserAccount: adminAccountAddress,
         takerSendingAta: admin_token_ata,
         takerReceivingAta: admin_currency_ata,
+        offererUserAccount: userAccountAddress,
         offererReceivingAta: user_token_ata,
         vault: currencyVault,
         orderbookInfo,
         orderPage: lastPageKey,
         lastPage: lastPageKey,
       })
-      .signers([admin]);
+      .signers([admin])
+      .rpc();
+
+    const vaultBalance =
+      await program.provider.connection.getTokenAccountBalance(currencyVault);
+    assert.equal(
+      vaultBalance.value.amount,
+      "45000000",
+      "Vault Balance should be reduced to 54000000." // sum 2 to 10 = 54
+    );
   });
 });
