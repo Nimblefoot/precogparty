@@ -1,4 +1,7 @@
-import { StatelessTransactButton } from "@/components/TransactButton"
+import {
+  StatelessTransactButton,
+  useTransact,
+} from "@/components/TransactButton"
 import {
   PredictionMarket,
   PredictionMarketJSON,
@@ -8,23 +11,20 @@ import { ClockIcon } from "@heroicons/react/outline"
 import { useConnection } from "@solana/wallet-adapter-react"
 import { PublicKey } from "@solana/web3.js"
 import { useRouter } from "next/router"
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
+import useResolveMarketTxn from "./hooks/useResolveMarketTxn"
 import User from "./User"
 
-const useMarketData = (name: string | undefined) => {
+const useMarketData = (address: PublicKey) => {
   const { connection } = useConnection()
   const [data, setData] = useState<PredictionMarketJSON | undefined>()
 
   const getMarketData = useCallback(async () => {
     if (name === undefined) return undefined
 
-    const [marketAccount] = await PublicKey.findProgramAddress(
-      [Buffer.from("market_account"), Buffer.from(name)],
-      PROGRAM_ID
-    )
-    const market = await PredictionMarket.fetch(connection, marketAccount)
+    const market = await PredictionMarket.fetch(connection, address)
     return market ? market.toJSON() : undefined
-  }, [connection, name])
+  }, [address, connection])
 
   useEffect(() => {
     ;(async () => {
@@ -35,12 +35,29 @@ const useMarketData = (name: string | undefined) => {
   return data
 }
 
-const Market = ({}) => {
+const MarketRouter = () => {
+  const router = useRouter()
+  const marketNameQ = router.query.m
+  const name = typeof marketNameQ === "string" ? marketNameQ : undefined
+
+  const market = useMemo(
+    () =>
+      name &&
+      PublicKey.findProgramAddressSync(
+        [Buffer.from("market_account"), Buffer.from(name)],
+        PROGRAM_ID
+      )[0],
+    [name]
+  )
+
+  return market ? <Market address={market} /> : <></>
+}
+
+const Market = ({ address }: { address: PublicKey }) => {
   const router = useRouter()
   const marketName = router.query.m
-  const market = useMarketData(
-    typeof marketName === "string" ? marketName : undefined
-  )
+
+  const market = useMarketData(address)
 
   return market ? (
     <>
@@ -73,7 +90,7 @@ const Market = ({}) => {
         </div>
         {/* 2nd column */}
         <div className="grow max-w-xs">
-          <Resolve />
+          <Resolve market={address} />
         </div>
       </div>
     </>
@@ -82,11 +99,20 @@ const Market = ({}) => {
   )
 }
 
-export default Market
+export default MarketRouter
 
 type Resolution = "yes" | "no"
-function Resolve() {
+function Resolve({ market }: { market: PublicKey }) {
   const [resolution, setResolution] = useState<Resolution | undefined>()
+
+  const { callback, status } = useTransact()
+  const getResolveMarketTxn = useResolveMarketTxn()
+  const onSubmit = useCallback(async () => {
+    if (!resolution) return
+    const txn = await getResolveMarketTxn({ resolution, market })
+    console.log(txn)
+    await callback(txn)
+  }, [callback, getResolveMarketTxn, market, resolution])
 
   return (
     <div className="shadow bg-white rounded-lg">
@@ -131,9 +157,10 @@ function Resolve() {
       </div>
       <div className="px-4 py-5 border-b border-gray-200 sm:px-6 w-full">
         <StatelessTransactButton
-          status="initial"
+          disabled={resolution === undefined}
+          status={status}
           verb="Resolve"
-          onClick={async () => {}}
+          onClick={onSubmit}
           className="w-full"
         />
       </div>
