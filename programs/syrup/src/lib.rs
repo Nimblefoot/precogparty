@@ -11,7 +11,15 @@ use anchor_spl::{
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
 
-// TodoDont pass in name, last page empty issues, actually compute space reuqirements, try_push should have an error.
+/* 
+Todos:
+-- Actually compute space
+-- Better checks/constraints [requires parsing the market names from byte arrays, maybe refactor some checks into a function?]
+-- Error codes (for example on try push)
+-- Take Order
+-- Execute MAtching Orders
+*/
+
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
@@ -75,7 +83,68 @@ pub mod syrup {
         Ok(())
     }
 
-    pub fn take_order(ctx: Context<TakeOrder>) -> Result<()> {
+    pub fn take_order(ctx: Context<TakeOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
+        let order_data: Order = ctx.accounts.order_page.get(index);
+        if ctx.accounts.offerer_user_account.user != order_data.user {
+            return err!(ErrorCode::IncorrectUser);
+        };
+
+        let order_page = &mut ctx.accounts.order_page;
+        let last_page = &mut ctx.accounts.last_page;
+        let offerer_user_account = &mut ctx.accounts.offerer_user_account;
+
+        // need to split up variables to avoid borrower check errors
+        let orderbook_name = ctx.accounts.orderbook_info.name.clone();
+        let orderbook_bump = ctx.accounts.orderbook_info.bump;
+        let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
+        let orderbook_length = &mut ctx.accounts.orderbook_info.length;
+
+        // Transfer from the vault to the taker
+        let seeds = &[
+            orderbook_name.as_bytes(),
+            "orderbook-info".as_bytes(),
+            &[orderbook_bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let accounts = Transfer {
+            from: ctx.accounts.vault.to_account_info(),
+            to: ctx.accounts.taker_receiving_ata.to_account_info(),
+            authority: orderbook_account_info,
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
+        token::transfer(cpi_ctx, order.size)?;
+
+        //Transfer from the taker to the offerer
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let accounts = Transfer {
+            from: ctx.accounts.taker_sending_ata.to_account_info(),
+            to: ctx.accounts.offerer_receiving_ata.to_account_info(),
+            authority: ctx.accounts.taker.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(cpi_program, accounts);
+
+        let amount = order.size * order.price;
+        token::transfer(cpi_ctx, amount)?; 
+
+        // Delete from the orderbook
+        // overwrite the cancelled order with the last order on the book
+        if let Some(last_order) = last_page.pop() {
+            order_page.set(index, last_order);
+        } else {
+            // TODO: throw some error cause last page should not be empty
+        }
+
+        *orderbook_length -= 1;
+
+        /** Delete from user account */
+        if let Some(deletion_index) = offerer_user_account.find_order(order) {
+            offerer_user_account.delete(deletion_index);
+        }
+        else {
+        // ToDo: add error if we can't find the order.
+        }
         Ok(())
     }
 
@@ -220,17 +289,13 @@ pub struct TakeOrder<'info> {
     )]
     pub taker_user_account: Box<Account<'info, UserAccount>>,
     #[account(mut)]
-    pub taker_ata: Box<Account<'info, TokenAccount>>,
+    pub taker_sending_ata: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub offerer: Signer<'info>,
-    #[account(
-        mut, 
-        seeds=["user-account".as_ref(), offerer.key().as_ref()], 
-        bump
-    )]
+    pub taker_receiving_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
     pub offerer_user_account: Box<Account<'info, UserAccount>>,
     #[account(mut)]
-    pub offerer_ata: Box<Account<'info, TokenAccount>>,
+    pub offerer_receiving_ata: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
@@ -245,6 +310,12 @@ pub struct TakeOrder<'info> {
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
+    #[account(
+        mut, 
+        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
+        bump
+    )]
+    pub last_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
