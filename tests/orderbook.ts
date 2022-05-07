@@ -37,6 +37,7 @@ describe("orderbook", async () => {
   const user = Keypair.generate();
 
   // All PDAs set in `before` block
+  let adminAccountAddress: PublicKey;
   let userAccountAddress: PublicKey;
   let orderbookInfo: PublicKey;
   let firstPage: PublicKey;
@@ -45,6 +46,9 @@ describe("orderbook", async () => {
   let currencyMint: PublicKey;
   let tokenMint: PublicKey;
   let user_currency_ata: PublicKey;
+  let user_token_ata: PublicKey;
+  let admin_currency_ata: PublicKey;
+  let admin_token_ata: PublicKey;
 
   before(async () => {
     /** SETUP */
@@ -71,13 +75,6 @@ describe("orderbook", async () => {
       6
     );
 
-    user_currency_ata = await createAssociatedTokenAccount(
-      program.provider.connection, // connection
-      user, // fee payer
-      currencyMint, // mint
-      user.publicKey // owner,
-    );
-
     tokenMint = await createMint(
       program.provider.connection,
       admin,
@@ -86,7 +83,40 @@ describe("orderbook", async () => {
       6
     );
 
+    user_currency_ata = await createAssociatedTokenAccount(
+      program.provider.connection, // connection
+      user, // fee payer
+      currencyMint, // mint
+      user.publicKey // owner,
+    );
+
+    user_token_ata = await createAssociatedTokenAccount(
+      program.provider.connection, // connection
+      user, // fee payer
+      tokenMint, // mint
+      user.publicKey // owner,
+    );
+
+    admin_currency_ata = await createAssociatedTokenAccount(
+      program.provider.connection, // connection
+      user, // fee payer
+      currencyMint, // mint
+      admin.publicKey // owner,
+    );
+
+    admin_token_ata = await createAssociatedTokenAccount(
+      program.provider.connection, // connection
+      admin, // fee payer
+      tokenMint, // mint
+      admin.publicKey // owner,
+    );
+
     /** PDAs */
+    [adminAccountAddress] = await PublicKey.findProgramAddress(
+      [utf8.encode("user-account"), admin.publicKey.toBuffer()],
+      program.programId
+    );
+
     [userAccountAddress] = await PublicKey.findProgramAddress(
       [utf8.encode("user-account"), user.publicKey.toBuffer()],
       program.programId
@@ -123,7 +153,7 @@ describe("orderbook", async () => {
     user: user.publicKey,
     size: new anchor.BN((1e8 / 100) * (i + 1)),
     buy: true,
-    price: new anchor.BN(1),
+    price: new anchor.BN(2),
   }));
 
   it("creates a user account", async () => {
@@ -182,11 +212,21 @@ describe("orderbook", async () => {
   });
 
   it("places 10 orders", async () => {
-    let txhash = await mintToChecked(
+    await mintToChecked(
       program.provider.connection, // connection
       user, // fee payer
       currencyMint, // mint
       user_currency_ata, // receiver (sholud be a token account)
+      admin, // mint authority
+      2e8, // amount. if your decimals is 8, you mint 10^8 for 1 token.
+      6 // decimals
+    );
+
+    let txhash2 = await mintToChecked(
+      program.provider.connection, // connection
+      admin, // fee payer
+      tokenMint, // mint
+      admin_token_ata, // receiver (sholud be a token account)
       admin, // mint authority
       2e8, // amount. if your decimals is 8, you mint 10^8 for 1 token.
       6 // decimals
@@ -263,7 +303,7 @@ describe("orderbook", async () => {
       "7000000",
       "correct size for order"
     );
-    assert.equal(seventhOrder.price, 1, "correct price for order");
+    assert.equal(seventhOrder.price, 2, "correct price for order");
   });
 
   it("cancels an order", async () => {
@@ -328,5 +368,38 @@ describe("orderbook", async () => {
     );
     // @ts-ignore
     assert.equal(userAccount.orders.length, 9, "user should have nine orders");
+  });
+
+  it("takes an order", async () => {
+    const [infoKey] = await PublicKey.findProgramAddress(
+      [utf8.encode("test"), utf8.encode("orderbook-info")],
+      program.programId
+    );
+    const info = await program.account.orderbookInfo.fetchNullable(infoKey);
+    const lastPageIndex = Math.floor((info.length - 1) / maxLength);
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode("test"),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    );
+    const lastOrder = mockData[8];
+
+    await program.methods
+      .takeOrder(lastOrder, 3, 3)
+      .accounts({
+        taker: admin.publicKey,
+        takerUserAccount: adminAccountAddress,
+        takerSendingAta: admin_token_ata,
+        takerReceivingAta: admin_currency_ata,
+        offererReceivingAta: user_token_ata,
+        vault: currencyVault,
+        orderbookInfo,
+        orderPage: lastPageKey,
+        lastPage: lastPageKey,
+      })
+      .signers([admin]);
   });
 });
