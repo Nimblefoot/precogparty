@@ -387,15 +387,6 @@ describe("orderbook", async () => {
       program.programId
     );
 
-    const [orderPageKey] = await PublicKey.findProgramAddress(
-      [
-        utf8.encode("test"),
-        utf8.encode("page"),
-        new anchor.BN(2).toArrayLike(Buffer, "le", 4),
-      ],
-      program.programId
-    );
-
     await program.methods
       .takeOrder(new anchor.BN(9e6), 2, 2)
       .accounts({
@@ -406,7 +397,7 @@ describe("orderbook", async () => {
         offererReceivingAta: user_token_ata,
         vault: currencyVault,
         orderbookInfo,
-        orderPage: orderPageKey,
+        orderPage: lastPageKey,
         lastPage: lastPageKey,
       })
       .signers([admin])

@@ -293,7 +293,7 @@ pub struct PlaceOrder<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(page_number: u32, index: u32)]
+#[instruction(price: u64, page_number: u32, index: u32)]
 pub struct TakeOrder<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
@@ -315,7 +315,7 @@ pub struct TakeOrder<'info> {
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
