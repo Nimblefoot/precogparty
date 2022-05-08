@@ -22,13 +22,10 @@ const MarketRouter = () => {
     [name]
   )
 
-  return market ? <Market address={market} /> : <></>
+  return market && name ? <Market address={market} name={name} /> : <></>
 }
 
-const Market = ({ address }: { address: PublicKey }) => {
-  const router = useRouter()
-  const marketName = router.query.m
-
+const Market = ({ address, name }: { address: PublicKey; name: string }) => {
   const market = useMarketData(address)
 
   return market ? (
@@ -39,9 +36,7 @@ const Market = ({ address }: { address: PublicKey }) => {
           <div className="py-4 shadow bg-white rounded-lg h-96">
             <div className="">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  {marketName}
-                </h1>
+                <h1 className="text-2xl font-semibold text-gray-900">{name}</h1>
                 <div className="flex content-center flex-row gap-4 mt-2">
                   <div>
                     <User publicKey={new PublicKey(market.marketAuthority)} />
