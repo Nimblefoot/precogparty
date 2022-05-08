@@ -20,22 +20,23 @@ Todos:
 -- Execute MAtching Orders
 */
 
-pub fn delete_order(index: u32, order: Order, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) {
+pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) {
+    let order_data = order_page.get(index).clone();
+
     if let Some(last_order) = last_page.pop() {
         order_page.set(index, last_order);
     } else {
         // TODO: throw some error cause last page should not be empty
-    }
+    };
 
     *orderbook_length -= 1;
 
     /** Delete from user account */
-    if let Some(deletion_index) = user_account.find_order(order) {
+    if let Some(deletion_index) = user_account.find_order(order_data) {
         user_account.delete(deletion_index);
-    }
-    else {
+    } else {
     // ToDo: add error if we can't find the order.
-    }
+    };
 }
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
@@ -105,12 +106,15 @@ pub mod syrup {
         Ok(())
     }
 
-    pub fn take_order(ctx: Context<TakeOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
+    pub fn take_order(ctx: Context<TakeOrder>, size: u64, page_number: u32, index: u32) -> Result<()> {
         msg!("taking an order!");
 
         let order_data: Order = ctx.accounts.order_page.get(index);
         if ctx.accounts.offerer_user_account.user != order_data.user {
             return err!(ErrorCode::IncorrectUser);
+        };
+        if size > order_data.size {
+            return err!(ErrorCode::SizeTooLarge);
         };
 
         let order_page = &mut ctx.accounts.order_page;
@@ -139,9 +143,9 @@ pub mod syrup {
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
         let vault_outgoing_amount = if order_data.buy { 
-            order_data.size * order_data.price 
+            size * order_data.price 
         } else { 
-            order_data.size
+            size
         };
         token::transfer(cpi_ctx, vault_outgoing_amount)?;
 
@@ -155,13 +159,15 @@ pub mod syrup {
         let cpi_ctx = CpiContext::new(cpi_program, accounts);
 
         let transfer_amount = if order_data.buy { 
-            order_data.size 
+            size 
         } else { 
-            order_data.size * order_data.price 
+            size * order_data.price 
         };
         token::transfer(cpi_ctx, transfer_amount)?;
 
-        delete_order(index, order, last_page, order_page, offerer_user_account, orderbook_length);
+        if size == order_data.size {
+            delete_order(index, last_page, order_page, offerer_user_account, orderbook_length);
+        };
 
         Ok(())
     }
@@ -207,7 +213,7 @@ pub mod syrup {
         };
         token::transfer(cpi_ctx, amount)?;
 
-        delete_order(index, order, last_page, order_page, user_account, orderbook_length);
+        delete_order(index, last_page, order_page, user_account, orderbook_length);
 
         Ok(())
     }
@@ -287,7 +293,7 @@ pub struct PlaceOrder<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(order: Order, page_number: u32, index: u32)]
+#[instruction(page_number: u32, index: u32)]
 pub struct TakeOrder<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
@@ -309,7 +315,7 @@ pub struct TakeOrder<'info> {
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
@@ -366,4 +372,6 @@ pub struct ExecuteMatchingOrders {}
 pub enum ErrorCode {
     #[msg("User on the order must match the user invoking the cancel method")]
     IncorrectUser,
+    #[msg("Size too large")]
+    SizeTooLarge
 }

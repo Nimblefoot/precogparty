@@ -377,6 +377,7 @@ describe("orderbook", async () => {
     );
     const info = await program.account.orderbookInfo.fetchNullable(infoKey);
     const lastPageIndex = Math.floor((info.length - 1) / maxLength);
+
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
         utf8.encode("test"),
@@ -385,10 +386,18 @@ describe("orderbook", async () => {
       ],
       program.programId
     );
-    const lastOrder = mockData[8];
+
+    const [orderPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode("test"),
+        utf8.encode("page"),
+        new anchor.BN(2).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    );
 
     await program.methods
-      .takeOrder(lastOrder, 2, 2)
+      .takeOrder(new anchor.BN(9e6), 2, 2)
       .accounts({
         taker: admin.publicKey,
         takerSendingAta: admin_token_ata,
@@ -397,7 +406,7 @@ describe("orderbook", async () => {
         offererReceivingAta: user_token_ata,
         vault: currencyVault,
         orderbookInfo,
-        orderPage: lastPageKey,
+        orderPage: orderPageKey,
         lastPage: lastPageKey,
       })
       .signers([admin])
