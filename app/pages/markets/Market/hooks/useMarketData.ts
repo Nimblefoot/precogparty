@@ -6,6 +6,7 @@ import { useConnection } from "@solana/wallet-adapter-react"
 import { PublicKey } from "@solana/web3.js"
 import { useCallback, useEffect, useState } from "react"
 
+// TODO lets use react-query, its sick
 export const useMarketData = (address: PublicKey) => {
   const { connection } = useConnection()
   const [data, setData] = useState<PredictionMarketJSON | undefined>()
