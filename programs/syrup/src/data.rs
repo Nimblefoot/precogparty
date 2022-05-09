@@ -1,5 +1,6 @@
 // use std::mem::size_of;
 
+use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 
 const MAX_SIZE: usize = 3; // max size is fixed.
@@ -50,9 +51,6 @@ impl Default for OrderbookPage {
     }
 }
 
-pub struct ListFull;
-pub struct ListEmpty;
-
 impl OrderbookPage {
     pub fn max_size() -> usize {
         MAX_SIZE
@@ -70,12 +68,14 @@ impl OrderbookPage {
         self.list.len() == 0
     }
 
-    pub fn try_push(&mut self, value: Order) {
-        // if self.is_full() {
-        //     return Err(ListFull);
-        // }
+    pub fn push(&mut self, value: Order) -> std::result::Result<(), anchor_lang::error::Error> {
+        if self.is_full() {
+            return err!(ErrorCode::PageFull);
+        }
 
         self.list.push(value);
+
+        Ok(())
     }
 
     pub fn set(&mut self, index: u32, data: Order) {

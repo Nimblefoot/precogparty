@@ -15,4 +15,7 @@ pub enum ErrorCode {
 
     #[msg("User already placed the maximum number of orders!")]
     MaxOrdersPlaced,
+
+    #[msg("Order page is full")]
+    PageFull,
 }

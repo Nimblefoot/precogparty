@@ -119,7 +119,7 @@ pub mod syrup {
         };
 
         // add to the lists of offers
-        ctx.accounts.current_page.try_push(order);
+        ctx.accounts.current_page.push(order)?;
 
         ctx.accounts.orderbook_info.length += 1;
 
