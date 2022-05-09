@@ -11,9 +11,8 @@ pub mod error;
 use error::ErrorCode;
 
 use anchor_spl::{
-    associated_token::{self, AssociatedToken},
-    mint,
-    token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount}
 };
 
 /* 
@@ -47,7 +46,7 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     Ok(())
 }
 
-pub fn modify_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
+pub fn edit_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
     let mut order_data = order_page.get(index).clone();
 
     // Modify the order in the user's orders
@@ -93,8 +92,6 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
-        // ToDo - Add check for if the user has space in their order vector. 
-
         let token_amount = if order.buy {
             order.size * order.price
         } else {
@@ -131,6 +128,7 @@ pub mod syrup {
         Ok(())
     }
 
+    #[allow(unused_variables)] 
     pub fn take_order(ctx: Context<TakeOrder>, size: u64, page_number: u32, index: u32) -> Result<()> {
 
         let order_data: Order = ctx.accounts.order_page.get(index);
@@ -192,12 +190,13 @@ pub mod syrup {
         if size == order_data.size {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
         } else {
-            modify_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
+            edit_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
         }
 
         Ok(())
     }
 
+    #[allow(unused_variables)]
     pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
 
         let order_data: Order = ctx.accounts.order_page.get(index);
@@ -239,6 +238,18 @@ pub mod syrup {
         )?;
 
         delete_order(index, last_page, order_page, user_account, orderbook_length)?;
+
+        Ok(())
+    }
+
+    #[allow(unused_variables)]
+    pub fn modify_order(ctx: Context<ModifyOrder>, new_order: Order, page_number: u32, index: u32) -> Result<()> {
+        let existing_order: Order = ctx.accounts.order_page.get(index);
+        if *ctx.accounts.user.key != existing_order.user {
+            return err!(ErrorCode::IncorrectUser);
+        } else if new_order.buy != existing_order.buy {
+            return err!(ErrorCode::CantConvertOrder);
+        };
 
         Ok(())
     }
@@ -391,18 +402,33 @@ pub struct CancelOrder<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub struct ExecuteMatchingOrders {}
+#[derive(Accounts)]
+#[instruction(new_order: Order, page_number: u32, index: u32)]
+pub struct ModifyOrder<'info> {
+    pub user: Signer<'info>,
+    #[account(
+        mut,
+        seeds = ["user-account".as_ref(), user.key().as_ref()],
+        bump
+    )]
+    pub user_account: Box<Account<'info, UserAccount>>,
+    #[account(mut)]
+    pub user_ata: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut, 
+        seeds=[orderbook_info.name.as_ref(), "orderbook-info".as_ref()], 
+        bump
+    )]
+    pub orderbook_info: Account<'info, OrderbookInfo>,
+    #[account(
+        mut, 
+        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        bump
+    )]
+    pub order_page: Account<'info, OrderbookPage>,
+    pub token_program: Program<'info, Token>,
+}
 
-// #[error_code]
-// pub enum ErrorCode {
-//     #[msg("User on the order must match the user invoking the cancel method")]
-//     IncorrectUser,
-//     #[msg("Size too large")]
-//     SizeTooLarge,
-//     #[msg("User does not have a matching order")]
-//     UserMissingOrder,
-//     #[msg("Orderbook does not have a matching order")]
-//     OrderbookMissingOrder,
-//     #[msg("Last Page of orders should not be empty")]
-//     LastPageEmpty,
-// }
+pub struct ExecuteMatchingOrders {}

@@ -12,6 +12,8 @@ pub enum ErrorCode {
     OrderbookMissingOrder,
     #[msg("Last Page of orders should not be empty")]
     LastPageEmpty,
+    #[msg("Can't convert a buy into a sell or vice versa")]
+    CantConvertOrder,
 
     #[msg("User already placed the maximum number of orders!")]
     MaxOrdersPlaced,
