@@ -3,7 +3,11 @@
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 
-const MAX_SIZE: usize = 3; // max size is fixed.
+#[cfg(feature = "orderbook-page-small-size")]
+const MAX_SIZE: usize = 3;
+
+#[cfg(not(feature = "orderbook-page-small-size"))]
+const MAX_SIZE: usize = 200;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {

@@ -18,10 +18,13 @@ use anchor_spl::{
 
 /* 
 Todos:
--- Actually compute space
+-- check the error codes work as intended (as much as possible?) -- not critical
 -- Better checks/constraints [requires parsing the market names from byte arrays, maybe refactor some checks into a function?]
--- Execute MAtching Orders
+-- Actually compute space
+-- Execute Matching Orders
+-- modify order
 */
+
 
 pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
     let order_data = order_page.get(index).clone();

@@ -26,7 +26,7 @@ import {
   mintToChecked,
 } from "@solana/spl-token";
 
-const maxLength = 3;
+const maxLength = 3; // extremely small to make sure stuff works properly
 
 describe("orderbook", async () => {
   // Configure the client to use the local cluster.
@@ -184,7 +184,7 @@ describe("orderbook", async () => {
 
   it("initializes an orderbook", async () => {
     await program.methods
-      .initializeOrderbook("test")
+      .initializeOrderbook(orderbookName)
       .accounts({
         admin: program.provider.wallet.publicKey,
         currencyMint,

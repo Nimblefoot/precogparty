@@ -13,7 +13,8 @@ no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
 cpi = ["no-entrypoint"]
-default = []
+default = ["orderbook-page-small-size"]
+orderbook-page-small-size = []
 
 [dependencies]
 anchor-lang = {version = "0.24.2", features = ["init-if-needed"]}
