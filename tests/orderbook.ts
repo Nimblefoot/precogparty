@@ -35,6 +35,7 @@ describe("orderbook", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>;
   const admin = Keypair.generate();
   const user = Keypair.generate();
+  let orderbookName = "test";
 
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey;
@@ -123,13 +124,13 @@ describe("orderbook", async () => {
     );
 
     [orderbookInfo] = await PublicKey.findProgramAddress(
-      [utf8.encode("test"), utf8.encode("orderbook-info")],
+      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
       program.programId
     );
 
     [firstPage] = await PublicKey.findProgramAddress(
       [
-        utf8.encode("test"),
+        utf8.encode(orderbookName),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],

@@ -7,6 +7,9 @@ use user_account::OrderRecord;
 pub mod instructions;
 use instructions::transfer_tokens;
 
+pub mod error;
+use error::ErrorCode;
+
 use anchor_spl::{
     associated_token::{self, AssociatedToken},
     mint,
@@ -387,16 +390,16 @@ pub struct CancelOrder<'info> {
 
 pub struct ExecuteMatchingOrders {}
 
-#[error_code]
-pub enum ErrorCode {
-    #[msg("User on the order must match the user invoking the cancel method")]
-    IncorrectUser,
-    #[msg("Size too large")]
-    SizeTooLarge,
-    #[msg("User does not have a matching order")]
-    UserMissingOrder,
-    #[msg("Orderbook does not have a matching order")]
-    OrderbookMissingOrder,
-    #[msg("Last Page of orders should not be empty")]
-    LastPageEmpty,
-}
+// #[error_code]
+// pub enum ErrorCode {
+//     #[msg("User on the order must match the user invoking the cancel method")]
+//     IncorrectUser,
+//     #[msg("Size too large")]
+//     SizeTooLarge,
+//     #[msg("User does not have a matching order")]
+//     UserMissingOrder,
+//     #[msg("Orderbook does not have a matching order")]
+//     OrderbookMissingOrder,
+//     #[msg("Last Page of orders should not be empty")]
+//     LastPageEmpty,
+// }
