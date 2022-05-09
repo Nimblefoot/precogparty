@@ -12,4 +12,7 @@ pub enum ErrorCode {
     OrderbookMissingOrder,
     #[msg("Last Page of orders should not be empty")]
     LastPageEmpty,
+
+    #[msg("User already placed the maximum number of orders!")]
+    MaxOrdersPlaced,
 }

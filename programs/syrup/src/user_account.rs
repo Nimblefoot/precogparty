@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::data::Order;
+use crate::error::ErrorCode;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct OrderRecord {
@@ -40,5 +41,18 @@ impl UserAccount {
     pub fn set(&mut self, index: usize, price: u64, size: u64) {
         self.orders[index].size = size;
         self.orders[index].price = price;
+    }
+
+    pub fn push(
+        &mut self,
+        order: OrderRecord,
+    ) -> std::result::Result<(), anchor_lang::error::Error> {
+        if self.orders.len() == Self::max_size() {
+            return err!(ErrorCode::MaxOrdersPlaced);
+        } else {
+            self.orders.push(order)
+        }
+
+        Ok(())
     }
 }

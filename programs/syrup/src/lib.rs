@@ -123,7 +123,7 @@ pub mod syrup {
 
         ctx.accounts.orderbook_info.length += 1;
 
-        ctx.accounts.user_account.orders.push(order_record);
+        ctx.accounts.user_account.push(order_record)?;
 
         Ok(())
     }
