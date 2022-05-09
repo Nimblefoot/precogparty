@@ -3,4 +3,4 @@ export {
   PredictionMarketFields,
   PredictionMarketJSON,
 } from "./PredictionMarket"
-export { Orderbook, OrderbookFields, OrderbookJSON } from "./Orderbook"
+export { MarketList, MarketListFields, MarketListJSON } from "./MarketList"

@@ -21,30 +21,22 @@ pub mod precog {
     pub fn create_market<'info>(
         ctx: Context<CreateMarket>,
         market_name: String,
-        market_description_uri: String,
+        market_description: String,
     ) -> Result<()> {
         // initialize market_account
 
-        let name_bytes = market_name.as_bytes();
-        let mut name_data = [b' '; 16];
-        name_data[..name_bytes.len()].copy_from_slice(name_bytes);
-
-        let desc_bytes = market_description_uri.as_bytes();
-        let mut desc_data = [b' '; 32];
-        desc_data[..desc_bytes.len()].copy_from_slice(desc_bytes);
+        // TODO enforce max length
 
         **ctx.accounts.market_account = PredictionMarket {
-            name: name_data,
+            name: market_name,
             bump: *ctx.bumps.get("market_account").unwrap(),
-            description_uri: desc_data,
+            description: market_description,
             yes_mint: ctx.accounts.yes_mint.key(),
-            yes_market: ctx.accounts.yes_market.key(),
             no_mint: ctx.accounts.no_mint.key(),
-            no_market: ctx.accounts.no_market.key(),
             market_authority: ctx.accounts.market_authority.key(),
             resolution_authority: ctx.accounts.resolution_authority.key(),
             description_authority: ctx.accounts.description_authority.key(),
-            usdc_vault: ctx.accounts.usdc_vault.key(),
+            collateral_vault: ctx.accounts.collateral_vault.key(),
             resolution: 0,
         };
 
@@ -55,18 +47,18 @@ pub mod precog {
         ctx: Context<MintMergeContingentSet>,
         amount: u64,
     ) -> Result<()> {
-        let market_name = ctx.accounts.market_account.name.as_ref();
+        let market_name = &ctx.accounts.market_account.name;
         let seeds = &[
             "market_account".as_bytes(),
-            market_name.trim_ascii_whitespace(),
+            market_name.as_bytes(),
             &[ctx.accounts.market_account.bump],
         ];
         let signer = &[&seeds[..]];
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
-            from: ctx.accounts.user_usdc.to_account_info(),
-            to: ctx.accounts.usdc_vault.to_account_info(),
+            from: ctx.accounts.user_collateral.to_account_info(),
+            to: ctx.accounts.collateral_vault.to_account_info(),
             authority: ctx.accounts.user.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, accounts);
@@ -98,18 +90,18 @@ pub mod precog {
         ctx: Context<MintMergeContingentSet>,
         amount: u64,
     ) -> Result<()> {
-        let market_name = ctx.accounts.market_account.name.as_ref();
+        let market_name = &ctx.accounts.market_account.name;
         let seeds = &[
             "market_account".as_bytes(),
-            market_name.trim_ascii_whitespace(),
+            market_name.as_bytes(),
             &[ctx.accounts.market_account.bump],
         ];
         let signer = &[&seeds[..]];
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
-            from: ctx.accounts.usdc_vault.to_account_info(),
-            to: ctx.accounts.user_usdc.to_account_info(),
+            from: ctx.accounts.collateral_vault.to_account_info(),
+            to: ctx.accounts.user_collateral.to_account_info(),
             authority: ctx.accounts.market_account.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
@@ -160,18 +152,18 @@ pub mod precog {
             return err!(ErrorCode::ContingencyNotMet);
         }
 
-        let market_name = ctx.accounts.market_account.name.as_ref();
+        let market_name = &ctx.accounts.market_account.name;
         let seeds = &[
             "market_account".as_bytes(),
-            market_name.trim_ascii_whitespace(),
+            market_name.as_bytes(),
             &[ctx.accounts.market_account.bump],
         ];
         let signer = &[&seeds[..]];
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
-            from: ctx.accounts.usdc_vault.to_account_info(),
-            to: ctx.accounts.user_usdc.to_account_info(),
+            from: ctx.accounts.collateral_vault.to_account_info(),
+            to: ctx.accounts.user_collateral.to_account_info(),
             authority: ctx.accounts.market_account.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
@@ -199,44 +191,53 @@ pub mod precog {
 
     pub fn update_market_description(
         ctx: Context<UpdateMarketDescription>,
-        market_description_uri: String,
+        market_description: String,
     ) -> Result<()> {
-        let desc_bytes = market_description_uri.as_bytes();
-        let mut desc_data = [b' '; 32];
-        desc_data[..desc_bytes.len()].copy_from_slice(desc_bytes);
+        ctx.accounts.market_account.description = market_description;
 
-        ctx.accounts.market_account.description_uri = desc_data;
+        Ok(())
+    }
 
+    pub fn init_market_list(_ctx: Context<InitMarketList>) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn list_market(ctx: Context<ListMarket>) -> Result<()> {
+        ctx.accounts.list.markets.push(ctx.accounts.market.key());
         Ok(())
     }
 }
 #[account]
 #[derive(Default)]
 pub struct PredictionMarket {
-    name: [u8; 16],                // 16
-    description_uri: [u8; 32],     // 32
+    name: String,                  // 100
+    description: String,           // 512
     bump: u8,                      // 1
     yes_mint: Pubkey,              // 32
     no_mint: Pubkey,               // 32
-    yes_market: Pubkey,            // 32
-    no_market: Pubkey,             // 32
-    usdc_vault: Pubkey,            // 32
+    collateral_vault: Pubkey,      // 32
     market_authority: Pubkey,      // 32
     resolution_authority: Pubkey,  // 32
     description_authority: Pubkey, // 32
     resolution: u8,                // 1 /* 1 -> yes, 2 -> no */
 }
 
-impl PredictionMarket {
-    pub const LEN: usize = 16 + 32 + 1 + (32 * 8) + 1;
+#[account]
+pub struct MarketList {
+    // TODO use a better data structure
+    markets: Vec<Pubkey>, // 32 * 100
 }
 
-#[account]
-#[derive(Default)]
-pub struct Orderbook {}
+impl MarketList {
+    pub const LEN: usize = 4 + 32 * 100;
+}
+
+impl PredictionMarket {
+    pub const LEN: usize = 4 + 100 + 4 + 512 + 1 + (32 * 6) + 1;
+}
 
 #[derive(Accounts)]
-#[instruction(market_name: String, market_description_uri: String)]
+#[instruction(market_name: String, market_description: String)]
 pub struct CreateMarket<'info> {
     #[account(mut)]
     pub market_authority: Signer<'info>,
@@ -273,23 +274,46 @@ pub struct CreateMarket<'info> {
     #[account(
         init,
         payer = market_authority,
-        associated_token::mint = usdc_mint,
+        associated_token::mint = collateral_mint,
         associated_token::authority = market_account,
     )]
-    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+    pub collateral_vault: Box<Account<'info, TokenAccount>>,
 
     #[account(
-        // address = mint::USDC
+        // address = mint::COLLATERAL
     )]
-    pub usdc_mint: Account<'info, Mint>,
-
-    pub yes_market: SystemAccount<'info>, //Account<'info, Orderbook>,
-    pub no_market: SystemAccount<'info>,  // Account<'info, Orderbook>,
-
+    pub collateral_mint: Account<'info, Mint>,
     pub resolution_authority: SystemAccount<'info>,
     pub description_authority: SystemAccount<'info>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+#[derive(Accounts)]
+pub struct ListMarket<'info> {
+    #[account(
+        mut,
+        seeds = ["list".as_bytes()],
+        bump
+    )]
+    pub list: Account<'info, MarketList>,
+    pub market: Box<Account<'info, PredictionMarket>>,
+}
+
+#[derive(Accounts)]
+pub struct InitMarketList<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        init,
+        payer = payer,
+        seeds = ["list".as_bytes()],
+        bump,
+        space = 8 + MarketList::LEN
+    )]
+    pub list: Account<'info, MarketList>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -302,7 +326,7 @@ pub struct MintMergeContingentSet<'info> {
     #[account(
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
     )]
@@ -319,9 +343,9 @@ pub struct MintMergeContingentSet<'info> {
     pub no_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
-        address = market_account.usdc_vault
+        address = market_account.collateral_vault
     )]
-    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+    pub collateral_vault: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
@@ -337,9 +361,9 @@ pub struct MintMergeContingentSet<'info> {
     #[account(
         mut,
         associated_token::authority = user,
-        associated_token::mint = usdc_vault.mint,
+        associated_token::mint = collateral_vault.mint,
     )]
-    pub user_usdc: Account<'info, TokenAccount>,
+    pub user_collateral: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
 }
@@ -353,7 +377,7 @@ pub struct RedeemContingentCoin<'info> {
     #[account(
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
     )]
@@ -362,9 +386,9 @@ pub struct RedeemContingentCoin<'info> {
     pub contingent_coin_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
-        address = market_account.usdc_vault
+        address = market_account.collateral_vault
     )]
-    pub usdc_vault: Box<Account<'info, TokenAccount>>,
+    pub collateral_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::authority = user,
@@ -373,9 +397,9 @@ pub struct RedeemContingentCoin<'info> {
     #[account(
         mut,
         associated_token::authority = user,
-        associated_token::mint = usdc_vault.mint,
+        associated_token::mint = collateral_vault.mint,
     )]
-    pub user_usdc: Account<'info, TokenAccount>,
+    pub user_collateral: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
 }
@@ -388,7 +412,7 @@ pub struct ResolveMarket<'info> {
         mut,
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
         has_one = resolution_authority,
@@ -404,7 +428,7 @@ pub struct UpdateMarketAuthority<'info> {
         mut,
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
         has_one = market_authority,
@@ -418,14 +442,14 @@ pub struct UpdateResolutionAuthority {}
 pub struct UpdateDescriptionAuthority {}
 
 #[derive(Accounts)]
-#[instruction(market_description_uri: String)]
+#[instruction(market_description: String)]
 pub struct UpdateMarketDescription<'info> {
     pub description_authority: Signer<'info>,
     #[account(
         mut,
         seeds = [
             "market_account".as_bytes(), 
-            market_account.name.as_ref().trim_ascii_whitespace()
+            market_account.name.as_bytes(),
         ],
         bump,
         has_one = description_authority,
@@ -433,27 +457,10 @@ pub struct UpdateMarketDescription<'info> {
     pub market_account: Account<'info, PredictionMarket>,
 }
 
-/// Trait to allow trimming ascii whitespace from a &[u8].
-pub trait TrimAsciiWhitespace {
-    /// Trim ascii whitespace (based on `is_ascii_whitespace()`) from the
-    /// start and end of a slice.
-    fn trim_ascii_whitespace(&self) -> &[u8];
-}
-impl<T: Deref<Target = [u8]>> TrimAsciiWhitespace for T {
-    fn trim_ascii_whitespace(&self) -> &[u8] {
-        let from = match self.iter().position(|x| !x.is_ascii_whitespace()) {
-            Some(i) => i,
-            None => return &self[0..0],
-        };
-        let to = self.iter().rposition(|x| !x.is_ascii_whitespace()).unwrap();
-        &self[from..=to]
-    }
-}
-
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Insufficient USDC")]
-    LowUsdc,
+    #[msg("Insufficient COLLATERAL")]
+    LowCollateral,
     #[msg("Unrecognized resolution; 1 -> yes, 2 -> no")]
     InvalidResolution,
     #[msg("Contingent coin mint supplied is not equal to the market's yes_mint or no_mint")]

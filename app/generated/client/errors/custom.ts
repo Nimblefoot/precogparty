@@ -1,17 +1,17 @@
 export type CustomError =
-  | LowUsdc
+  | LowCollateral
   | InvalidResolution
   | ContingentMintNotRecognized
   | MarketNotResolved
   | ContingencyNotMet
 
-export class LowUsdc extends Error {
+export class LowCollateral extends Error {
   readonly code = 6000
-  readonly name = "LowUsdc"
-  readonly msg = "Insufficient USDC"
+  readonly name = "LowCollateral"
+  readonly msg = "Insufficient COLLATERAL"
 
   constructor() {
-    super("6000: Insufficient USDC")
+    super("6000: Insufficient COLLATERAL")
   }
 }
 
@@ -61,7 +61,7 @@ export class ContingencyNotMet extends Error {
 export function fromCode(code: number): CustomError | null {
   switch (code) {
     case 6000:
-      return new LowUsdc()
+      return new LowCollateral()
     case 6001:
       return new InvalidResolution()
     case 6002:

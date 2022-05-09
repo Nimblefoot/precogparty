@@ -5,7 +5,7 @@ import { PROGRAM_ID } from "../programId"
 
 export interface CreateMarketArgs {
   marketName: string
-  marketDescriptionUri: string
+  marketDescription: string
 }
 
 export interface CreateMarketAccounts {
@@ -13,10 +13,8 @@ export interface CreateMarketAccounts {
   marketAccount: PublicKey
   yesMint: PublicKey
   noMint: PublicKey
-  usdcVault: PublicKey
-  usdcMint: PublicKey
-  yesMarket: PublicKey
-  noMarket: PublicKey
+  collateralVault: PublicKey
+  collateralMint: PublicKey
   resolutionAuthority: PublicKey
   descriptionAuthority: PublicKey
   tokenProgram: PublicKey
@@ -27,7 +25,7 @@ export interface CreateMarketAccounts {
 
 export const layout = borsh.struct([
   borsh.str("marketName"),
-  borsh.str("marketDescriptionUri"),
+  borsh.str("marketDescription"),
 ])
 
 export function createMarket(
@@ -39,10 +37,8 @@ export function createMarket(
     { pubkey: accounts.marketAccount, isSigner: false, isWritable: true },
     { pubkey: accounts.yesMint, isSigner: false, isWritable: true },
     { pubkey: accounts.noMint, isSigner: false, isWritable: true },
-    { pubkey: accounts.usdcVault, isSigner: false, isWritable: true },
-    { pubkey: accounts.usdcMint, isSigner: false, isWritable: false },
-    { pubkey: accounts.yesMarket, isSigner: false, isWritable: false },
-    { pubkey: accounts.noMarket, isSigner: false, isWritable: false },
+    { pubkey: accounts.collateralVault, isSigner: false, isWritable: true },
+    { pubkey: accounts.collateralMint, isSigner: false, isWritable: false },
     {
       pubkey: accounts.resolutionAuthority,
       isSigner: false,
@@ -67,7 +63,7 @@ export function createMarket(
   const len = layout.encode(
     {
       marketName: args.marketName,
-      marketDescriptionUri: args.marketDescriptionUri,
+      marketDescription: args.marketDescription,
     },
     buffer
   )

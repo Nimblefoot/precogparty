@@ -4,14 +4,12 @@ import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript
 import { PROGRAM_ID } from "../programId"
 
 export interface PredictionMarketFields {
-  name: Array<number>
-  descriptionUri: Array<number>
+  name: string
+  description: string
   bump: number
   yesMint: PublicKey
   noMint: PublicKey
-  yesMarket: PublicKey
-  noMarket: PublicKey
-  usdcVault: PublicKey
+  collateralVault: PublicKey
   marketAuthority: PublicKey
   resolutionAuthority: PublicKey
   descriptionAuthority: PublicKey
@@ -19,14 +17,12 @@ export interface PredictionMarketFields {
 }
 
 export interface PredictionMarketJSON {
-  name: Array<number>
-  descriptionUri: Array<number>
+  name: string
+  description: string
   bump: number
   yesMint: string
   noMint: string
-  yesMarket: string
-  noMarket: string
-  usdcVault: string
+  collateralVault: string
   marketAuthority: string
   resolutionAuthority: string
   descriptionAuthority: string
@@ -34,14 +30,12 @@ export interface PredictionMarketJSON {
 }
 
 export class PredictionMarket {
-  readonly name: Array<number>
-  readonly descriptionUri: Array<number>
+  readonly name: string
+  readonly description: string
   readonly bump: number
   readonly yesMint: PublicKey
   readonly noMint: PublicKey
-  readonly yesMarket: PublicKey
-  readonly noMarket: PublicKey
-  readonly usdcVault: PublicKey
+  readonly collateralVault: PublicKey
   readonly marketAuthority: PublicKey
   readonly resolutionAuthority: PublicKey
   readonly descriptionAuthority: PublicKey
@@ -52,14 +46,12 @@ export class PredictionMarket {
   ])
 
   static readonly layout = borsh.struct([
-    borsh.array(borsh.u8(), 16, "name"),
-    borsh.array(borsh.u8(), 32, "descriptionUri"),
+    borsh.str("name"),
+    borsh.str("description"),
     borsh.u8("bump"),
     borsh.publicKey("yesMint"),
     borsh.publicKey("noMint"),
-    borsh.publicKey("yesMarket"),
-    borsh.publicKey("noMarket"),
-    borsh.publicKey("usdcVault"),
+    borsh.publicKey("collateralVault"),
     borsh.publicKey("marketAuthority"),
     borsh.publicKey("resolutionAuthority"),
     borsh.publicKey("descriptionAuthority"),
@@ -68,13 +60,11 @@ export class PredictionMarket {
 
   constructor(fields: PredictionMarketFields) {
     this.name = fields.name
-    this.descriptionUri = fields.descriptionUri
+    this.description = fields.description
     this.bump = fields.bump
     this.yesMint = fields.yesMint
     this.noMint = fields.noMint
-    this.yesMarket = fields.yesMarket
-    this.noMarket = fields.noMarket
-    this.usdcVault = fields.usdcVault
+    this.collateralVault = fields.collateralVault
     this.marketAuthority = fields.marketAuthority
     this.resolutionAuthority = fields.resolutionAuthority
     this.descriptionAuthority = fields.descriptionAuthority
@@ -124,13 +114,11 @@ export class PredictionMarket {
 
     return new PredictionMarket({
       name: dec.name,
-      descriptionUri: dec.descriptionUri,
+      description: dec.description,
       bump: dec.bump,
       yesMint: dec.yesMint,
       noMint: dec.noMint,
-      yesMarket: dec.yesMarket,
-      noMarket: dec.noMarket,
-      usdcVault: dec.usdcVault,
+      collateralVault: dec.collateralVault,
       marketAuthority: dec.marketAuthority,
       resolutionAuthority: dec.resolutionAuthority,
       descriptionAuthority: dec.descriptionAuthority,
@@ -141,13 +129,11 @@ export class PredictionMarket {
   toJSON(): PredictionMarketJSON {
     return {
       name: this.name,
-      descriptionUri: this.descriptionUri,
+      description: this.description,
       bump: this.bump,
       yesMint: this.yesMint.toString(),
       noMint: this.noMint.toString(),
-      yesMarket: this.yesMarket.toString(),
-      noMarket: this.noMarket.toString(),
-      usdcVault: this.usdcVault.toString(),
+      collateralVault: this.collateralVault.toString(),
       marketAuthority: this.marketAuthority.toString(),
       resolutionAuthority: this.resolutionAuthority.toString(),
       descriptionAuthority: this.descriptionAuthority.toString(),
@@ -158,13 +144,11 @@ export class PredictionMarket {
   static fromJSON(obj: PredictionMarketJSON): PredictionMarket {
     return new PredictionMarket({
       name: obj.name,
-      descriptionUri: obj.descriptionUri,
+      description: obj.description,
       bump: obj.bump,
       yesMint: new PublicKey(obj.yesMint),
       noMint: new PublicKey(obj.noMint),
-      yesMarket: new PublicKey(obj.yesMarket),
-      noMarket: new PublicKey(obj.noMarket),
-      usdcVault: new PublicKey(obj.usdcVault),
+      collateralVault: new PublicKey(obj.collateralVault),
       marketAuthority: new PublicKey(obj.marketAuthority),
       resolutionAuthority: new PublicKey(obj.resolutionAuthority),
       descriptionAuthority: new PublicKey(obj.descriptionAuthority),
