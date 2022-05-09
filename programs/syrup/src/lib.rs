@@ -18,17 +18,16 @@ Todos:
 -- Actually compute space
 -- Better checks/constraints [requires parsing the market names from byte arrays, maybe refactor some checks into a function?]
 -- Error codes (for example on try push)
--- Take Order
 -- Execute MAtching Orders
 */
 
-pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) {
+pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
     let order_data = order_page.get(index).clone();
 
     if let Some(last_order) = last_page.pop() {
         order_page.set(index, last_order);
     } else {
-        // TODO: throw some error cause last page should not be empty
+        return err!(ErrorCode::LastPageEmpty);
     };
 
     *orderbook_length -= 1;
@@ -37,8 +36,10 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     if let Some(deletion_index) = user_account.find_order(order_data) {
         user_account.delete(deletion_index);
     } else {
-    // ToDo: add error if we can't find the order.
+        return err!(ErrorCode::UserMissingOrder);
     };
+
+    Ok(())
 }
 
 pub fn modify_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) {
@@ -184,7 +185,7 @@ pub mod syrup {
         )?;
 
         if size == order_data.size {
-            delete_order(index, last_page, order_page, offerer_user_account, orderbook_length);
+            delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
         } else {
             modify_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account);
         }
@@ -397,5 +398,7 @@ pub enum ErrorCode {
     #[msg("User does not have a matching order")]
     UserMissingOrder,
     #[msg("Orderbook does not have a matching order")]
-    OrderbookMissingOrder
+    OrderbookMissingOrder,
+    #[msg("Last Page of orders should not be empty")]
+    LastPageEmpty
 }
