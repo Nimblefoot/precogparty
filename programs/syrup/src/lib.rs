@@ -17,7 +17,6 @@ use anchor_spl::{
 Todos:
 -- Actually compute space
 -- Better checks/constraints [requires parsing the market names from byte arrays, maybe refactor some checks into a function?]
--- Error codes (for example on try push)
 -- Execute MAtching Orders
 */
 
@@ -32,7 +31,7 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
 
     *orderbook_length -= 1;
 
-    /** Delete from user account */
+    // Delete from user account
     if let Some(deletion_index) = user_account.find_order(order_data) {
         user_account.delete(deletion_index);
     } else {
@@ -42,20 +41,21 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     Ok(())
 }
 
-pub fn modify_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) {
+pub fn modify_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
     let mut order_data = order_page.get(index).clone();
 
-    /** Modify the order in the user's orders */
+    // Modify the order in the user's orders
     if let Some(user_orders_index) = user_account.find_order(order_data) {
         user_account.set(user_orders_index, new_price, new_size);
     } else {
-    // ToDo: add error if we can't find the order.
+        return err!(ErrorCode::UserMissingOrder);
     };
 
     order_data.price = new_price;
     order_data.size = new_size;
     order_page.set(index, order_data);
 
+    Ok(())
 }
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
@@ -126,7 +126,6 @@ pub mod syrup {
     }
 
     pub fn take_order(ctx: Context<TakeOrder>, size: u64, page_number: u32, index: u32) -> Result<()> {
-        msg!("taking an order!");
 
         let order_data: Order = ctx.accounts.order_page.get(index);
         if ctx.accounts.offerer_user_account.user != order_data.user {
@@ -187,14 +186,13 @@ pub mod syrup {
         if size == order_data.size {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
         } else {
-            modify_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account);
+            modify_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
         }
 
         Ok(())
     }
 
     pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
-        msg!("cancelling an order!");
 
         let order_data: Order = ctx.accounts.order_page.get(index);
         if ctx.accounts.user.key() != order_data.user {
@@ -234,7 +232,7 @@ pub mod syrup {
             Some(signer_seeds)
         )?;
 
-        delete_order(index, last_page, order_page, user_account, orderbook_length);
+        delete_order(index, last_page, order_page, user_account, orderbook_length)?;
 
         Ok(())
     }
@@ -400,5 +398,5 @@ pub enum ErrorCode {
     #[msg("Orderbook does not have a matching order")]
     OrderbookMissingOrder,
     #[msg("Last Page of orders should not be empty")]
-    LastPageEmpty
+    LastPageEmpty,
 }
