@@ -15,13 +15,13 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount}
 };
 
+use std::cmp::Ordering;
+
 /* 
 Todos:
 -- check the error codes work as intended (as much as possible?) -- not critical
 -- Better checks/constraints [requires parsing the market names from byte arrays, maybe refactor some checks into a function?]
 -- Actually compute space
--- Execute Matching Orders
--- modify order
 */
 
 
@@ -244,18 +244,70 @@ pub mod syrup {
 
     #[allow(unused_variables)]
     pub fn modify_order(ctx: Context<ModifyOrder>, new_order: Order, page_number: u32, index: u32) -> Result<()> {
-        let existing_order: Order = ctx.accounts.order_page.get(index);
+        let orderbook_name = ctx.accounts.orderbook_info.name.clone();
+        let orderbook_bump = ctx.accounts.orderbook_info.bump;
+        let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
+
+        let order_page = &mut ctx.accounts.order_page;
+        let user_account = &mut ctx.accounts.user_account;
+
+        // user either adds more funds or withdraws funds
+        let existing_order: Order = order_page.get(index);
         if *ctx.accounts.user.key != existing_order.user {
             return err!(ErrorCode::IncorrectUser);
         } else if new_order.buy != existing_order.buy {
             return err!(ErrorCode::CantConvertOrder);
         };
 
+        let existing_locked_funds = if existing_order.buy { 
+            existing_order.size * existing_order.price 
+        } else { 
+            existing_order.size
+        };
+
+        let new_locked_funds = if new_order.buy { 
+            new_order.size * new_order.price 
+        } else { 
+            new_order.size
+        }; 
+
+        match new_locked_funds.cmp(&existing_locked_funds) {
+            Ordering::Greater => {
+                transfer_tokens(
+                    new_locked_funds - existing_locked_funds,
+                    ctx.accounts.user_ata.to_account_info(),
+                    ctx.accounts.vault.to_account_info(),
+                    ctx.accounts.user.to_account_info(),
+                    ctx.accounts.token_program.to_account_info(),
+                    None
+                )?;
+            },
+            Ordering::Less => {
+                let seeds = &[
+                    orderbook_name.as_bytes(),
+                    "orderbook-info".as_bytes(),
+                    &[orderbook_bump],
+                ];
+                let signer_seeds = &[&seeds[..]];
+        
+                transfer_tokens(
+                    existing_locked_funds - new_locked_funds,
+                    ctx.accounts.vault.to_account_info(),
+                    ctx.accounts.user_ata.to_account_info(),
+                    orderbook_account_info,
+                    ctx.accounts.token_program.to_account_info(),
+                    Some(signer_seeds)
+                )?;
+            },
+            Ordering::Equal => {}
+        };
+
+        // actually edit the order
+        edit_order(index, new_order.price, new_order.size, order_page, user_account)?;
+
         Ok(())
     }
 }
-
-// const TOKEN_DECIMALS: u8 = 6;
 
 #[derive(Accounts)]
 pub struct CreateUserAccount<'info> {
@@ -430,5 +482,3 @@ pub struct ModifyOrder<'info> {
     pub order_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
 }
-
-pub struct ExecuteMatchingOrders {}
