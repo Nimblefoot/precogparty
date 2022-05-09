@@ -4,6 +4,8 @@ pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
 use user_account::OrderRecord;
+pub mod instructions;
+use instructions::transfer_tokens;
 
 use anchor_spl::{
     associated_token::{self, AssociatedToken},
@@ -86,19 +88,19 @@ pub mod syrup {
     pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
         // ToDo - Add check for if the user has space in their order vector. 
 
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let accounts = Transfer {
-            from: ctx.accounts.user_ata.to_account_info(),
-            to: ctx.accounts.vault.to_account_info(),
-            authority: ctx.accounts.user.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new(cpi_program, accounts);
-
-        if order.buy {
-            token::transfer(cpi_ctx, order.size * order.price)?;
+        let token_amount = if order.buy {
+            order.size * order.price
         } else {
-            token::transfer(cpi_ctx, order.size)?;
-        }
+            order.size
+        };
+        transfer_tokens(
+            token_amount, 
+            ctx.accounts.user_ata.to_account_info(),
+            ctx.accounts.vault.to_account_info(),
+            ctx.accounts.user.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            None
+        )?;
 
         // create and append order record
         let name_bytes = ctx.accounts.orderbook_info.name.as_bytes();
@@ -149,37 +151,37 @@ pub mod syrup {
             "orderbook-info".as_bytes(),
             &[orderbook_bump],
         ];
-        let signer = &[&seeds[..]];
+        let signer_seeds = &[&seeds[..]];
 
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let accounts = Transfer {
-            from: ctx.accounts.vault.to_account_info(),
-            to: ctx.accounts.taker_receiving_ata.to_account_info(),
-            authority: orderbook_account_info,
-        };
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
         let vault_outgoing_amount = if order_data.buy { 
             size * order_data.price 
         } else { 
             size
         };
-        token::transfer(cpi_ctx, vault_outgoing_amount)?;
+
+        transfer_tokens(
+            vault_outgoing_amount,
+            ctx.accounts.vault.to_account_info(),
+            ctx.accounts.taker_receiving_ata.to_account_info(),
+            orderbook_account_info,
+            ctx.accounts.token_program.to_account_info(),
+            Some(signer_seeds)
+        )?;
 
         //Transfer from the taker to the offerer
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let accounts = Transfer {
-            from: ctx.accounts.taker_sending_ata.to_account_info(),
-            to: ctx.accounts.offerer_receiving_ata.to_account_info(),
-            authority: ctx.accounts.taker.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new(cpi_program, accounts);
-
         let transfer_amount = if order_data.buy { 
             size 
         } else { 
             size * order_data.price 
         };
-        token::transfer(cpi_ctx, transfer_amount)?;
+        transfer_tokens(
+            transfer_amount,
+            ctx.accounts.taker_sending_ata.to_account_info(),
+            ctx.accounts.offerer_receiving_ata.to_account_info(),
+            ctx.accounts.taker.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            None
+        )?;
 
         if size == order_data.size {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length);
@@ -214,22 +216,22 @@ pub mod syrup {
             "orderbook-info".as_bytes(),
             &[orderbook_bump],
         ];
-        let signer = &[&seeds[..]];
-
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let accounts = Transfer {
-            from: ctx.accounts.vault.to_account_info(),
-            to: ctx.accounts.user_ata.to_account_info(),
-            authority: orderbook_account_info,
-        };
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, accounts, signer);
+        let signer_seeds = &[&seeds[..]];
 
         let amount = if order_data.buy { 
             order_data.size * order_data.price 
         } else { 
             order_data.size
         };
-        token::transfer(cpi_ctx, amount)?;
+
+        transfer_tokens(
+            amount,
+            ctx.accounts.vault.to_account_info(),
+            ctx.accounts.user_ata.to_account_info(),
+            orderbook_account_info,
+            ctx.accounts.token_program.to_account_info(),
+            Some(signer_seeds)
+        )?;
 
         delete_order(index, last_page, order_page, user_account, orderbook_length);
 
