@@ -36,4 +36,9 @@ impl UserAccount {
             record.buy == order.buy && record.size == order.size && record.price == order.price
         })
     }
+
+    pub fn set(&mut self, index: usize, price: u64, size: u64) {
+        self.orders[index].size = size;
+        self.orders[index].price = price;
+    }
 }

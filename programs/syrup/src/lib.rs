@@ -39,6 +39,22 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     };
 }
 
+pub fn modify_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) {
+    let mut order_data = order_page.get(index).clone();
+
+    /** Modify the order in the user's orders */
+    if let Some(user_orders_index) = user_account.find_order(order_data) {
+        user_account.set(user_orders_index, new_price, new_size);
+    } else {
+    // ToDo: add error if we can't find the order.
+    };
+
+    order_data.price = new_price;
+    order_data.size = new_size;
+    order_page.set(index, order_data);
+
+}
+
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
 #[program]
@@ -68,7 +84,7 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
-        // ToDo - Add check for if the user has space in their order vector. Maybe just have a length? Actually cleaner?
+        // ToDo - Add check for if the user has space in their order vector. 
 
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let accounts = Transfer {
@@ -167,7 +183,9 @@ pub mod syrup {
 
         if size == order_data.size {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length);
-        };
+        } else {
+            modify_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account);
+        }
 
         Ok(())
     }
@@ -373,5 +391,9 @@ pub enum ErrorCode {
     #[msg("User on the order must match the user invoking the cancel method")]
     IncorrectUser,
     #[msg("Size too large")]
-    SizeTooLarge
+    SizeTooLarge,
+    #[msg("User does not have a matching order")]
+    UserMissingOrder,
+    #[msg("Orderbook does not have a matching order")]
+    OrderbookMissingOrder
 }
