@@ -5,24 +5,18 @@ import {
 import { useConnection } from "@solana/wallet-adapter-react"
 import { PublicKey } from "@solana/web3.js"
 import { useCallback, useEffect, useState } from "react"
+import { useQuery } from "react-query"
 
 // TODO lets use react-query, its sick
 export const useMarketData = (address: PublicKey) => {
   const { connection } = useConnection()
-  const [data, setData] = useState<PredictionMarketJSON | undefined>()
 
-  const getMarketData = useCallback(async () => {
-    if (name === undefined) return undefined
+  const fetchData = useCallback(
+    () => PredictionMarket.fetch(connection, address),
+    [address, connection]
+  )
 
-    const market = await PredictionMarket.fetch(connection, address)
-    return market ? market.toJSON() : undefined
-  }, [address, connection])
+  const query = useQuery(`market-${address.toString()}`, fetchData)
 
-  useEffect(() => {
-    ;(async () => {
-      setData(await getMarketData())
-    })()
-  }, [getMarketData, data])
-
-  return data
+  return query
 }

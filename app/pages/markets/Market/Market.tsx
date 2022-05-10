@@ -29,7 +29,7 @@ const MarketRouter = () => {
 const Market = ({ address, name }: { address: PublicKey; name: string }) => {
   const market = useMarketData(address)
 
-  return market ? (
+  return market.data ? (
     <>
       <div className="flex px-4 sm:px-6 md:px-8 max-w-7xl mx-auto gap-5">
         {/* Main body */}
@@ -40,7 +40,9 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                 <h1 className="text-2xl font-semibold text-gray-900">{name}</h1>
                 <div className="flex content-center flex-row gap-4 mt-2">
                   <div>
-                    <User publicKey={new PublicKey(market.marketAuthority)} />
+                    <User
+                      publicKey={new PublicKey(market.data.marketAuthority)}
+                    />
                   </div>
                   <div className="text-sm flex justify-center flex-col">
                     <div className="flex">
@@ -51,7 +53,7 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                     </div>
                   </div>
                 </div>
-                <p className="mt-4">{market.description}</p>
+                <p className="mt-4">{market.data.description}</p>
               </div>
             </div>
           </div>

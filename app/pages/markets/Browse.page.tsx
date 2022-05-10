@@ -1,24 +1,7 @@
-import { PredictionMarket } from "@/generated/client/accounts"
 import { ClockIcon } from "@heroicons/react/outline"
-import { useConnection } from "@solana/wallet-adapter-react"
-import { PublicKey } from "@solana/web3.js"
 import Link from "next/link"
-import { useCallback } from "react"
-import { useQuery } from "react-query"
-import useWalletlessProgram from "./new/hooks/useWalletlessProgram"
+import { useMarketsQuery } from "./useMarketsQuery"
 import User from "./User"
-
-const useMarketsQuery = () => {
-  const program = useWalletlessProgram()
-  const fetchData = useCallback(
-    () => program.account.predictionMarket.all(),
-    [program]
-  )
-
-  const query = useQuery("markets", fetchData)
-
-  return query
-}
 
 export default function Browse() {
   const query = useMarketsQuery()
