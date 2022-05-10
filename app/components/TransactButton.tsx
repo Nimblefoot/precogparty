@@ -28,7 +28,6 @@ export const useTransact = () => {
     setStatus("sending")
     // this combines sending and signing steps for now
     console.log(txn)
-    console.log(JSON.stringify(txn))
     try {
       const sig = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: true,

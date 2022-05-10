@@ -1,5 +1,11 @@
+import {
+  StatelessTransactButton,
+  useTransact,
+} from "@/components/TransactButton"
 import { PublicKey } from "@solana/web3.js"
-import React, { useRef, useState } from "react"
+import { COLLATERAL_DECIMALS } from "config"
+import React, { useCallback, useRef, useState } from "react"
+import useMintContingentSet from "./hooks/useMintContingentSet"
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ")
@@ -11,10 +17,23 @@ type Mode = "split" | "merge"
 // TODO cool css transitions when switching modes
 // TODO display balances
 export function TokenControls({ address }: { address: PublicKey }) {
-  const [amount, setAmount] = useState<string | undefined>()
+  const [amount, setAmount] = useState<string>("")
   const [mode, setMode] = useState<Mode>("split")
 
   const inputRef = useRef(null)
+
+  const { callback, status } = useTransact()
+  const getMintTxn = useMintContingentSet(address)
+  const onSubmit = useCallback(async () => {
+    if (amount === "") return
+    if (mode === "split") {
+      const txn = await getMintTxn({
+        amount: parseFloat(amount) * 10 ** COLLATERAL_DECIMALS,
+      })
+      console.log(txn)
+      await callback(txn)
+    }
+  }, [amount, callback, getMintTxn, mode])
 
   return (
     <>
@@ -77,8 +96,8 @@ export function TokenControls({ address }: { address: PublicKey }) {
               </div>
             </div>
           </div>
-          {/* little splitter art :-) */}
 
+          {/* little splitter art :-) */}
           <div
             className="grid grid-cols-2 w-[50%] self-center"
             style={{
@@ -130,12 +149,12 @@ export function TokenControls({ address }: { address: PublicKey }) {
           </div>
         </div>
         <div className="px-4 py-5 border-b border-gray-200 sm:px-6 w-full">
-          {/* <StatelessTransactButton
+          <StatelessTransactButton
             status={status}
-            verb="Resolve"
+            verb="Mint"
             onClick={onSubmit}
             className="w-full"
-          /> */}
+          />
         </div>
       </div>
     </>
