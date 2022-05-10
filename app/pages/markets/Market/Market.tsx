@@ -56,8 +56,9 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
           </div>
         </div>
         {/* 2nd column */}
-        <div className="grow max-w-xs">
+        <div className="grow max-w-xs flex flex-col gap-4">
           <Resolve market={address} />
+          <TokenControls address={address} />
         </div>
       </div>
     </>
@@ -67,3 +68,28 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
 }
 
 export default MarketRouter
+
+function TokenControls({ address }: { address: PublicKey }) {
+  return (
+    <>
+      <div className="shadow bg-white rounded-lg">
+        <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">
+            Tokens
+          </h3>
+        </div>
+        <div className="px-4 py-5 sm:px-6 flex flex-col gap-2 border-b border-gray-200">
+          fart
+        </div>
+        <div className="px-4 py-5 border-b border-gray-200 sm:px-6 w-full">
+          {/* <StatelessTransactButton
+          status={status}
+          verb="Resolve"
+          onClick={onSubmit}
+          className="w-full"
+        /> */}
+        </div>
+      </div>
+    </>
+  )
+}
