@@ -5,6 +5,7 @@ import {
 import { PublicKey } from "@solana/web3.js"
 import { COLLATERAL_DECIMALS } from "config"
 import React, { useCallback, useRef, useState } from "react"
+import useMergeContingentSet from "./hooks/useMergeContingentSet"
 import useMintContingentSet from "./hooks/useMintContingentSet"
 
 function classNames(...classes: string[]) {
@@ -24,16 +25,18 @@ export function TokenControls({ address }: { address: PublicKey }) {
 
   const { callback, status } = useTransact()
   const getMintTxn = useMintContingentSet(address)
+  const getMergeTxn = useMergeContingentSet(address)
   const onSubmit = useCallback(async () => {
     if (amount === "") return
-    if (mode === "split") {
-      const txn = await getMintTxn({
-        amount: parseFloat(amount) * 10 ** COLLATERAL_DECIMALS,
-      })
-      console.log(txn)
-      await callback(txn)
-    }
-  }, [amount, callback, getMintTxn, mode])
+
+    const getTxn = mode === "split" ? getMintTxn : getMergeTxn
+
+    const txn = await getTxn({
+      amount: parseFloat(amount) * 10 ** COLLATERAL_DECIMALS,
+    })
+    console.log(txn)
+    await callback(txn)
+  }, [amount, callback, getMergeTxn, getMintTxn, mode])
 
   return (
     <>
@@ -151,9 +154,10 @@ export function TokenControls({ address }: { address: PublicKey }) {
         <div className="px-4 py-5 border-b border-gray-200 sm:px-6 w-full">
           <StatelessTransactButton
             status={status}
-            verb="Mint"
+            verb={capitalizeFirstLetter(mode)}
             onClick={onSubmit}
             className="w-full"
+            disabled={!amount}
           />
         </div>
       </div>
