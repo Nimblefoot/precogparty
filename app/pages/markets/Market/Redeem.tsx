@@ -2,8 +2,10 @@ import {
   StatelessTransactButton,
   useTransact,
 } from "@/components/TransactButton"
+import BN from "bn.js"
 import { PublicKey } from "@solana/web3.js"
 import { COLLATERAL_DECIMALS, RESOLUTION_MAPPING_INVERSE } from "config"
+import { useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useRef, useState } from "react"
 import { useMarket } from "./hooks/marketQueries"
 import useMergeContingentSet from "./hooks/useMergeContingentSet"
@@ -17,14 +19,22 @@ function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-const useTokenBalanceQuery = (mint: PublicKey) => {}
-
 // TODO display balances
 export function Redeem({ address }: { address: PublicKey }) {
-  const [amount, setAmount] = useState<string>("")
   const market = useMarket(address)
+  const yesAccount = useTokenAccount(market.data?.yesMint)
+  const noAccount = useTokenAccount(market.data?.noMint)
 
-  const inputRef = useRef(null)
+  const resolution =
+    market.data !== undefined
+      ? RESOLUTION_MAPPING_INVERSE[market.data?.resolution as 1 | 2]
+      : undefined
+  const redeemableAmount =
+    resolution &&
+    {
+      yes: yesAccount.data?.value.amount,
+      no: noAccount.data?.value.amount,
+    }[resolution]
 
   const { callback, status } = useTransact()
   const getTxn = useRedeemTxn(address)
@@ -32,24 +42,22 @@ export function Redeem({ address }: { address: PublicKey }) {
     // ideally this should just await the query but the UX impact is zero so whatever
     if (!market.data)
       throw new Error("submit redemption callback before loading market data")
-    if (market.data.resolution === 0) throw new Error("market is not resolved")
-    if (market.data.resolution !== 1 && market.data.resolution !== 2)
-      throw new Error("market resolution is not understood")
-    if (amount === "") return
 
-    const resolution = RESOLUTION_MAPPING_INVERSE[market.data.resolution]
+    if (!resolution) throw new Error("market is not resolved")
+    if (!redeemableAmount) throw new Error("redeemable amount not fetched")
+
     const contingentCoin = {
       yes: market.data.yesMint,
       no: market.data.noMint,
     }[resolution]
 
     const txn = await getTxn({
-      amount: parseFloat(amount) * 10 ** COLLATERAL_DECIMALS,
+      amount: redeemableAmount,
       contingentCoin,
     })
     console.log(txn)
     await callback(txn)
-  }, [amount, callback, getTxn, market.data])
+  }, [callback, getTxn, market.data, redeemableAmount, resolution])
 
   return (
     <>
@@ -66,7 +74,9 @@ export function Redeem({ address }: { address: PublicKey }) {
           flex-col
         `}
         >
-          cum
+          {new BN(redeemableAmount!)
+            .div(new BN(10 ** COLLATERAL_DECIMALS))
+            .toString()}
         </div>
         <div className="px-4 py-5 border-b border-gray-200 sm:px-6 w-full">
           <StatelessTransactButton
@@ -74,7 +84,9 @@ export function Redeem({ address }: { address: PublicKey }) {
             verb={"Redeem"}
             onClick={onSubmit}
             className="w-full"
-            disabled={!amount}
+            disabled={
+              redeemableAmount === undefined || redeemableAmount === "0"
+            }
           />
         </div>
       </div>

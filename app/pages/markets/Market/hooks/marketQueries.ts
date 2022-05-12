@@ -27,6 +27,7 @@ export const useMarket = (address: PublicKey) => {
   return query
 }
 
+// TODO make useMarket use data from useMarkets in the way you would want
 export const useMarkets = () => {
   const program = useWalletlessProgram()
   const fetchData = useCallback(

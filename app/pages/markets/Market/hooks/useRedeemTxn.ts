@@ -16,7 +16,7 @@ const useRedeemTxn = (marketAddress: PublicKey) => {
       amount,
       contingentCoin,
     }: {
-      amount: number
+      amount: string
       contingentCoin: PublicKey
     }) => {
       if (!publicKey) throw new Error("no publickey connected")
