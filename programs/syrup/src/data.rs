@@ -46,12 +46,14 @@ impl OrderbookInfo {
 
 #[account]
 pub struct OrderbookPage {
-    list: Vec<Order>,
+    pub list: Vec<Order>,
+    pub orderbook_name: String,
 }
 
 impl Default for OrderbookPage {
     fn default() -> Self {
         Self {
+            orderbook_name: "".to_string(),
             list: Vec::with_capacity(MAX_SIZE),
         }
     }
@@ -103,5 +105,13 @@ impl OrderbookPage {
         let result = self.list.pop().unwrap();
 
         Some(result)
+    }
+
+    pub fn set_orderbook_name(&mut self, name: String) {
+        self.orderbook_name = name;
+    }
+
+    pub fn is_orderbook_name_blank(&self) -> bool {
+        self.orderbook_name.len() == 0
     }
 }

@@ -34,9 +34,12 @@ impl UserAccount {
         self.orders.remove(index);
     }
 
-    pub fn find_order(&self, order: Order) -> Option<usize> {
+    pub fn find_order(&self, order: Order, orderbook_name: String) -> Option<usize> {
         self.orders.iter().position(|record| {
-            record.buy == order.buy && record.size == order.size && record.price == order.price
+            record.buy == order.buy
+                && record.size == order.size
+                && record.price == order.price
+                && record.market == orderbook_name.as_bytes()
         })
     }
 
