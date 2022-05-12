@@ -323,7 +323,7 @@ pub struct CreateUserAccount<'info> {
 pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    #[account(init, payer=admin, seeds=[name.as_ref(), "orderbook-info".as_ref()], space=1000, bump)]
+    #[account(init, payer=admin, seeds=[name.as_ref(), "orderbook-info".as_ref()], space=129, bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(init, payer=admin, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], space=500, bump)]
     pub first_page: Account<'info, OrderbookPage>,

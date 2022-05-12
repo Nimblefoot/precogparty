@@ -14,4 +14,4 @@ cluster = "localnet"
 wallet = "./dev-wallet.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/precog.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/orderbook.ts"

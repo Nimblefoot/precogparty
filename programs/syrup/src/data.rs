@@ -11,21 +11,21 @@ const MAX_SIZE: usize = 200;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
-    pub size: u64,
-    pub buy: bool, // false for a sell order
-    pub user: Pubkey,
-    pub price: u64,
+    pub size: u64,    // 8
+    pub buy: bool,    // 1
+    pub user: Pubkey, // 8
+    pub price: u64,   // 8 - 25 total
 }
 
 #[account]
 #[derive(Default)]
 pub struct OrderbookInfo {
-    pub admin: Pubkey,
-    pub length: u32,
-    pub currency_mint: Pubkey,
-    pub token_mint: Pubkey,
-    pub bump: u8,
-    pub name: String,
+    pub admin: Pubkey,         // 32
+    pub length: u32,           // 4
+    pub currency_mint: Pubkey, // 32
+    pub token_mint: Pubkey,    // 32
+    pub bump: u8,              // 1
+    pub name: String,          // 20 = 121 total
 }
 
 impl OrderbookInfo {
