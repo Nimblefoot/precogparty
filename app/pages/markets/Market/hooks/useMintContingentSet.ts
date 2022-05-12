@@ -3,7 +3,7 @@ import { mintContingentSet } from "@/generated/client/instructions"
 import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "@project-serum/anchor"
-import { useMarketData } from "./useMarketData"
+import { useMarket } from "./marketQueries"
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { COLLATERAL_MINT } from "config"
 import getATAandCreateIxIfNeeded from "@/utils/getATAandCreateIxIfNeeded"
@@ -12,7 +12,7 @@ const useMintContingentSet = (address: PublicKey) => {
   const { publicKey } = useWallet()
   const { connection } = useConnection()
   // TODO we are just getting PDAs so we could just derive them
-  const market = useMarketData(address)
+  const market = useMarket(address)
 
   const callback = useCallback(
     async ({ amount }: { amount: number }) => {

@@ -2,13 +2,7 @@ import { useCallback } from "react"
 import { resolveMarket } from "@/generated/client/instructions"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
-
-const MAPPING = {
-  yes: 1,
-  no: 2,
-} as const
-
-type Resolution = "yes" | "no"
+import { Resolution, RESOLUTION_MAPPING } from "config"
 
 const useResolveMarketTxn = () => {
   const { publicKey } = useWallet()
@@ -25,7 +19,7 @@ const useResolveMarketTxn = () => {
 
       const x = resolveMarket(
         {
-          resolution: MAPPING[resolution],
+          resolution: RESOLUTION_MAPPING[resolution],
         },
         {
           marketAccount: market,

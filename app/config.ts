@@ -5,3 +5,13 @@ export const COLLATERAL_MINT = new PublicKey(
 )
 
 export const COLLATERAL_DECIMALS = 9
+
+export const RESOLUTION_MAPPING = {
+  yes: 1,
+  no: 2,
+} as const
+export const RESOLUTION_MAPPING_INVERSE = {
+  1: "yes",
+  2: "no",
+} as const
+export type Resolution = keyof typeof RESOLUTION_MAPPING

@@ -1,10 +1,10 @@
 import { ClockIcon } from "@heroicons/react/outline"
 import Link from "next/link"
-import { useMarketsQuery } from "./useMarketsQuery"
+import { useMarkets } from "./Market/hooks/marketQueries"
 import User from "./User"
 
 export default function Browse() {
-  const query = useMarketsQuery()
+  const query = useMarkets()
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
