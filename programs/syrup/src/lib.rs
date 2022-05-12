@@ -21,7 +21,6 @@ use std::cmp::Ordering;
 Todos:
 -- check the error codes work as intended (as much as possible?) -- not critical
 -- Better checks/constraints [requires parsing the market names from byte arrays, maybe refactor some checks into a function?]
--- Actually compute space
 */
 
 
@@ -313,7 +312,13 @@ pub mod syrup {
 pub struct CreateUserAccount<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
-    #[account(init, payer=user, seeds=["user-account".as_ref(), user.key().as_ref()], space=1000, bump)]
+    #[account(
+        init, 
+        payer = user, 
+        seeds = ["user-account".as_ref(), user.key().as_ref()], 
+        space = 8 + UserAccount::LEN, 
+        bump
+    )]
     pub user_account: Box<Account<'info, UserAccount>>,
     pub system_program: Program<'info, System>,
 }
@@ -382,7 +387,7 @@ pub struct PlaceOrder<'info> {
         init_if_needed, 
         payer=user, 
         seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
-        space=500, 
+        space = 8 + OrderbookPage::LEN, 
         bump
     )]
     pub current_page: Account<'info, OrderbookPage>,
