@@ -13,8 +13,8 @@ const MAX_SIZE: usize = 200;
 pub struct Order {
     pub size: u64,    // 8
     pub buy: bool,    // 1
-    pub user: Pubkey, // 8
-    pub price: u64,   // 8 - 25 total
+    pub user: Pubkey, // 32
+    pub price: u64,   // 8 - 49 total
 }
 
 #[account]
@@ -29,6 +29,8 @@ pub struct OrderbookInfo {
 }
 
 impl OrderbookInfo {
+    pub const LEN: usize = (32 * 3) + 20 + 4 + 1;
+
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
             0
@@ -50,12 +52,14 @@ pub struct OrderbookPage {
 impl Default for OrderbookPage {
     fn default() -> Self {
         Self {
-            list: Vec::with_capacity(Self::max_size()),
+            list: Vec::with_capacity(MAX_SIZE),
         }
     }
 }
 
 impl OrderbookPage {
+    pub const LEN: usize = 49 * 200;
+
     pub fn max_size() -> usize {
         MAX_SIZE
     }
