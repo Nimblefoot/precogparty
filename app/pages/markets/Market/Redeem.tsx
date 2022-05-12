@@ -5,12 +5,13 @@ import {
 import BN from "bn.js"
 import { PublicKey } from "@solana/web3.js"
 import { COLLATERAL_DECIMALS, RESOLUTION_MAPPING_INVERSE } from "config"
-import { useTokenAccount } from "pages/tokenAccountQuery"
+import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useRef, useState } from "react"
 import { useMarket } from "./hooks/marketQueries"
 import useMergeContingentSet from "./hooks/useMergeContingentSet"
 import useMintContingentSet from "./hooks/useMintContingentSet"
 import useRedeemTxn from "./hooks/useRedeemTxn"
+import { queryClient } from "pages/providers"
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ")
@@ -20,7 +21,13 @@ function capitalizeFirstLetter(string: string) {
 }
 
 // TODO display balances
-export function Redeem({ address }: { address: PublicKey }) {
+export function RedeemButton({
+  address,
+  className,
+}: {
+  address: PublicKey
+  className?: string
+}) {
   const market = useMarket(address)
   const yesAccount = useTokenAccount(market.data?.yesMint)
   const noAccount = useTokenAccount(market.data?.noMint)
@@ -57,39 +64,19 @@ export function Redeem({ address }: { address: PublicKey }) {
     })
     console.log(txn)
     await callback(txn)
+
+    queryClient.invalidateQueries(tokenAccountKeys.token(contingentCoin))
   }, [callback, getTxn, market.data, redeemableAmount, resolution])
 
   return (
     <>
-      <div className="shadow bg-white rounded-lg">
-        <div className="px-4 pt-5 border-b border-gray-200 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Redeem
-          </h3>
-        </div>
-
-        <div
-          className={`
-          px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center
-          flex-col
-        `}
-        >
-          {new BN(redeemableAmount!)
-            .div(new BN(10 ** COLLATERAL_DECIMALS))
-            .toString()}
-        </div>
-        <div className="px-4 py-5 border-b border-gray-200 sm:px-6 w-full">
-          <StatelessTransactButton
-            status={status}
-            verb={"Redeem"}
-            onClick={onSubmit}
-            className="w-full"
-            disabled={
-              redeemableAmount === undefined || redeemableAmount === "0"
-            }
-          />
-        </div>
-      </div>
+      <StatelessTransactButton
+        status={status}
+        verb={"Redeem"}
+        onClick={onSubmit}
+        className={"w-full " + className}
+        disabled={redeemableAmount === undefined || redeemableAmount === "0"}
+      />
     </>
   )
 }

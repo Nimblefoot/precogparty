@@ -2,7 +2,8 @@ import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/outline"
 import { PublicKey } from "@solana/web3.js"
 import Link from "next/link"
 import { useMarket, useMarkets } from "pages/markets/Market/hooks/marketQueries"
-import { useAllTokenAccounts } from "pages/tokenAccountQuery"
+import { RedeemButton } from "pages/markets/Market/Redeem"
+import { useAllTokenAccounts, useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useMemo } from "react"
 
 const YesBadge = () => (
@@ -52,8 +53,8 @@ const usePositions = () => {
         if (yesAccount || noAccount)
           return {
             marketAddress: market.publicKey,
-            yesAccount,
-            noAccount,
+            yesMint: yesAccount?.mint,
+            noMint: noAccount?.mint,
           } as const
       })
       .filter((x): x is typeof x & {} => x !== undefined)
@@ -125,10 +126,23 @@ export default Positions
 
 function Position({
   marketAddress,
-  yesAccount,
-  noAccount,
+  yesMint,
+  noMint,
 }: NonNullable<ReturnType<typeof usePositions>>[number]) {
   const market = useMarket(marketAddress)
+  const yesAccount = useTokenAccount(yesMint)
+  const noAccount = useTokenAccount(noMint)
+
+  const yesAmount =
+    yesAccount.data?.value &&
+    yesAccount.data.value.uiAmount !== null &&
+    yesAccount.data.value.uiAmount > 0 &&
+    yesAccount.data.value.uiAmount
+  const noAmount =
+    noAccount.data?.value &&
+    noAccount.data.value.uiAmount !== null &&
+    noAccount.data.value.uiAmount > 0 &&
+    noAccount.data.value.uiAmount
 
   return (
     <tr>
@@ -150,16 +164,16 @@ function Position({
         whitespace-nowrap px-3 py-4 text-sm 
       `}
       >
-        {yesAccount && (
-          <span className="text-lime-700">${yesAccount.uiAmount} YES</span>
-        )}
-        {yesAccount && noAccount && <>{",  "}</>}
-        {noAccount && (
-          <span className="text-rose-700">${noAccount.uiAmount} NO</span>
-        )}
+        {yesAmount && <span className="text-lime-700">${yesAmount} YES</span>}
+        {yesAmount && noAmount && <>{",  "}</>}
+        {noAmount && <span className="text-rose-700">${noAmount} NO</span>}
       </td>
 
-      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6"></td>
+      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+        {market.data?.resolution !== 0 && (
+          <RedeemButton address={marketAddress} className="disabled:hidden" />
+        )}
+      </td>
     </tr>
   )
 }
