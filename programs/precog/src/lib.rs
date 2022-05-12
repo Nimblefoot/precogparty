@@ -12,6 +12,7 @@ use anchor_spl::{
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
+// Actually this should just depend on the collateral's decimals
 const TOKEN_DECIMALS: u8 = 6;
 #[program]
 pub mod precog {
