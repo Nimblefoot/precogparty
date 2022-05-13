@@ -214,9 +214,9 @@ pub struct PredictionMarket {
     name: String,                  // 100
     description: String,           // 512
     bump: u8,                      // 1
-    yes_mint: Pubkey,              // 32
-    no_mint: Pubkey,               // 32
-    collateral_vault: Pubkey,      // 32
+    yes_mint: Pubkey,              // 32 // this doesnt need to be saved
+    no_mint: Pubkey,               // 32 // this doesnt need to be saved
+    collateral_vault: Pubkey,      // 32 // this doesnt need to be saved
     market_authority: Pubkey,      // 32
     resolution_authority: Pubkey,  // 32
     description_authority: Pubkey, // 32
