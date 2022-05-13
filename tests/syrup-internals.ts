@@ -185,7 +185,7 @@ describe("orderbook", async () => {
         currencyVault,
         tokenMint,
         tokenVault,
-        orderbookInfo,
+        // orderbookInfo, //derivable from seeds
         firstPage,
       })
       .rpc()
