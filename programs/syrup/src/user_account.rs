@@ -18,7 +18,7 @@ pub struct UserAccount {
 }
 
 impl UserAccount {
-    pub const LEN: usize = 32 + (33 * 200);
+    pub const LEN: usize = 32 + (33 * 200) + 32;
 
     pub fn initialize(&mut self, user: Pubkey) {
         self.user = user;

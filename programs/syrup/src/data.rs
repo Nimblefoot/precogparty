@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 const MAX_SIZE: usize = 3;
 
 #[cfg(not(feature = "orderbook-page-small-size"))]
-const MAX_SIZE: usize = 200;
+const MAX_SIZE: usize = 100;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
@@ -60,7 +60,7 @@ impl Default for OrderbookPage {
 }
 
 impl OrderbookPage {
-    pub const LEN: usize = 49 * 200;
+    pub const LEN: usize = 49 * MAX_SIZE + 64;
 
     pub fn max_size() -> usize {
         MAX_SIZE
@@ -112,6 +112,6 @@ impl OrderbookPage {
     }
 
     pub fn is_orderbook_name_blank(&self) -> bool {
-        self.orderbook_name.len() == 0
+        self.orderbook_name.is_empty()
     }
 }

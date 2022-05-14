@@ -400,7 +400,7 @@ pub struct PlaceOrder<'info> {
         space = 8 + OrderbookPage::LEN, 
         bump
     )]
-    pub current_page: Account<'info, OrderbookPage>,
+    pub current_page: Box<Account<'info, OrderbookPage>>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
