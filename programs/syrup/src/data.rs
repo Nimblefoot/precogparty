@@ -7,28 +7,30 @@ use anchor_lang::prelude::*;
 const MAX_SIZE: usize = 3;
 
 #[cfg(not(feature = "orderbook-page-small-size"))]
-const MAX_SIZE: usize = 200;
+const MAX_SIZE: usize = 100;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
-    pub size: u64,
-    pub buy: bool, // false for a sell order
-    pub user: Pubkey,
-    pub price: u64,
+    pub size: u64,    // 8
+    pub buy: bool,    // 1
+    pub user: Pubkey, // 32
+    pub price: u64,   // 8 - 49 total
 }
 
 #[account]
 #[derive(Default)]
 pub struct OrderbookInfo {
-    pub admin: Pubkey,
-    pub length: u32,
-    pub currency_mint: Pubkey,
-    pub token_mint: Pubkey,
-    pub bump: u8,
-    pub name: String,
+    pub admin: Pubkey,         // 32
+    pub length: u32,           // 4
+    pub currency_mint: Pubkey, // 32
+    pub token_mint: Pubkey,    // 32
+    pub bump: u8,              // 1
+    pub name: String,          // 20 = 121 total
 }
 
 impl OrderbookInfo {
+    pub const LEN: usize = (32 * 3) + 20 + 4 + 1;
+
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
             0
@@ -44,18 +46,22 @@ impl OrderbookInfo {
 
 #[account]
 pub struct OrderbookPage {
-    list: Vec<Order>,
+    pub list: Vec<Order>,
+    pub orderbook_name: String,
 }
 
 impl Default for OrderbookPage {
     fn default() -> Self {
         Self {
-            list: Vec::with_capacity(Self::max_size()),
+            orderbook_name: "".to_string(),
+            list: Vec::with_capacity(MAX_SIZE),
         }
     }
 }
 
 impl OrderbookPage {
+    pub const LEN: usize = 49 * MAX_SIZE + 64;
+
     pub fn max_size() -> usize {
         MAX_SIZE
     }
@@ -83,8 +89,14 @@ impl OrderbookPage {
     }
 
     pub fn set(&mut self, index: u32, data: Order) {
+        msg!("orderpage set method. incoming price is: ");
+        msg!(&data.price.to_string());
+
         let idx = index as usize;
         self.list[idx] = data;
+
+        msg!("we set price to: ");
+        msg!(&self.list[idx].price.to_string());
     }
 
     pub fn get(&mut self, index: u32) -> Order {
@@ -99,5 +111,13 @@ impl OrderbookPage {
         let result = self.list.pop().unwrap();
 
         Some(result)
+    }
+
+    pub fn set_orderbook_name(&mut self, name: String) {
+        self.orderbook_name = name;
+    }
+
+    pub fn is_orderbook_name_blank(&self) -> bool {
+        self.orderbook_name.is_empty()
     }
 }

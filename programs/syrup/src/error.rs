@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("User on the order must match the user invoking the cancel method")]
+    #[msg("Order has the wrong user")]
     IncorrectUser,
     #[msg("Size too large")]
     SizeTooLarge,
@@ -14,6 +14,8 @@ pub enum ErrorCode {
     LastPageEmpty,
     #[msg("Can't convert a buy into a sell or vice versa")]
     CantConvertOrder,
+    #[msg("Orberbook name does not match Order")]
+    OrderbookMismatch,
 
     #[msg("User already placed the maximum number of orders!")]
     MaxOrdersPlaced,

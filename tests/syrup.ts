@@ -26,7 +26,7 @@ import {
   mintToChecked,
 } from "@solana/spl-token"
 
-const maxLength = 3 // extremely small to make sure stuff works properly
+const maxLength = 100 //
 
 describe("orderbook", async () => {
   // Configure the client to use the local cluster.
@@ -36,7 +36,7 @@ describe("orderbook", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>
   const admin = Keypair.generate()
   const user = Keypair.generate()
-  let orderbookName = "test"
+  let orderbookName = "test-test-test-1"
 
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey
@@ -135,48 +135,18 @@ describe("orderbook", async () => {
       program.programId
     )
 
+    // Vaults
     currencyVault = await getAssociatedTokenAddress(
       currencyMint,
       orderbookInfo,
       true
     )
+
     tokenVault = await getAssociatedTokenAddress(tokenMint, orderbookInfo, true)
   })
 
-  const size = 10
-  const mockData = [...Array(size).keys()].map((i) => ({
-    user: user.publicKey,
-    size: new anchor.BN((1e8 / 100) * (i + 1)),
-    buy: true,
-    price: new anchor.BN(2),
-  }))
-
-  it("creates a user account", async () => {
-    await program.methods
-      .createUserAccount()
-      .accounts({
-        user: user.publicKey,
-      })
-      .signers([user])
-      .rpc()
-
-    let userAccount = await program.account.userAccount.fetch(
-      userAccountAddress
-    )
-    assert.equal(
-      userAccount.user.toString(),
-      user.publicKey.toString(),
-      "user should match the creator"
-    )
-    assert.equal(
-      // @ts-ignore
-      userAccount.orders.length,
-      0,
-      "initially orders should be empty"
-    )
-  })
-
   it("initializes an orderbook", async () => {
+    // initialize orderbook
     await program.methods
       .initializeOrderbook(orderbookName)
       .accounts({
@@ -185,203 +155,250 @@ describe("orderbook", async () => {
         currencyVault,
         tokenMint,
         tokenVault,
-        orderbookInfo,
+        // orderbookInfo, //derivable from seeds
         firstPage,
       })
       .rpc()
-
-    let orderbookData = await program.account.orderbookInfo.fetch(orderbookInfo)
-
-    assert.equal(
-      orderbookData.currencyMint.toString(),
-      currencyMint.toString(),
-      "currency mints should match"
-    )
-    assert.equal(
-      orderbookData.tokenMint.toString(),
-      tokenMint.toString(),
-      "token mints should match"
-    )
   })
 
-  it("places 10 orders", async () => {
+  it("creates accounts for user and admin", async () => {
+    await program.methods
+      .createUserAccount()
+      .accounts({
+        user: user.publicKey,
+      })
+      .signers([user])
+      .rpc()
+
+    await program.methods
+      .createUserAccount()
+      .accounts({
+        user: admin.publicKey,
+      })
+      .signers([admin])
+      .rpc()
+  })
+
+  it("handles placing orders", async () => {
+    // MINT TOKENS
+    // user has '500' currency.
     await mintToChecked(
       program.provider.connection, // connection
       user, // fee payer
       currencyMint, // mint
       user_currency_ata, // receiver (sholud be a token account)
       admin, // mint authority
-      2e8, // amount. if your decimals is 8, you mint 10^8 for 1 token.
+      5e8, // amount. if your decimals is 6, this is 500 tokens
       6 // decimals
     )
 
-    let txhash2 = await mintToChecked(
+    // admin has '500' tokens
+    await mintToChecked(
       program.provider.connection, // connection
       admin, // fee payer
       tokenMint, // mint
       admin_token_ata, // receiver (sholud be a token account)
       admin, // mint authority
-      2e8, // amount. if your decimals is 8, you mint 10^8 for 1 token.
+      5e8, // amount. if your decimals is 6, this is 500 tokens
       6 // decimals
     )
 
-    for (let i = 0; i < size; i++) {
-      const [infoKey] = await PublicKey.findProgramAddress(
-        [utf8.encode("test"), utf8.encode("orderbook-info")],
-        program.programId
-      )
-      const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-      const nextOpenPageIndex = Math.floor(info.length / maxLength)
-      const [currentPageKey] = await PublicKey.findProgramAddress(
-        [
-          utf8.encode("test"),
-          utf8.encode("page"),
-          new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
-        ],
-        program.programId
-      )
-
-      await program.methods
-        .placeOrder(mockData[i])
-        .accounts({
-          user: user.publicKey,
-          userAta: user_currency_ata,
-          vault: currencyVault,
-          orderbookInfo,
-          currentPage: currentPageKey,
-          userAccount: userAccountAddress,
-        })
-        .signers([user])
-        .rpc()
-    }
-
-    let vaultBalance = await program.provider.connection.getTokenAccountBalance(
-      currencyVault
+    const orderbookInfoData = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfo
     )
-    assert.equal(
-      vaultBalance.value.amount,
-      "110000000",
-      "Vault Balance should match sum of orders." // sum 1 to 10 = 55. 55x 2 = 110.
-    )
-
-    const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode("test"), utf8.encode("orderbook-info")],
+    const nextOpenPageIndex = Math.floor(orderbookInfoData.length / maxLength)
+    const [currentPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode(orderbookName),
+        utf8.encode("page"),
+        new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
       program.programId
     )
-    const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-    const lastPageIndex = Math.floor((info.length - 1) / maxLength)
+
+    const lastPageIndex = Math.floor((orderbookInfoData.length - 1) / maxLength)
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode("test"),
+        utf8.encode(orderbookName),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
       program.programId
     )
-    const lastPage = await program.account.orderbookPage.fetch(lastPageKey)
 
-    assert.equal(info.length, 10, "correct orderbook length")
+    await program.methods
+      .placeOrder({
+        user: user.publicKey,
+        size: new anchor.BN(1e6),
+        buy: true,
+        price: new anchor.BN(2),
+      })
+      .accounts({
+        user: user.publicKey,
+        userAta: user_currency_ata,
+        vault: currencyVault,
+        orderbookInfo,
+        currentPage: currentPageKey,
+        userAccount: userAccountAddress,
+      })
+      .signers([user])
+      .rpc({
+        skipPreflight: true,
+      })
+
+    await program.methods
+      .placeOrder({
+        user: user.publicKey,
+        size: new anchor.BN(5e6),
+        buy: true,
+        price: new anchor.BN(1),
+      })
+      .accounts({
+        user: user.publicKey,
+        userAta: user_currency_ata,
+        vault: currencyVault,
+        orderbookInfo,
+        currentPage: currentPageKey,
+        userAccount: userAccountAddress,
+      })
+      .signers([user])
+      .rpc({
+        skipPreflight: true,
+      })
+
+    const vaultBalance =
+      await program.provider.connection.getTokenAccountBalance(currencyVault)
     assert.equal(
-      // @ts-ignore
-      lastPage.list.length,
-      1,
-      "correct length of final chunk"
-    )
-    const userAccount = await program.account.userAccount.fetch(
-      userAccountAddress
-    )
-    const seventhOrder = userAccount.orders[6]
-    assert.equal(
-      seventhOrder.size.toString(),
+      vaultBalance.value.amount,
       "7000000",
-      "correct size for order"
+      "Vault Balance should be reduced to 5000000." // 1*2 + 5*1
     )
-    assert.equal(seventhOrder.price, 2, "correct price for order")
+
+    // re-compute nextOpenPage before placing an order but we know its still the first page lol.
+    await program.methods
+      .placeOrder({
+        user: admin.publicKey,
+        size: new anchor.BN(5e6),
+        buy: false,
+        price: new anchor.BN(3),
+      })
+      .accounts({
+        user: admin.publicKey,
+        userAta: admin_token_ata,
+        vault: tokenVault,
+        orderbookInfo,
+        currentPage: currentPageKey,
+        userAccount: adminAccountAddress,
+      })
+      .signers([admin])
+      .rpc({
+        skipPreflight: true,
+      })
   })
 
   it("cancels an order", async () => {
-    const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode("test"), utf8.encode("orderbook-info")],
-      program.programId
+    const orderbookInfoData = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfo
     )
-    const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-    const lastPageIndex = Math.floor((info.length - 1) / maxLength)
+    const lastPageIndex = Math.floor((orderbookInfoData.length - 1) / maxLength)
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode("test"),
+        utf8.encode(orderbookName),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
       program.programId
     )
-    const firstOrder = mockData[0]
+    let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
+
     await program.methods
-      .cancelOrder(firstOrder, 0, 0)
+      .cancelOrder(
+        {
+          user: user.publicKey,
+          size: new anchor.BN(1e6),
+          buy: true,
+          price: new anchor.BN(2),
+        },
+        0,
+        0
+      )
       .accounts({
         user: user.publicKey,
         userAccount: userAccountAddress,
         userAta: user_currency_ata,
         vault: currencyVault,
         orderbookInfo,
-        orderPage: firstPage,
+        orderPage: lastPageKey,
         lastPage: lastPageKey,
       })
       .signers([user])
       .rpc()
 
+    console.log("order canceled")
+    firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
+
     const vaultBalance =
       await program.provider.connection.getTokenAccountBalance(currencyVault)
     assert.equal(
       vaultBalance.value.amount,
-      "108000000",
-      "Vault Balance should be reduced to 108000000." // sum 2 to 10 = 54. 54*2 = 108
+      "5000000",
+      "Vault Balance should be reduced to 5000000." // sum 2 to 10 = 54. 54*2 = 108
     )
 
-    const info2 = await program.account.orderbookInfo.fetchNullable(infoKey)
-    const lastPageIndex2 = Math.floor((info2.length - 1) / maxLength)
-    const [lastPageKey2] = await PublicKey.findProgramAddress(
-      [
-        utf8.encode("test"),
-        utf8.encode("page"),
-        new anchor.BN(lastPageIndex2).toArrayLike(Buffer, "le", 4),
-      ],
-      program.programId
+    const info2 = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfo
     )
-    const lastPage2 = await program.account.orderbookPage.fetch(lastPageKey2)
+    assert.equal(info2.length, 2, "correct orderbook length")
 
-    assert.equal(info2.length, 9, "correct orderbook length")
-    assert.equal(
-      // @ts-ignore
-      lastPage2.list.length,
-      3,
-      "correct length of final chunk"
-    )
     const userAccount = await program.account.userAccount.fetch(
       userAccountAddress
     )
-    // @ts-ignore
-    assert.equal(userAccount.orders.length, 9, "user should have nine orders")
+    assert.equal(
+      // @ts-ignore
+      userAccount.orders.length,
+      1,
+      "user should have one remaining orders"
+    )
   })
 
-  it("takes an order", async () => {
-    const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode("test"), utf8.encode("orderbook-info")],
-      program.programId
-    )
-    const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-    const lastPageIndex = Math.floor((info.length - 1) / maxLength)
-
+  it("takes orders", async () => {
+    // we know the last page and don't need to recompute lengths
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode("test"),
+        utf8.encode(orderbookName),
         utf8.encode("page"),
-        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+        new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
       program.programId
     )
-
+    let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
+    // the max size is 5e6. Going to take for 2e6. the order is in position 0,1 cause of how deletion works (swap and pop)!
     await program.methods
-      .takeOrder(new anchor.BN(9e6), 2, 2)
+      .takeOrder(new anchor.BN(2e6), 0, 1)
       .accounts({
         taker: admin.publicKey,
         takerSendingAta: admin_token_ata,
@@ -396,19 +413,20 @@ describe("orderbook", async () => {
       .signers([admin])
       .rpc()
 
-    const vaultBalance =
+    const currencyVaultBalance =
       await program.provider.connection.getTokenAccountBalance(currencyVault)
     assert.equal(
-      vaultBalance.value.amount,
-      "90000000",
-      "Vault Balance should be reduced to 90000000." // (sum 2 to 10) - 9 = 45. 45 x 2 = 90
+      currencyVaultBalance.value.amount,
+      "3000000",
+      "Vault Balance should be reduced to 3000000."
     )
+
     const userTokenBalance =
       await program.provider.connection.getTokenAccountBalance(user_token_ata)
     assert.equal(
       userTokenBalance.value.amount,
-      "9000000",
-      "User should have bought 9 tokens at a price of 2 usdc" //
+      "2000000",
+      "User should have bought 2 tokens at a price of 1 usdc" //
     )
 
     const adminCurrencyBalance =
@@ -417,31 +435,82 @@ describe("orderbook", async () => {
       )
     assert.equal(
       adminCurrencyBalance.value.amount,
-      "18000000",
-      "Admin sold 9 tokens for 2usdc each."
+      "2000000",
+      "Admin sold 2 tokens for 1usdc each."
+    )
+
+    // User will take the admins sell order for the full amount
+    console.log("order taken")
+    firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
+
+    await program.methods
+      .takeOrder(new anchor.BN(5e6), 0, 0)
+      .accounts({
+        taker: user.publicKey,
+        takerSendingAta: user_currency_ata,
+        takerReceivingAta: user_token_ata,
+        offererUserAccount: adminAccountAddress,
+        offererReceivingAta: admin_currency_ata,
+        vault: tokenVault,
+        orderbookInfo,
+        orderPage: lastPageKey,
+        lastPage: lastPageKey,
+      })
+      .signers([user])
+      .rpc({
+        skipPreflight: true,
+      })
+
+    const userTokenBalance2 =
+      await program.provider.connection.getTokenAccountBalance(user_token_ata)
+    assert.equal(
+      userTokenBalance2.value.amount,
+      "7000000",
+      "User should have bought 7 tokens" //
+    )
+
+    const adminCurrencyBalance2 =
+      await program.provider.connection.getTokenAccountBalance(
+        admin_currency_ata
+      )
+    assert.equal(
+      adminCurrencyBalance2.value.amount,
+      "17000000",
+      "Admin sold 2 tokens for 1usdc each and 5 tokens for 3usdc each"
+    )
+
+    console.log("order taken for max amount")
+    firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
     )
   })
 
   it("modifies an order", async () => {
-    const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
-      program.programId
-    )
-    const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-    const lastPageIndex = Math.floor((info.length - 1) / maxLength)
-
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
         utf8.encode(orderbookName),
         utf8.encode("page"),
-        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+        new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
       program.programId
     )
-    const lastPageData = await program.account.orderbookPage.fetch(lastPageKey)
 
-    // last order has size 8 and price 2
-    const newOrder1 = {
+    // currently the order should have a size of 3 and a price of 1. 10x2 - 3x1 = 17
+    const newOrder = {
       size: new anchor.BN(10e6),
       price: new anchor.BN(2),
       user: user.publicKey,
@@ -464,7 +533,7 @@ describe("orderbook", async () => {
     // console.log(userCurrencyBalance1); // 92
 
     await program.methods
-      .modifyOrder(newOrder1, 2, 1)
+      .modifyOrder(newOrder, 0, 0)
       .accounts({
         user: user.publicKey,
         orderPage: lastPageKey,
@@ -474,7 +543,20 @@ describe("orderbook", async () => {
         orderbookInfo,
       })
       .signers([user])
-      .rpc()
+      .rpc({
+        skipPreflight: true,
+      })
+
+    console.log("order modified")
+    const lastPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(
+      JSON.stringify(
+        lastPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
 
     let currencyVaultAmount2 =
       await program.provider.connection.getTokenAccountBalance(currencyVault)
@@ -490,16 +572,24 @@ describe("orderbook", async () => {
 
     assert.equal(
       currencyVaultBalance2 - currencyVaultBalance1,
-      4,
-      "vault should have increased by 4"
+      17,
+      "vault should have increased by 17"
     )
     assert.equal(
       userCurrencyBalance2 - userCurrencyBalance1,
-      -4,
-      "user should have transfered out 4"
+      -17,
+      "user should have transfered out 17"
     )
 
-    const lastPage = await program.account.orderbookPage.fetch(lastPageKey)
-    assert.equal(lastPage.list[1].size.toString(), (10e6).toString())
+    assert.equal(
+      lastPage.list[0].size.toString(),
+      (10e6).toString(),
+      "correct modifed size"
+    )
+    assert.equal(
+      lastPage.list[0].price.toString(),
+      (2).toString(),
+      "correct modifed price"
+    )
   })
 })

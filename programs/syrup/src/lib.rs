@@ -17,19 +17,25 @@ use anchor_spl::{
 
 use std::cmp::Ordering;
 
-/* 
-Todos:
--- check the error codes work as intended (as much as possible?) -- not critical
--- Better checks/constraints [requires parsing the market names from byte arrays, maybe refactor some checks into a function?]
--- Actually compute space
-*/
-
-
 pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
-    let order_data = order_page.get(index).clone();
+    let order_data = order_page.get(index);
+    let orderbook_name = order_page.orderbook_name.clone();
 
-    if let Some(last_order) = last_page.pop() {
-        order_page.set(index, last_order);
+    if order_page.key() == last_page.key() && (index as usize) == last_page.len() - 1 {
+        msg!("just need to pop!!!");
+        last_page.pop();
+    } else if let Some(last_order) = last_page.pop() {
+        msg!("setting data in position: ");
+        msg!(&index.to_string());
+        msg!("last order has price");
+        msg!(&last_order.price.to_string());
+
+        // there is probably a better way to handle this problem. Rust does not allow you to have two mutable references to the same data!
+        if order_page.key() == last_page.key() {
+            last_page.set(index, last_order);
+        } else {
+            order_page.set(index, last_order); // this is wrong and has to get fixed???? should be order_page. stuff broken when the pages are the same???
+        }
     } else {
         return err!(ErrorCode::LastPageEmpty);
     };
@@ -37,7 +43,7 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     *orderbook_length -= 1;
 
     // Delete from user account
-    if let Some(deletion_index) = user_account.find_order(order_data) {
+    if let Some(deletion_index) = user_account.find_order(order_data, orderbook_name) {
         user_account.delete(deletion_index);
     } else {
         return err!(ErrorCode::UserMissingOrder);
@@ -47,10 +53,11 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
 }
 
 pub fn edit_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
-    let mut order_data = order_page.get(index).clone();
+    let mut order_data = order_page.get(index);
+    let orderbook_name = order_page.orderbook_name.clone();
 
     // Modify the order in the user's orders
-    if let Some(user_orders_index) = user_account.find_order(order_data) {
+    if let Some(user_orders_index) = user_account.find_order(order_data, orderbook_name) {
         user_account.set(user_orders_index, new_price, new_size);
     } else {
         return err!(ErrorCode::UserMissingOrder);
@@ -78,7 +85,9 @@ pub mod syrup {
         ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
         ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
         ctx.accounts.orderbook_info.bump = *ctx.bumps.get("orderbook_info").unwrap();
-        ctx.accounts.orderbook_info.name = name;
+        ctx.accounts.orderbook_info.name = name.clone();
+
+        ctx.accounts.first_page.set_orderbook_name(name);
 
         Ok(())
     }
@@ -92,6 +101,16 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
+        if order.user != ctx.accounts.user.key() {
+            return err!(ErrorCode::IncorrectUser);
+        };
+
+        // set the name of the new page if you initialized it
+        if ctx.accounts.current_page.is_orderbook_name_blank() {
+            ctx.accounts.current_page.set_orderbook_name(ctx.accounts.orderbook_info.name.clone());
+        }
+
+        // transfer tokens from user to the vault
         let token_amount = if order.buy {
             order.size * order.price
         } else {
@@ -130,17 +149,23 @@ pub mod syrup {
 
     #[allow(unused_variables)] 
     pub fn take_order(ctx: Context<TakeOrder>, size: u64, page_number: u32, index: u32) -> Result<()> {
-
         let order_data: Order = ctx.accounts.order_page.get(index);
+        msg!("order price");
+        msg!(&order_data.price.to_string());
+        msg!("order page length");
+        msg!(&ctx.accounts.order_page.len().to_string());
+
         if ctx.accounts.offerer_user_account.user != order_data.user {
             return err!(ErrorCode::IncorrectUser);
         };
+        msg!("order data size");
+        msg!(&order_data.size.to_string());
         if size > order_data.size {
             return err!(ErrorCode::SizeTooLarge);
         };
 
-        let order_page = &mut ctx.accounts.order_page;
-        let last_page = &mut ctx.accounts.last_page;
+        let last_page = &mut ctx.accounts.last_page; 
+        let order_page = &mut ctx.accounts.order_page; // this could be a second mutable reference to same page!
         let offerer_user_account = &mut ctx.accounts.offerer_user_account;
 
         // need to split up variables to avoid borrower check errors
@@ -190,7 +215,11 @@ pub mod syrup {
         if size == order_data.size {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
         } else {
-            edit_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
+            if (last_page.key() == order_page.key()) {
+                edit_order(index, order_data.price, order_data.size - size, last_page, offerer_user_account)?;
+            } else {
+                edit_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
+            }
         }
 
         Ok(())
@@ -238,6 +267,8 @@ pub mod syrup {
         )?;
 
         delete_order(index, last_page, order_page, user_account, orderbook_length)?;
+        order_page.list[0].price = 16;
+        msg!(&order_page.list[0].price.to_string());
 
         Ok(())
     }
@@ -313,7 +344,13 @@ pub mod syrup {
 pub struct CreateUserAccount<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
-    #[account(init, payer=user, seeds=["user-account".as_ref(), user.key().as_ref()], space=1000, bump)]
+    #[account(
+        init, 
+        payer = user, 
+        seeds = ["user-account".as_ref(), user.key().as_ref()], 
+        space = 8 + UserAccount::LEN, 
+        bump
+    )]
     pub user_account: Box<Account<'info, UserAccount>>,
     pub system_program: Program<'info, System>,
 }
@@ -323,9 +360,21 @@ pub struct CreateUserAccount<'info> {
 pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    #[account(init, payer=admin, seeds=[name.as_ref(), "orderbook-info".as_ref()], space=1000, bump)]
+    #[account(
+        init, 
+        payer = admin, 
+        seeds = [name.as_ref(), "orderbook-info".as_ref()], 
+        space = 8 + OrderbookInfo::LEN, 
+        bump
+    )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
-    #[account(init, payer=admin, seeds=[name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], space=500, bump)]
+    #[account(
+        init, 
+        payer=admin, 
+        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
+        space = 8 + OrderbookPage::LEN, 
+        bump
+    )]
     pub first_page: Account<'info, OrderbookPage>,
     pub currency_mint: Account<'info, Mint>,
     #[account(
@@ -370,10 +419,10 @@ pub struct PlaceOrder<'info> {
         init_if_needed, 
         payer=user, 
         seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
-        space=500, 
+        space = 8 + OrderbookPage::LEN, 
         bump
     )]
-    pub current_page: Account<'info, OrderbookPage>,
+    pub current_page: Box<Account<'info, OrderbookPage>>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
