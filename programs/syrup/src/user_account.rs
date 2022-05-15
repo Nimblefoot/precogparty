@@ -18,7 +18,7 @@ pub struct UserAccount {
 }
 
 impl UserAccount {
-    pub const LEN: usize = 32 + (49 * 200) + 32;
+    pub const LEN: usize = 32 + (49 * 140) + 32;
 
     pub fn initialize(&mut self, user: Pubkey) {
         self.user = user;
@@ -27,7 +27,7 @@ impl UserAccount {
 
     pub fn max_size() -> usize {
         // (10240 - 8 - 4) / size_of::<Pubkey>() - hardcoded for now
-        200
+        140
     }
 
     pub fn delete(&mut self, index: usize) {

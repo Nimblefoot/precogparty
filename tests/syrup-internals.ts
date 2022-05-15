@@ -36,7 +36,7 @@ describe("orderbook", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>
   const admin = Keypair.generate()
   const user = Keypair.generate()
-  let orderbookName = "test-test-test-1"
+  let orderbookName = Keypair.generate().publicKey
 
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey
@@ -123,12 +123,12 @@ describe("orderbook", async () => {
       program.programId
     )
     ;[orderbookInfo] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     ;[firstPage] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
@@ -227,14 +227,14 @@ describe("orderbook", async () => {
 
     for (let i = 0; i < size; i++) {
       const [infoKey] = await PublicKey.findProgramAddress(
-        [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+        [orderbookName.toBytes(), utf8.encode("orderbook-info")],
         program.programId
       )
       const info = await program.account.orderbookInfo.fetchNullable(infoKey)
       const nextOpenPageIndex = Math.floor(info.length / maxLength)
       const [currentPageKey] = await PublicKey.findProgramAddress(
         [
-          utf8.encode(orderbookName),
+          orderbookName.toBytes(),
           utf8.encode("page"),
           new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
         ],
@@ -265,14 +265,14 @@ describe("orderbook", async () => {
     )
 
     const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     const info = await program.account.orderbookInfo.fetchNullable(infoKey)
     const lastPageIndex = Math.floor((info.length - 1) / maxLength)
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -301,14 +301,14 @@ describe("orderbook", async () => {
 
   it("cancels an order", async () => {
     const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     const info = await program.account.orderbookInfo.fetchNullable(infoKey)
     const lastPageIndex = Math.floor((info.length - 1) / maxLength)
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -341,7 +341,7 @@ describe("orderbook", async () => {
     const lastPageIndex2 = Math.floor((info2.length - 1) / maxLength)
     const [lastPageKey2] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex2).toArrayLike(Buffer, "le", 4),
       ],
@@ -365,7 +365,7 @@ describe("orderbook", async () => {
 
   it("takes an order", async () => {
     const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     const info = await program.account.orderbookInfo.fetchNullable(infoKey)
@@ -373,7 +373,7 @@ describe("orderbook", async () => {
 
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -424,7 +424,7 @@ describe("orderbook", async () => {
 
   it("modifies an order", async () => {
     const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     const info = await program.account.orderbookInfo.fetchNullable(infoKey)
@@ -432,7 +432,7 @@ describe("orderbook", async () => {
 
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],

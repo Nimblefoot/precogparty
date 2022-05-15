@@ -36,7 +36,7 @@ describe("orderbook", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>
   const admin = Keypair.generate()
   const user = Keypair.generate()
-  let orderbookName = "test-test-test-1"
+  let orderbookName = Keypair.generate().publicKey
 
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey
@@ -123,12 +123,12 @@ describe("orderbook", async () => {
       program.programId
     )
     ;[orderbookInfo] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     ;[firstPage] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
@@ -174,7 +174,7 @@ describe("orderbook", async () => {
       .rpc()
   })
 
-  it("places 300 orders", async () => {
+  it("places 280 orders", async () => {
     await mintToChecked(
       program.provider.connection, // connection
       user, // fee payer
@@ -195,20 +195,20 @@ describe("orderbook", async () => {
       6 // decimals
     )
 
-    // user places 200 buy orders. Should deposit 400 units of currency
-    for (let i = 0; i < 200; i++) {
+    // user places 140 buy orders. Should deposit 400 units of currency
+    for (let i = 0; i < 140; i++) {
       if ((i + 1) % 10 == 0) {
         console.log("place user order: " + (i + 1))
       }
       const [infoKey] = await PublicKey.findProgramAddress(
-        [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+        [orderbookName.toBytes(), utf8.encode("orderbook-info")],
         program.programId
       )
       const info = await program.account.orderbookInfo.fetchNullable(infoKey)
       const nextOpenPageIndex = Math.floor(info.length / maxLength)
       const [currentPageKey] = await PublicKey.findProgramAddress(
         [
-          utf8.encode(orderbookName),
+          orderbookName.toBytes(),
           utf8.encode("page"),
           new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
         ],
@@ -236,20 +236,20 @@ describe("orderbook", async () => {
         })
     }
 
-    // admin places 100 sell orders. should deposit 100 tokens.
-    for (let i = 0; i < 100; i++) {
+    // admin places 140 sell orders. should deposit 100 tokens.
+    for (let i = 0; i < 140; i++) {
       if ((i + 1) % 10 == 0) {
         console.log("place admin order: " + (i + 1))
       }
       const [infoKey] = await PublicKey.findProgramAddress(
-        [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+        [orderbookName.toBytes(), utf8.encode("orderbook-info")],
         program.programId
       )
       const info = await program.account.orderbookInfo.fetchNullable(infoKey)
       const nextOpenPageIndex = Math.floor(info.length / maxLength)
       const [currentPageKey] = await PublicKey.findProgramAddress(
         [
-          utf8.encode(orderbookName),
+          orderbookName.toBytes(),
           utf8.encode("page"),
           new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
         ],
@@ -281,22 +281,22 @@ describe("orderbook", async () => {
       await program.provider.connection.getTokenAccountBalance(currencyVault)
     assert.equal(
       currencyVaultBalance.value.amount,
-      "400000000",
+      "280000000",
       "Currency Vault Balance should match sum of orders." // 300e6
     )
     let tokenVaultBalance =
       await program.provider.connection.getTokenAccountBalance(tokenVault)
     assert.equal(
       tokenVaultBalance.value.amount,
-      "100000000",
+      "140000000",
       "Token Vault Balance should match sum of orders." // 100e6
     )
 
     const [infoKey] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-    assert.equal(info.length, 300, "Should have 300 orders on the book.")
+    assert.equal(info.length, 280, "Should have 280 orders on the book.")
   })
 })
