@@ -424,40 +424,44 @@ describe("orderbook", async () => {
     firstPage = await program.account.orderbookPage.fetch(lastPageKey)
     console.log(JSON.stringify(firstPage.list))
 
-    //   await program.methods
-    //     .takeOrder(new anchor.BN(5e6), 0, 0)
-    //     .accounts({
-    //       taker: user.publicKey,
-    //       takerSendingAta: user_currency_ata,
-    //       takerReceivingAta: user_token_ata,
-    //       offererUserAccount: adminAccountAddress,
-    //       offererReceivingAta: admin_currency_ata,
-    //       vault: tokenVault,
-    //       orderbookInfo,
-    //       orderPage: lastPageKey,
-    //       lastPage: lastPageKey,
-    //     })
-    //     .signers([user])
-    //     .rpc({
-    //       skipPreflight: true,
-    //     })
+    await program.methods
+      .takeOrder(new anchor.BN(5e6), 0, 0)
+      .accounts({
+        taker: user.publicKey,
+        takerSendingAta: user_currency_ata,
+        takerReceivingAta: user_token_ata,
+        offererUserAccount: adminAccountAddress,
+        offererReceivingAta: admin_currency_ata,
+        vault: tokenVault,
+        orderbookInfo,
+        orderPage: lastPageKey,
+        lastPage: lastPageKey,
+      })
+      .signers([user])
+      .rpc({
+        skipPreflight: true,
+      })
 
-    //   const userTokenBalance2 =
-    //     await program.provider.connection.getTokenAccountBalance(user_token_ata)
-    //   assert.equal(
-    //     userTokenBalance.value.amount,
-    //     "7000000",
-    //     "User should have bought 2 tokens at a price of 1 usdc" //
-    //   )
+    const userTokenBalance2 =
+      await program.provider.connection.getTokenAccountBalance(user_token_ata)
+    assert.equal(
+      userTokenBalance2.value.amount,
+      "7000000",
+      "User should have bought 7 tokens" //
+    )
 
-    //   const adminCurrencyBalance2 =
-    //     await program.provider.connection.getTokenAccountBalance(
-    //       admin_currency_ata
-    //     )
-    //   assert.equal(
-    //     adminCurrencyBalance2.value.amount,
-    //     "12000000",
-    //     "Admin sold 2 tokens for 1usdc each and 5 tokens for 2usdc each"
-    //   )
+    const adminCurrencyBalance2 =
+      await program.provider.connection.getTokenAccountBalance(
+        admin_currency_ata
+      )
+    assert.equal(
+      adminCurrencyBalance2.value.amount,
+      "17000000",
+      "Admin sold 2 tokens for 1usdc each and 5 tokens for 3usdc each"
+    )
+
+    console.log("order taken for max amount")
+    firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(JSON.stringify(firstPage.list))
   })
 })

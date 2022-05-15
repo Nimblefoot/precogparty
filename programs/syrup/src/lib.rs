@@ -22,13 +22,20 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     let orderbook_name = order_page.orderbook_name.clone();
 
     if order_page.key() == last_page.key() && (index as usize) == last_page.len() - 1 {
+        msg!("just need to pop!!!");
         last_page.pop();
     } else if let Some(last_order) = last_page.pop() {
         msg!("setting data in position: ");
         msg!(&index.to_string());
         msg!("last order has price");
         msg!(&last_order.price.to_string());
-        order_page.set(index, last_order);
+
+        // there is probably a better way to handle this problem. Rust does not allow you to have two mutable references to the same data!
+        if order_page.key() == last_page.key() {
+            last_page.set(index, last_order);
+        } else {
+            order_page.set(index, last_order); // this is wrong and has to get fixed???? should be order_page. stuff broken when the pages are the same???
+        }
     } else {
         return err!(ErrorCode::LastPageEmpty);
     };
@@ -257,6 +264,7 @@ pub mod syrup {
 
         delete_order(index, last_page, order_page, user_account, orderbook_length)?;
         order_page.list[0].price = 16;
+        msg!(&order_page.list[0].price.to_string());
 
         // let order_data = order_page.get(index);
         // let orderbook_name = order_page.orderbook_name.clone();
