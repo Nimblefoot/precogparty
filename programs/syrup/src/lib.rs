@@ -77,7 +77,7 @@ pub mod syrup {
     use super::*;
 
     #[allow(unused_variables)]
-    pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: String) -> Result<()> {
+    pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: Pubkey) -> Result<()> {
         // ToDo - insist names are unique and max 16 characters
 
         ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
@@ -126,12 +126,8 @@ pub mod syrup {
         )?;
 
         // create and append order record
-        let name_bytes = ctx.accounts.orderbook_info.name.as_bytes();
-        let mut name_data = [b' '; 16];
-        name_data[..name_bytes.len()].copy_from_slice(name_bytes);
-
         let order_record = OrderRecord {
-            market: name_data,
+            market: ctx.accounts.orderbook_info.name,
             buy: order.buy,
             size: order.size,
             price: order.price,
@@ -176,7 +172,7 @@ pub mod syrup {
 
         // Transfer from the vault to the taker
         let seeds = &[
-            orderbook_name.as_bytes(),
+            &orderbook_name.to_bytes(),
             "orderbook-info".as_bytes(),
             &[orderbook_bump],
         ];
@@ -245,7 +241,7 @@ pub mod syrup {
 
         // Refund order
         let seeds = &[
-            orderbook_name.as_bytes(),
+            &orderbook_name.to_bytes(),
             "orderbook-info".as_bytes(),
             &[orderbook_bump],
         ];
@@ -275,7 +271,7 @@ pub mod syrup {
 
     #[allow(unused_variables)]
     pub fn modify_order(ctx: Context<ModifyOrder>, new_order: Order, page_number: u32, index: u32) -> Result<()> {
-        let orderbook_name = ctx.accounts.orderbook_info.name.clone();
+        let orderbook_name = ctx.accounts.orderbook_info.name;
         let orderbook_bump = ctx.accounts.orderbook_info.bump;
         let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
 
@@ -315,7 +311,7 @@ pub mod syrup {
             },
             Ordering::Less => {
                 let seeds = &[
-                    orderbook_name.as_bytes(),
+                    &orderbook_name.to_bytes(),
                     "orderbook-info".as_bytes(),
                     &[orderbook_bump],
                 ];
@@ -356,14 +352,14 @@ pub struct CreateUserAccount<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: String)]
+#[instruction(name: Pubkey)]
 pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(
         init, 
         payer = admin, 
-        seeds = [name.as_ref(), "orderbook-info".as_ref()], 
+        seeds = [name.to_bytes().as_ref(), "orderbook-info".as_ref()], 
         space = 8 + OrderbookInfo::LEN, 
         bump
     )]
@@ -371,7 +367,7 @@ pub struct InitializeOrderbook<'info> {
     #[account(
         init, 
         payer=admin, 
-        seeds=[name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
+        seeds=[name.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
         space = 8 + OrderbookPage::LEN, 
         bump
     )]
@@ -413,12 +409,12 @@ pub struct PlaceOrder<'info> {
     pub user_ata: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut, seeds=[orderbook_info.name.as_ref(), "orderbook-info".as_ref()], bump)]
+    #[account(mut, seeds=[orderbook_info.name.to_bytes().as_ref(), "orderbook-info".as_ref()], bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         init_if_needed, 
         payer=user, 
-        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
         space = 8 + OrderbookPage::LEN, 
         bump
     )]
@@ -446,19 +442,19 @@ pub struct TakeOrder<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "orderbook-info".as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "orderbook-info".as_ref()], 
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
         bump
     )]
     pub last_page: Account<'info, OrderbookPage>,
@@ -484,19 +480,19 @@ pub struct CancelOrder<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "orderbook-info".as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "orderbook-info".as_ref()], 
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
         bump
     )]
     pub last_page: Account<'info, OrderbookPage>,
@@ -519,13 +515,13 @@ pub struct ModifyOrder<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "orderbook-info".as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "orderbook-info".as_ref()], 
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,

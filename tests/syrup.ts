@@ -36,7 +36,7 @@ describe("orderbook", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>
   const admin = Keypair.generate()
   const user = Keypair.generate()
-  let orderbookName = "test-test-test-1"
+  let orderbookName = Keypair.generate().publicKey
 
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey
@@ -123,12 +123,12 @@ describe("orderbook", async () => {
       program.programId
     )
     ;[orderbookInfo] = await PublicKey.findProgramAddress(
-      [utf8.encode(orderbookName), utf8.encode("orderbook-info")],
+      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     ;[firstPage] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
@@ -209,7 +209,7 @@ describe("orderbook", async () => {
     const nextOpenPageIndex = Math.floor(orderbookInfoData.length / maxLength)
     const [currentPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -219,7 +219,7 @@ describe("orderbook", async () => {
     const lastPageIndex = Math.floor((orderbookInfoData.length - 1) / maxLength)
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -303,7 +303,7 @@ describe("orderbook", async () => {
     const lastPageIndex = Math.floor((orderbookInfoData.length - 1) / maxLength)
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -312,6 +312,7 @@ describe("orderbook", async () => {
     let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
     console.log(
       JSON.stringify(
+        // @ts-ignore
         firstPage.list.map((d) => {
           d.size = d.size.toString()
           return d
@@ -346,6 +347,7 @@ describe("orderbook", async () => {
     firstPage = await program.account.orderbookPage.fetch(lastPageKey)
     console.log(
       JSON.stringify(
+        // @ts-ignore
         firstPage.list.map((d) => {
           d.size = d.size.toString()
           return d
@@ -381,7 +383,7 @@ describe("orderbook", async () => {
     // we know the last page and don't need to recompute lengths
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
@@ -390,6 +392,7 @@ describe("orderbook", async () => {
     let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
     console.log(
       JSON.stringify(
+        // @ts-ignore
         firstPage.list.map((d) => {
           d.size = d.size.toString()
           return d
@@ -444,6 +447,7 @@ describe("orderbook", async () => {
     firstPage = await program.account.orderbookPage.fetch(lastPageKey)
     console.log(
       JSON.stringify(
+        // @ts-ignore
         firstPage.list.map((d) => {
           d.size = d.size.toString()
           return d
@@ -491,6 +495,7 @@ describe("orderbook", async () => {
     firstPage = await program.account.orderbookPage.fetch(lastPageKey)
     console.log(
       JSON.stringify(
+        // @ts-ignore
         firstPage.list.map((d) => {
           d.size = d.size.toString()
           return d
@@ -502,7 +507,7 @@ describe("orderbook", async () => {
   it("modifies an order", async () => {
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        utf8.encode(orderbookName),
+        orderbookName.toBytes(),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
@@ -529,9 +534,6 @@ describe("orderbook", async () => {
     const userCurrencyBalance1 =
       parseInt(userCurrencyAmount1.value.amount) / 1e6
 
-    // console.log(currencyVaultBalance1); // 90
-    // console.log(userCurrencyBalance1); // 92
-
     await program.methods
       .modifyOrder(newOrder, 0, 0)
       .accounts({
@@ -551,6 +553,7 @@ describe("orderbook", async () => {
     const lastPage = await program.account.orderbookPage.fetch(lastPageKey)
     console.log(
       JSON.stringify(
+        // @ts-ignore
         lastPage.list.map((d) => {
           d.size = d.size.toString()
           return d

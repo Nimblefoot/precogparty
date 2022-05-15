@@ -25,11 +25,11 @@ pub struct OrderbookInfo {
     pub currency_mint: Pubkey, // 32
     pub token_mint: Pubkey,    // 32
     pub bump: u8,              // 1
-    pub name: String,          // 20 = 121 total
+    pub name: Pubkey,          // 32
 }
 
 impl OrderbookInfo {
-    pub const LEN: usize = (32 * 3) + 20 + 4 + 1;
+    pub const LEN: usize = (32 * 4) + 4 + 1;
 
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
@@ -47,20 +47,22 @@ impl OrderbookInfo {
 #[account]
 pub struct OrderbookPage {
     pub list: Vec<Order>,
-    pub orderbook_name: String,
+    pub orderbook_name: Pubkey,
+    pub name_set: bool,
 }
 
 impl Default for OrderbookPage {
     fn default() -> Self {
         Self {
-            orderbook_name: "".to_string(),
+            orderbook_name: Pubkey::new_unique(),
+            name_set: false,
             list: Vec::with_capacity(MAX_SIZE),
         }
     }
 }
 
 impl OrderbookPage {
-    pub const LEN: usize = 49 * MAX_SIZE + 64;
+    pub const LEN: usize = 49 * MAX_SIZE + 64; // TODO: this is bigger than I feel like it needs to be
 
     pub fn max_size() -> usize {
         MAX_SIZE
@@ -113,11 +115,13 @@ impl OrderbookPage {
         Some(result)
     }
 
-    pub fn set_orderbook_name(&mut self, name: String) {
+    pub fn set_orderbook_name(&mut self, name: Pubkey) {
+        // TODO: add error in case name is already set
         self.orderbook_name = name;
+        self.name_set = true
     }
 
     pub fn is_orderbook_name_blank(&self) -> bool {
-        self.orderbook_name.is_empty()
+        !self.name_set
     }
 }

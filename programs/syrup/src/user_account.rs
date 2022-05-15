@@ -5,20 +5,20 @@ use crate::error::ErrorCode;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct OrderRecord {
-    pub market: [u8; 16], // 16
-    pub size: u64,        // 8
-    pub buy: bool,        // 1
-    pub price: u64,       // 8
+    pub market: Pubkey, // 32
+    pub size: u64,      // 8
+    pub buy: bool,      // 1
+    pub price: u64,     // 8
 }
 
 #[account]
 pub struct UserAccount {
-    pub orders: Vec<OrderRecord>, // 33 * 200
+    pub orders: Vec<OrderRecord>, // 49 * 200
     pub user: Pubkey,             // 32
 }
 
 impl UserAccount {
-    pub const LEN: usize = 32 + (33 * 200) + 32;
+    pub const LEN: usize = 32 + (49 * 200) + 32;
 
     pub fn initialize(&mut self, user: Pubkey) {
         self.user = user;
@@ -34,12 +34,12 @@ impl UserAccount {
         self.orders.remove(index);
     }
 
-    pub fn find_order(&self, order: Order, orderbook_name: String) -> Option<usize> {
+    pub fn find_order(&self, order: Order, orderbook_name: Pubkey) -> Option<usize> {
         self.orders.iter().position(|record| {
             record.buy == order.buy
                 && record.size == order.size
                 && record.price == order.price
-                && record.market == orderbook_name.as_bytes()
+                && record.market == orderbook_name
         })
     }
 
