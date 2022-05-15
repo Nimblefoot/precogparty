@@ -95,6 +95,10 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
+        if order.user != ctx.accounts.user.key() {
+            return err!(ErrorCode::IncorrectUser);
+        };
+
         // set the name of the new page if you initialized it
         if ctx.accounts.current_page.is_orderbook_name_blank() {
             ctx.accounts.current_page.set_orderbook_name(ctx.accounts.orderbook_info.name.clone());

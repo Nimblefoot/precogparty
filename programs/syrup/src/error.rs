@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("User on the order must match the user invoking the cancel method")]
+    #[msg("User on the order must match the user invoking the instruction")]
     IncorrectUser,
     #[msg("Size too large")]
     SizeTooLarge,

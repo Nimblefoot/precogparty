@@ -216,6 +216,16 @@ describe("orderbook", async () => {
       program.programId
     )
 
+    const lastPageIndex = Math.floor((orderbookInfoData.length - 1) / maxLength)
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode(orderbookName),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
+
     await program.methods
       .placeOrder({
         user: user.publicKey,
@@ -236,13 +246,41 @@ describe("orderbook", async () => {
         skipPreflight: true,
       })
 
+    await program.methods
+      .placeOrder({
+        user: user.publicKey,
+        size: new anchor.BN(5e6),
+        buy: true,
+        price: new anchor.BN(1),
+      })
+      .accounts({
+        user: user.publicKey,
+        userAta: user_currency_ata,
+        vault: currencyVault,
+        orderbookInfo,
+        currentPage: currentPageKey,
+        userAccount: userAccountAddress,
+      })
+      .signers([user])
+      .rpc({
+        skipPreflight: true,
+      })
+
+    const vaultBalance =
+      await program.provider.connection.getTokenAccountBalance(currencyVault)
+    assert.equal(
+      vaultBalance.value.amount,
+      "7000000",
+      "Vault Balance should be reduced to 5000000." // 1*2 + 5*1
+    )
+
     // re-compute nextOpenPage before placing an order but we know its still the first page lol.
     await program.methods
       .placeOrder({
         user: admin.publicKey,
         size: new anchor.BN(5e6),
         buy: false,
-        price: new anchor.BN(3),
+        price: new anchor.BN(2),
       })
       .accounts({
         user: admin.publicKey,
@@ -256,5 +294,66 @@ describe("orderbook", async () => {
       .rpc({
         skipPreflight: true,
       })
+  })
+
+  it("cancels an order", async () => {
+    const orderbookInfoData = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfo
+    )
+    const lastPageIndex = Math.floor((orderbookInfoData.length - 1) / maxLength)
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode(orderbookName),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
+
+    await program.methods
+      .cancelOrder(
+        {
+          user: user.publicKey,
+          size: new anchor.BN(1e6),
+          buy: true,
+          price: new anchor.BN(2),
+        },
+        0,
+        0
+      )
+      .accounts({
+        user: user.publicKey,
+        userAccount: userAccountAddress,
+        userAta: user_currency_ata,
+        vault: currencyVault,
+        orderbookInfo,
+        orderPage: lastPageKey,
+        lastPage: lastPageKey,
+      })
+      .signers([user])
+      .rpc()
+
+    const vaultBalance =
+      await program.provider.connection.getTokenAccountBalance(currencyVault)
+    assert.equal(
+      vaultBalance.value.amount,
+      "5000000",
+      "Vault Balance should be reduced to 5000000." // sum 2 to 10 = 54. 54*2 = 108
+    )
+
+    const info2 = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfo
+    )
+    assert.equal(info2.length, 2, "correct orderbook length")
+
+    const userAccount = await program.account.userAccount.fetch(
+      userAccountAddress
+    )
+    assert.equal(
+      // @ts-ignore
+      userAccount.orders.length,
+      1,
+      "user should have one remaining orders"
+    )
   })
 })
