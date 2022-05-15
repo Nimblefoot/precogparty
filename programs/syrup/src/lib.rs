@@ -17,18 +17,17 @@ use anchor_spl::{
 
 use std::cmp::Ordering;
 
-/* 
-Todos:
--- check the error codes work as intended (as much as possible?) -- not critical
--- Better checks/constraints [requires parsing the market names from byte arrays, maybe refactor some checks into a function?]
-*/
-
-
 pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
-    let order_data = order_page.get(index).clone();
+    let order_data = order_page.get(index);
     let orderbook_name = order_page.orderbook_name.clone();
 
-    if let Some(last_order) = last_page.pop() {
+    if order_page.key() == last_page.key() && (index as usize) == last_page.len() - 1 {
+        last_page.pop();
+    } else if let Some(last_order) = last_page.pop() {
+        msg!("setting data in position: ");
+        msg!(&index.to_string());
+        msg!("last order has price");
+        msg!(&last_order.price.to_string());
         order_page.set(index, last_order);
     } else {
         return err!(ErrorCode::LastPageEmpty);
@@ -143,11 +142,17 @@ pub mod syrup {
 
     #[allow(unused_variables)] 
     pub fn take_order(ctx: Context<TakeOrder>, size: u64, page_number: u32, index: u32) -> Result<()> {
-
         let order_data: Order = ctx.accounts.order_page.get(index);
+        msg!("order price");
+        msg!(&order_data.price.to_string());
+        msg!("order page length");
+        msg!(&ctx.accounts.order_page.len().to_string());
+
         if ctx.accounts.offerer_user_account.user != order_data.user {
             return err!(ErrorCode::IncorrectUser);
         };
+        msg!("order data size");
+        msg!(&order_data.size.to_string());
         if size > order_data.size {
             return err!(ErrorCode::SizeTooLarge);
         };
@@ -251,6 +256,31 @@ pub mod syrup {
         )?;
 
         delete_order(index, last_page, order_page, user_account, orderbook_length)?;
+        order_page.list[0].price = 16;
+
+        // let order_data = order_page.get(index);
+        // let orderbook_name = order_page.orderbook_name.clone();
+    
+        // if order_page.key() == last_page.key() && (index as usize) == last_page.len() - 1 {
+        //     last_page.pop();
+        // } else if let Some(last_order) = last_page.pop() {
+        //     msg!("setting data in position: ");
+        //     msg!(&index.to_string());
+        //     msg!("last order has price");
+        //     msg!(&last_order.price.to_string());
+        //     order_page.set(index, last_order);
+        // } else {
+        //     return err!(ErrorCode::LastPageEmpty);
+        // };
+    
+        // *orderbook_length -= 1;
+    
+        // // Delete from user account
+        // if let Some(deletion_index) = user_account.find_order(order_data, orderbook_name) {
+        //     user_account.delete(deletion_index);
+        // } else {
+        //     return err!(ErrorCode::UserMissingOrder);
+        // };
 
         Ok(())
     }

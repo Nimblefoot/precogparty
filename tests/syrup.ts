@@ -280,7 +280,7 @@ describe("orderbook", async () => {
         user: admin.publicKey,
         size: new anchor.BN(5e6),
         buy: false,
-        price: new anchor.BN(2),
+        price: new anchor.BN(3),
       })
       .accounts({
         user: admin.publicKey,
@@ -309,6 +309,8 @@ describe("orderbook", async () => {
       ],
       program.programId
     )
+    let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(JSON.stringify(firstPage.list))
 
     await program.methods
       .cancelOrder(
@@ -333,6 +335,10 @@ describe("orderbook", async () => {
       .signers([user])
       .rpc()
 
+    console.log("order canceled")
+    firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(JSON.stringify(firstPage.list))
+
     const vaultBalance =
       await program.provider.connection.getTokenAccountBalance(currencyVault)
     assert.equal(
@@ -355,5 +361,103 @@ describe("orderbook", async () => {
       1,
       "user should have one remaining orders"
     )
+  })
+
+  it("takes orders", async () => {
+    // we know the last page and don't need to recompute lengths
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode(orderbookName),
+        utf8.encode("page"),
+        new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
+    let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(JSON.stringify(firstPage.list))
+
+    // the max size is 5e6. Going to take for 2e6. the order is in position 0,1 cause of how deletion works (swap and pop)!
+    await program.methods
+      .takeOrder(new anchor.BN(2e6), 0, 1)
+      .accounts({
+        taker: admin.publicKey,
+        takerSendingAta: admin_token_ata,
+        takerReceivingAta: admin_currency_ata,
+        offererUserAccount: userAccountAddress,
+        offererReceivingAta: user_token_ata,
+        vault: currencyVault,
+        orderbookInfo,
+        orderPage: lastPageKey,
+        lastPage: lastPageKey,
+      })
+      .signers([admin])
+      .rpc()
+
+    const currencyVaultBalance =
+      await program.provider.connection.getTokenAccountBalance(currencyVault)
+    assert.equal(
+      currencyVaultBalance.value.amount,
+      "3000000",
+      "Vault Balance should be reduced to 3000000."
+    )
+
+    const userTokenBalance =
+      await program.provider.connection.getTokenAccountBalance(user_token_ata)
+    assert.equal(
+      userTokenBalance.value.amount,
+      "2000000",
+      "User should have bought 2 tokens at a price of 1 usdc" //
+    )
+
+    const adminCurrencyBalance =
+      await program.provider.connection.getTokenAccountBalance(
+        admin_currency_ata
+      )
+    assert.equal(
+      adminCurrencyBalance.value.amount,
+      "2000000",
+      "Admin sold 2 tokens for 1usdc each."
+    )
+
+    // User will take the admins sell order for the full amount
+    console.log("order taken")
+    firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(JSON.stringify(firstPage.list))
+
+    //   await program.methods
+    //     .takeOrder(new anchor.BN(5e6), 0, 0)
+    //     .accounts({
+    //       taker: user.publicKey,
+    //       takerSendingAta: user_currency_ata,
+    //       takerReceivingAta: user_token_ata,
+    //       offererUserAccount: adminAccountAddress,
+    //       offererReceivingAta: admin_currency_ata,
+    //       vault: tokenVault,
+    //       orderbookInfo,
+    //       orderPage: lastPageKey,
+    //       lastPage: lastPageKey,
+    //     })
+    //     .signers([user])
+    //     .rpc({
+    //       skipPreflight: true,
+    //     })
+
+    //   const userTokenBalance2 =
+    //     await program.provider.connection.getTokenAccountBalance(user_token_ata)
+    //   assert.equal(
+    //     userTokenBalance.value.amount,
+    //     "7000000",
+    //     "User should have bought 2 tokens at a price of 1 usdc" //
+    //   )
+
+    //   const adminCurrencyBalance2 =
+    //     await program.provider.connection.getTokenAccountBalance(
+    //       admin_currency_ata
+    //     )
+    //   assert.equal(
+    //     adminCurrencyBalance2.value.amount,
+    //     "12000000",
+    //     "Admin sold 2 tokens for 1usdc each and 5 tokens for 2usdc each"
+    //   )
   })
 })

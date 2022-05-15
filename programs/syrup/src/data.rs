@@ -89,8 +89,14 @@ impl OrderbookPage {
     }
 
     pub fn set(&mut self, index: u32, data: Order) {
+        msg!("orderpage set method. incoming price is: ");
+        msg!(&data.price.to_string());
+
         let idx = index as usize;
         self.list[idx] = data;
+
+        msg!("we set price to: ");
+        msg!(&self.list[idx].price.to_string());
     }
 
     pub fn get(&mut self, index: u32) -> Order {
