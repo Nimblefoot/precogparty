@@ -310,7 +310,14 @@ describe("orderbook", async () => {
       program.programId
     )
     let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-    console.log(JSON.stringify(firstPage.list))
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
 
     await program.methods
       .cancelOrder(
@@ -337,7 +344,14 @@ describe("orderbook", async () => {
 
     console.log("order canceled")
     firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-    console.log(JSON.stringify(firstPage.list))
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
 
     const vaultBalance =
       await program.provider.connection.getTokenAccountBalance(currencyVault)
@@ -374,8 +388,14 @@ describe("orderbook", async () => {
       program.programId
     )
     let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-    console.log(JSON.stringify(firstPage.list))
-
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
     // the max size is 5e6. Going to take for 2e6. the order is in position 0,1 cause of how deletion works (swap and pop)!
     await program.methods
       .takeOrder(new anchor.BN(2e6), 0, 1)
@@ -422,7 +442,14 @@ describe("orderbook", async () => {
     // User will take the admins sell order for the full amount
     console.log("order taken")
     firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-    console.log(JSON.stringify(firstPage.list))
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
 
     await program.methods
       .takeOrder(new anchor.BN(5e6), 0, 0)
@@ -462,6 +489,107 @@ describe("orderbook", async () => {
 
     console.log("order taken for max amount")
     firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-    console.log(JSON.stringify(firstPage.list))
+    console.log(
+      JSON.stringify(
+        firstPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
+  })
+
+  it("modifies an order", async () => {
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        utf8.encode(orderbookName),
+        utf8.encode("page"),
+        new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
+
+    // currently the order should have a size of 3 and a price of 1. 10x2 - 3x1 = 17
+    const newOrder = {
+      size: new anchor.BN(10e6),
+      price: new anchor.BN(2),
+      user: user.publicKey,
+      buy: true,
+    }
+
+    let currencyVaultAmount1 =
+      await program.provider.connection.getTokenAccountBalance(currencyVault)
+    let userCurrencyAmount1 =
+      await program.provider.connection.getTokenAccountBalance(
+        user_currency_ata
+      )
+
+    const currencyVaultBalance1 =
+      parseInt(currencyVaultAmount1.value.amount) / 1e6
+    const userCurrencyBalance1 =
+      parseInt(userCurrencyAmount1.value.amount) / 1e6
+
+    // console.log(currencyVaultBalance1); // 90
+    // console.log(userCurrencyBalance1); // 92
+
+    await program.methods
+      .modifyOrder(newOrder, 0, 0)
+      .accounts({
+        user: user.publicKey,
+        orderPage: lastPageKey,
+        userAccount: userAccountAddress,
+        userAta: user_currency_ata,
+        vault: currencyVault,
+        orderbookInfo,
+      })
+      .signers([user])
+      .rpc({
+        skipPreflight: true,
+      })
+
+    console.log("order modified")
+    const lastPage = await program.account.orderbookPage.fetch(lastPageKey)
+    console.log(
+      JSON.stringify(
+        lastPage.list.map((d) => {
+          d.size = d.size.toString()
+          return d
+        })
+      )
+    )
+
+    let currencyVaultAmount2 =
+      await program.provider.connection.getTokenAccountBalance(currencyVault)
+    let userCurrencyAmount2 =
+      await program.provider.connection.getTokenAccountBalance(
+        user_currency_ata
+      )
+
+    const currencyVaultBalance2 =
+      parseInt(currencyVaultAmount2.value.amount) / 1e6
+    const userCurrencyBalance2 =
+      parseInt(userCurrencyAmount2.value.amount) / 1e6
+
+    assert.equal(
+      currencyVaultBalance2 - currencyVaultBalance1,
+      17,
+      "vault should have increased by 17"
+    )
+    assert.equal(
+      userCurrencyBalance2 - userCurrencyBalance1,
+      -17,
+      "user should have transfered out 17"
+    )
+
+    assert.equal(
+      lastPage.list[0].size.toString(),
+      (10e6).toString(),
+      "correct modifed size"
+    )
+    assert.equal(
+      lastPage.list[0].price.toString(),
+      (2).toString(),
+      "correct modifed price"
+    )
   })
 })

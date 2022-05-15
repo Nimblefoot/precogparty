@@ -53,7 +53,7 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
 }
 
 pub fn edit_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
-    let mut order_data = order_page.get(index).clone();
+    let mut order_data = order_page.get(index);
     let orderbook_name = order_page.orderbook_name.clone();
 
     // Modify the order in the user's orders
@@ -164,8 +164,8 @@ pub mod syrup {
             return err!(ErrorCode::SizeTooLarge);
         };
 
-        let order_page = &mut ctx.accounts.order_page;
-        let last_page = &mut ctx.accounts.last_page;
+        let last_page = &mut ctx.accounts.last_page; 
+        let order_page = &mut ctx.accounts.order_page; // this could be a second mutable reference to same page!
         let offerer_user_account = &mut ctx.accounts.offerer_user_account;
 
         // need to split up variables to avoid borrower check errors
@@ -215,7 +215,11 @@ pub mod syrup {
         if size == order_data.size {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
         } else {
-            edit_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
+            if (last_page.key() == order_page.key()) {
+                edit_order(index, order_data.price, order_data.size - size, last_page, offerer_user_account)?;
+            } else {
+                edit_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
+            }
         }
 
         Ok(())
@@ -265,30 +269,6 @@ pub mod syrup {
         delete_order(index, last_page, order_page, user_account, orderbook_length)?;
         order_page.list[0].price = 16;
         msg!(&order_page.list[0].price.to_string());
-
-        // let order_data = order_page.get(index);
-        // let orderbook_name = order_page.orderbook_name.clone();
-    
-        // if order_page.key() == last_page.key() && (index as usize) == last_page.len() - 1 {
-        //     last_page.pop();
-        // } else if let Some(last_order) = last_page.pop() {
-        //     msg!("setting data in position: ");
-        //     msg!(&index.to_string());
-        //     msg!("last order has price");
-        //     msg!(&last_order.price.to_string());
-        //     order_page.set(index, last_order);
-        // } else {
-        //     return err!(ErrorCode::LastPageEmpty);
-        // };
-    
-        // *orderbook_length -= 1;
-    
-        // // Delete from user account
-        // if let Some(deletion_index) = user_account.find_order(order_data, orderbook_name) {
-        //     user_account.delete(deletion_index);
-        // } else {
-        //     return err!(ErrorCode::UserMissingOrder);
-        // };
 
         Ok(())
     }
