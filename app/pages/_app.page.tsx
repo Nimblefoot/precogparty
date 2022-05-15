@@ -32,7 +32,7 @@ const navigation = [
   },
   { name: "New", href: "/markets/new", icon: ChartBarIcon },
 
-  { name: "Account", href: "#", icon: FolderIcon },
+  { name: "Positions", href: "/positions", icon: FolderIcon },
   { name: "About", href: "#", icon: CalendarIcon },
 ]
 

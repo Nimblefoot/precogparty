@@ -12,6 +12,7 @@ use anchor_spl::{
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
+// Actually this should just depend on the collateral's decimals
 const TOKEN_DECIMALS: u8 = 6;
 #[program]
 pub mod precog {
@@ -213,9 +214,9 @@ pub struct PredictionMarket {
     name: String,                  // 100
     description: String,           // 512
     bump: u8,                      // 1
-    yes_mint: Pubkey,              // 32
-    no_mint: Pubkey,               // 32
-    collateral_vault: Pubkey,      // 32
+    yes_mint: Pubkey,              // 32 // this doesnt need to be saved
+    no_mint: Pubkey,               // 32 // this doesnt need to be saved
+    collateral_vault: Pubkey,      // 32 // this doesnt need to be saved
     market_authority: Pubkey,      // 32
     resolution_authority: Pubkey,  // 32
     description_authority: Pubkey, // 32

@@ -5,7 +5,8 @@ import { useRouter } from "next/router"
 import React, { useMemo } from "react"
 import User from "../User"
 import { Resolve } from "./Resolution"
-import { useMarketData } from "./hooks/useMarketData"
+import { useMarket } from "./hooks/marketQueries"
+import { TokenControls } from "./TokenControls"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -22,29 +23,28 @@ const MarketRouter = () => {
     [name]
   )
 
-  return market ? <Market address={market} /> : <></>
+  return market && name ? <Market address={market} name={name} /> : <></>
 }
 
-const Market = ({ address }: { address: PublicKey }) => {
-  const router = useRouter()
-  const marketName = router.query.m
+const Market = ({ address, name }: { address: PublicKey; name: string }) => {
+  const market = useMarket(address)
 
-  const market = useMarketData(address)
-
-  return market ? (
+  return market.data ? (
     <>
       <div className="flex px-4 sm:px-6 md:px-8 max-w-7xl mx-auto gap-5">
-        {/* Main body */}
+        {/* Card */}
         <div className="flex-grow">
           <div className="py-4 shadow bg-white rounded-lg h-96">
             <div className="">
+              {/* Main body */}
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  {marketName}
-                </h1>
+                <h1 className="text-2xl font-semibold text-gray-900">{name}</h1>
+                {/* Metadata display */}
                 <div className="flex content-center flex-row gap-4 mt-2">
                   <div>
-                    <User publicKey={new PublicKey(market.marketAuthority)} />
+                    <User
+                      publicKey={new PublicKey(market.data.marketAuthority)}
+                    />
                   </div>
                   <div className="text-sm flex justify-center flex-col">
                     <div className="flex">
@@ -55,14 +55,26 @@ const Market = ({ address }: { address: PublicKey }) => {
                     </div>
                   </div>
                 </div>
-                <p className="mt-4">{market.description}</p>
+                <div className="w-full flex justify-center">
+                  <div>
+                    <h1 className="text-5xl">
+                      {
+                        { 0: "Unresolved", 1: "YES", 2: "NO" }[
+                          market.data.resolution
+                        ]
+                      }
+                    </h1>
+                  </div>
+                </div>
+                <p className="mt-4">{market.data.description}</p>
               </div>
             </div>
           </div>
         </div>
         {/* 2nd column */}
-        <div className="grow max-w-xs">
-          <Resolve market={address} />
+        <div className="grow max-w-xs flex flex-col gap-4">
+          {market.data.resolution === 0 && <Resolve market={address} />}
+          <TokenControls address={address} />
         </div>
       </div>
     </>

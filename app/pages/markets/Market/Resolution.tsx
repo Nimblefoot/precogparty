@@ -3,7 +3,9 @@ import {
   useTransact,
 } from "@/components/TransactButton"
 import { PublicKey } from "@solana/web3.js"
+import { queryClient } from "pages/providers"
 import React, { useCallback, useState } from "react"
+import { marketKeys } from "./hooks/marketQueries"
 import useResolveMarketTxn from "./hooks/useResolveMarketTxn"
 
 type Resolution = "yes" | "no"
@@ -17,6 +19,7 @@ export function Resolve({ market }: { market: PublicKey }) {
     const txn = await getResolveMarketTxn({ resolution, market })
     console.log(txn)
     await callback(txn)
+    queryClient.invalidateQueries(marketKeys.market(market))
   }, [callback, getResolveMarketTxn, market, resolution])
 
   return (
