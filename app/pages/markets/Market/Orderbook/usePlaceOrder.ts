@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import {
   Connection,
@@ -7,12 +7,12 @@ import {
   SYSVAR_RENT_PUBKEY,
   Transaction,
 } from "@solana/web3.js"
-import { COLLATERAL_MINT, ORDERBOOK_PAGE_MAX_LENGTH } from "config"
+import { COLLATERAL_MINT, ORDERBOOK_PAGE_MAX_LENGTH, Resolution } from "config"
 import BN from "bn.js"
 import { createUserAccount, placeOrder } from "@/generated/syrup/instructions"
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
-import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
+import { PROGRAM_ID, PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
 import { useOrderbookForCoin } from "./orderbookQueries"
 import { ASSOCIATED_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token"
 import { UserAccount } from "@/generated/syrup/accounts"
@@ -38,9 +38,26 @@ const getMaybeCreateUserAccountAddress = async (
   return [userAccountAddress, ix] as const
 }
 
-const usePlaceOrderTxn = (token: PublicKey) => {
+export const useResolutionMint = (
+  marketAddress: PublicKey,
+  resolution: Resolution
+) => {
+  const [x] = useMemo(
+    () =>
+      PublicKey.findProgramAddressSync(
+        [Buffer.from(`${resolution}_mint`), marketAddress.toBuffer()],
+        PROGRAM_ID
+      ),
+    [marketAddress, resolution]
+  )
+  return x
+}
+
+const usePlaceOrderTxn = (marketAddress: PublicKey, resolution: Resolution) => {
   const { publicKey } = useWallet()
   const { connection } = useConnection()
+  const token = useResolutionMint(marketAddress, resolution)
+
   const orderbookQuery = useOrderbookForCoin(token)
 
   const callback = useCallback(

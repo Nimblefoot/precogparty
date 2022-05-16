@@ -2,9 +2,13 @@ import {
   StatelessTransactButton,
   useTransact,
 } from "@/components/TransactButton"
+import { PROGRAM_ID } from "@/generated/client/programId"
+import { getAssociatedTokenAddress } from "@solana/spl-token"
 import { PublicKey } from "@solana/web3.js"
-import { COLLATERAL_DECIMALS } from "config"
-import React, { useCallback, useRef, useState } from "react"
+import { BN } from "bn.js"
+import { COLLATERAL_DECIMALS, Resolution } from "config"
+import React, { useCallback, useMemo, useRef, useState } from "react"
+import usePlaceOrderTxn from "./usePlaceOrder"
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ")
@@ -12,29 +16,40 @@ function classNames(...classes: string[]) {
 function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
-type Mode = "split" | "merge"
+
+type Mode = "buy" | "sell"
 // TODO cool css transitions when switching modes
 // TODO display balances
-export function TokenControls({ address }: { address: PublicKey }) {
-  const [amount, setAmount] = useState<string>("")
-  const [mode, setMode] = useState<Mode>("split")
+export function PlaceOrderPanel({
+  marketAddress,
+}: {
+  marketAddress: PublicKey
+}) {
+  const [price, setPrice] = useState<string>("")
+  const [size, setSize] = useState<string>("")
+  const [mode, setMode] = useState<Mode>("buy")
+  const [resolution, setResolution] = useState<Resolution>("yes")
+
+  const placeYesOrder = usePlaceOrderTxn(marketAddress, "yes")
+  const placeNoOrder = usePlaceOrderTxn(marketAddress, "no")
 
   const inputRef = useRef(null)
 
   const { callback, status } = useTransact()
-  const getMintTxn = useMintContingentSet(address)
-  const getMergeTxn = useMergeContingentSet(address)
-  const onSubmit = useCallback(async () => {
-    if (amount === "") return
 
-    const getTxn = mode === "split" ? getMintTxn : getMergeTxn
+  const onSubmit = useCallback(async () => {
+    if (price === "") return
+
+    const getTxn = resolution === "yes" ? placeYesOrder : placeNoOrder
 
     const txn = await getTxn({
-      amount: parseFloat(amount) * 10 ** COLLATERAL_DECIMALS,
+      price: new BN(price).mul(new BN(10 ** COLLATERAL_DECIMALS)),
+      buying: mode === "buy",
+      size: new BN(price).mul(new BN(10 ** COLLATERAL_DECIMALS)),
     })
     console.log(txn)
     await callback(txn)
-  }, [amount, callback, getMergeTxn, getMintTxn, mode])
+  }, [price, resolution, placeYesOrder, placeNoOrder, mode, callback])
 
   return (
     <>
@@ -44,11 +59,11 @@ export function TokenControls({ address }: { address: PublicKey }) {
             Tokens
           </h3>
           <nav className="-mb-px flex space-x-8 mt-3 sm:mt-4">
-            {(["split", "merge"] as const).map((tab) => (
+            {(["buy", "sell"] as const).map((tab) => (
               <a
                 key={tab}
                 onClick={(e) => {
-                  setMode(tab)
+                  setMode(mode)
                   ;(inputRef as any)?.current.focus()
                 }}
                 className={classNames(
@@ -66,8 +81,7 @@ export function TokenControls({ address }: { address: PublicKey }) {
 
         <div
           className={`
-          px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center
-          ${mode === "split" ? "flex-col" : "flex-col-reverse"}
+          px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col
         `}
         >
           {/* USDC input */}
@@ -87,8 +101,8 @@ export function TokenControls({ address }: { address: PublicKey }) {
                 className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
                 placeholder="0.00"
                 aria-describedby="price-currency"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-gray-500 sm:text-sm" id="price-currency">
@@ -98,54 +112,22 @@ export function TokenControls({ address }: { address: PublicKey }) {
             </div>
           </div>
 
-          {/* little splitter art :-) */}
-          <div
-            className="grid grid-cols-2 w-[50%] self-center"
-            style={{
-              transform: mode === "split" ? "" : "rotateX(-180deg)",
-            }}
-          >
-            <div className="border-r border-b rounded-br-md ml-2 mb-[-1px] mr-[-0.5px] border-gray-400 h-2" />
-            <div className="border-l border-b rounded-bl-md mr-2 mb-[-1px] ml-[-0.5px] border-gray-400 h-2" />
-            <div className="border-l border-t rounded-tl-md mr-3  border-gray-400 h-2" />
-            <div className="border-r border-t rounded-tr-md ml-3 border-gray-400 h-2" />
-          </div>
-          <div className="flex gap-2">
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-lime-500 sm:text-sm">$</span>
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-7 pr-12 sm:text-sm border-lime-300 rounded-md bg-lime-100 text-lime-500 placeholder:text-lime-400"
-                placeholder="0.00"
-                aria-describedby="price-currency"
-                value={amount}
-                disabled
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-lime-500 sm:text-sm" id="price-currency">
-                  YES
-                </span>
-              </div>
+          <div className="mt-1 relative rounded-md shadow-sm">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-lime-500 sm:text-sm">$</span>
             </div>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-rose-500 sm:text-sm">$</span>
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-7 pr-12 sm:text-sm border-rose-300 rounded-md bg-rose-100 text-rose-500 placeholder:text-rose-300"
-                placeholder="0.00"
-                aria-describedby="price-currency"
-                value={amount}
-                disabled
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-rose-500 sm:text-sm" id="price-currency">
-                  NO
-                </span>
-              </div>
+            <input
+              type="text"
+              className="block w-full pl-7 pr-12 sm:text-sm border-lime-300 rounded-md bg-lime-100 text-lime-500 placeholder:text-lime-400"
+              placeholder="0.00"
+              aria-describedby="price-currency"
+              value={price}
+              disabled
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-lime-500 sm:text-sm" id="price-currency">
+                YES
+              </span>
             </div>
           </div>
         </div>
@@ -155,7 +137,7 @@ export function TokenControls({ address }: { address: PublicKey }) {
             verb={capitalizeFirstLetter(mode)}
             onClick={onSubmit}
             className="w-full"
-            disabled={!amount}
+            disabled={!price}
           />
         </div>
       </div>
