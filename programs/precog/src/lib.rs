@@ -257,7 +257,7 @@ pub struct CreateMarket<'info> {
         payer = market_authority,
         seeds = ["yes_mint".as_bytes(), market_account.key().as_ref()],
         bump,
-        mint::decimals = TOKEN_DECIMALS,
+        mint::decimals = collateral_mint.decimals,
         mint::authority = market_account,
         mint::freeze_authority = market_account
     )]
@@ -267,7 +267,7 @@ pub struct CreateMarket<'info> {
         payer = market_authority,
         seeds = ["no_mint".as_bytes(), market_account.key().as_ref()],
         bump,
-        mint::decimals = TOKEN_DECIMALS,
+        mint::decimals = collateral_mint.decimals,
         mint::authority = market_account,
         mint::freeze_authority = market_account
     )]
