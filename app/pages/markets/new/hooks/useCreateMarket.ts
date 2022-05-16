@@ -8,6 +8,7 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   Transaction,
+  TransactionInstruction,
 } from "@solana/web3.js"
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -19,6 +20,15 @@ import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
 import { COLLATERAL_MINT } from "config"
 import BN from "bn.js"
 import { initializeOrderbook } from "@/generated/syrup/instructions"
+
+const requestAdditionalBudgetIx = (budget: number) => {
+  const data = Buffer.from(Uint8Array.of(0, ...new BN(budget).toArray("le", 4)))
+  return new TransactionInstruction({
+    keys: [],
+    programId: new PublicKey("ComputeBudget111111111111111111111111111111"),
+    data,
+  })
+}
 
 const useCreateMarket = () => {
   const { wallet, publicKey } = useWallet()
@@ -125,7 +135,11 @@ const useCreateMarket = () => {
         })
       )
 
-      const txn = new Transaction().add(x, ...createBooks)
+      const txn = new Transaction().add(
+        requestAdditionalBudgetIx(341007),
+        x,
+        ...createBooks
+      )
       return txn
     },
     []
