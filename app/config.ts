@@ -15,3 +15,5 @@ export const RESOLUTION_MAPPING_INVERSE = {
   2: "no",
 } as const
 export type Resolution = keyof typeof RESOLUTION_MAPPING
+
+export const ORDERBOOK_PAGE_MAX_LENGTH = 100
