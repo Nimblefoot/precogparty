@@ -12,10 +12,11 @@ import BN from "bn.js"
 import { createUserAccount, placeOrder } from "@/generated/syrup/instructions"
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
-import { PROGRAM_ID, PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
+import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
 import { useOrderbookForCoin } from "./orderbookQueries"
 import { ASSOCIATED_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token"
 import { UserAccount } from "@/generated/syrup/accounts"
+import { PROGRAM_ID } from "@/generated/client/programId"
 
 const getMaybeCreateUserAccountAddress = async (
   connection: Connection,
