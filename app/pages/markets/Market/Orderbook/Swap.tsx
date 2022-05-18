@@ -19,18 +19,28 @@ function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-type Mode = "buy" | "trade"
+type BN_ = InstanceType<typeof BN>
+
+const displayBN = (bn: BN_) =>
+  (bn.toNumber() / 10 ** COLLATERAL_DECIMALS)
+    .toFixed(2)
+    .replace(/0+$/, "")
+    .replace(/[.]$/, "")
+const timesOdds = (bn: BN_, odds: number) =>
+  bn.mul(new BN(odds * 100000)).div(new BN(100000))
+const divOdds = (bn: BN_, odds: number) =>
+  bn.div(new BN(odds * 100000)).mul(new BN(100000))
+
+const modes = ["Buy YES", "Buy NO"] as const
+type Mode = typeof modes[number]
 // TODO cool css transitions when switching modes
 // TODO display balances
-export function PlaceOrderPanel({
-  marketAddress,
-}: {
-  marketAddress: PublicKey
-}) {
+export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
   const [odds, setOdds] = useState<number>(0.8)
-  const [inputSize, setInputSize] = useState<number>(0)
-  const [mode, setMode] = useState<Mode>("buy")
-  const [resolution, setResolution] = useState<Resolution>("yes")
+  const [yesInput, setYesInput] = useState("")
+  const [noInput, setNoInput] = useState("")
+
+  const [mode, setMode] = useState<Mode>("Buy YES")
 
   const market = useMarket(marketAddress)
   console.log(market.data?.yesMint.toString())
@@ -43,8 +53,6 @@ export function PlaceOrderPanel({
   const noAccount = useTokenAccount(noMint)
 
   const swap = usePlaceOrderTxn(marketAddress)
-
-  const inputRef = useRef(null)
 
   const { callback, status } = useTransact()
 
@@ -62,9 +70,6 @@ export function PlaceOrderPanel({
     await callback(txn) */
   }, [])
 
-  const yesOutput = inputSize / odds
-  const noOutput = inputSize / (1 - odds)
-
   return (
     <>
       <div className="shadow bg-white rounded-lg">
@@ -73,12 +78,12 @@ export function PlaceOrderPanel({
             Tokens
           </h3>
           <nav className="-mb-px flex space-x-8 mt-3 sm:mt-4">
-            {(["buy", "trade"] as const).map((tab) => (
+            {modes.map((tab) => (
               <a
                 key={tab}
                 onClick={(e) => {
                   setMode(tab)
-                  ;(inputRef as any)?.current.focus()
+                  //;(inputRef as any)?.current.focus()
                 }}
                 className={classNames(
                   tab === mode
@@ -97,103 +102,62 @@ export function PlaceOrderPanel({
           px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col
         `}
         >
-          <div className="relative pt-1">
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={odds}
-              onChange={(e) => setOdds(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-            />
-          </div>
-          <div className="flex gap-2">
-            {/* USDC input */}
-
-            <div className="mt-1 relative rounded-md shadow-sm w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">$</span>
-              </div>
+          <div className="flex flex-col gap-2">
+            <div>
               <input
-                ref={inputRef}
                 type="number"
-                step="0.001"
+                className="border-transparent"
                 min="0"
-                name="price"
-                id="price"
-                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
-                placeholder="0.00"
-                aria-describedby="price-currency"
-                value={inputSize.toString()}
-                onChange={(e) => {
-                  const input = parseFloat(e.target.value)
-
-                  setInputSize(input)
-                }}
+                max="1"
+                step="0.01"
+                value={odds}
+                onChange={(e) => setOdds(parseFloat(e.target.value))}
               />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm" id="price-currency">
-                  USDC
-                </span>
-              </div>
+            </div>
+            <div className="relative pt-1">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={odds}
+                onChange={(e) => setOdds(parseFloat(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+              />
             </div>
           </div>
 
-          {/* little splitter art :-) */}
-          <div className="grid grid-cols-2 w-[50%] self-center">
-            <div
-              className={`border-r border-b rounded-br-md ml-2 mb-[-1px] mr-[-0.5px] h-2
-                ${
-                  resolution === "no" ? "border-transparent" : "border-gray-400"
-                }
-              `}
-            />
-            <div
-              className={`border-l border-b rounded-bl-md mr-2 mb-[-1px] ml-[-0.5px] h-2
-                ${
-                  resolution === "yes"
-                    ? "border-transparent"
-                    : "border-gray-400"
-                }
-
-              `}
-            />
-            <div
-              className={`border-l border-t rounded-tl-md mr-3 h-2
-                ${
-                  resolution === "no" ? "border-transparent" : "border-gray-400"
-                }
-
-              `}
-            />
-            <div
-              className={`border-r border-t rounded-tr-md ml-3 h-2
-                ${
-                  resolution === "yes"
-                    ? "border-transparent"
-                    : "border-gray-400"
-                }
-              `}
-            />
-          </div>
-          <div className="flex gap-2">
+          <div
+            className={`
+            flex gap-2 
+            ${mode === "Buy NO" ? "flex-col" : "flex-col-reverse"}
+            `}
+          >
             <div className="mt-1 relative rounded-md shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <span className="text-lime-500 sm:text-sm">$</span>
               </div>
               <input
                 type="number"
-                step="0.001"
+                step="0.01"
                 min="0"
+                pattern="^\d*(\.\d{0,2})?$"
                 className={`
                   block w-full pl-7 pr-12 sm:text-sm border-lime-300 rounded-md bg-lime-100 text-lime-500 placeholder:text-lime-400
-                  ${resolution === "yes" ? "" : "opacity-50"}
                 `}
+                onChange={(e) => {
+                  const value = new BN(
+                    parseFloat(e.target.value) * 10 ** COLLATERAL_DECIMALS
+                  )
+                  const noInput = displayBN(
+                    divOdds(timesOdds(value, odds), 1 - odds)
+                  )
+                  setYesInput(e.target.value)
+                  setNoInput(noInput)
+                }}
                 placeholder="0.00"
                 aria-describedby="price-currency"
-                onSelect={() => setResolution("yes")}
-                value={yesOutput}
+                value={yesInput}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-lime-500 sm:text-sm" id="price-currency">
@@ -211,16 +175,19 @@ export function PlaceOrderPanel({
                 min="0"
                 className={`
                   block w-full pl-7 pr-12 sm:text-sm border-rose-300 rounded-md bg-rose-100 text-rose-500 placeholder:text-rose-300
-                  ${resolution === "no" ? "" : "opacity-50"}
                 `}
                 placeholder="0.00"
                 aria-describedby="price-currency"
-                onSelect={() => setResolution("no")}
-                value={noOutput}
+                value={noInput}
                 onChange={(e) => {
-                  const output = parseFloat(e.target.value)
-                  const input = output * (1 - odds)
-                  setInputSize(input)
+                  const value = new BN(
+                    parseFloat(e.target.value) * 10 ** COLLATERAL_DECIMALS
+                  )
+                  const yesInput = displayBN(
+                    divOdds(timesOdds(value, 1 - odds), odds)
+                  )
+                  setYesInput(yesInput)
+                  setNoInput(e.target.value)
                 }}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

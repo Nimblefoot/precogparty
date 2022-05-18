@@ -54,22 +54,23 @@ export const useResolutionMint = (
   return x
 }
 
-const usePlaceOrderTxn = (marketAddress: PublicKey, resolution: Resolution) => {
+const usePlaceOrderTxn = (marketAddress: PublicKey) => {
   const { publicKey } = useWallet()
   const { connection } = useConnection()
-  const token = useResolutionMint(marketAddress, resolution)
+  const yesMint = useResolutionMint(marketAddress, "yes")
+  const noMint = useResolutionMint(marketAddress, "no")
 
-  const orderbookQuery = useOrderbookForCoin(token)
+  const orderbookQuery = useOrderbookForCoin(yesMint)
 
   const callback = useCallback(
     async ({
       size,
       price,
-      buying,
+      yesForNo,
     }: {
       size: BN
       price: BN
-      buying: boolean
+      yesForNo: boolean
     }) => {
       if (!publicKey) throw new Error("no publickey connected")
 
@@ -80,18 +81,18 @@ const usePlaceOrderTxn = (marketAddress: PublicKey, resolution: Resolution) => {
         )
 
       const [orderbookInfo] = await PublicKey.findProgramAddress(
-        [token.toBuffer(), utf8.encode("orderbook-info")],
+        [yesMint.toBuffer(), utf8.encode("orderbook-info")],
         SYRUP_ID
       )
 
       // the ATA is for the token we are locking up
       const userAta = await getAssociatedTokenAddress(
-        buying ? COLLATERAL_MINT : token,
+        yesForNo ? yesMint : noMint,
         publicKey
       )
       // corresponding ATA owned by program
       const vault = await getAssociatedTokenAddress(
-        buying ? COLLATERAL_MINT : token,
+        yesForNo ? yesMint : noMint,
         orderbookInfo,
         true
       )
@@ -102,7 +103,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey, resolution: Resolution) => {
 
       const [currentPage] = await PublicKey.findProgramAddress(
         [
-          token.toBuffer(),
+          yesMint.toBuffer(),
           utf8.encode("page"),
           new BN(currentPageIndex).toArrayLike(Buffer, "le", 4),
         ],
@@ -120,7 +121,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey, resolution: Resolution) => {
             user: publicKey,
             size,
             price,
-            buy: buying,
+            buy: yesForNo,
           },
         },
         {
@@ -142,7 +143,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey, resolution: Resolution) => {
         : new Transaction().add(ix)
       return txn
     },
-    [connection, orderbookQuery.data, publicKey, token]
+    [connection, noMint, orderbookQuery.data, publicKey, yesMint]
   )
 
   return callback
