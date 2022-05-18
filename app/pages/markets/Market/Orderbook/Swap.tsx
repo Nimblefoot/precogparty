@@ -153,7 +153,7 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
                     divOdds(timesOdds(value, odds), 1 - odds)
                   )
                   setYesInput(e.target.value)
-                  setNoInput(noInput)
+                  setNoInput(e.target.value !== "" ? noInput : "")
                 }}
                 placeholder="0.00"
                 aria-describedby="price-currency"
@@ -186,7 +186,7 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
                   const yesInput = displayBN(
                     divOdds(timesOdds(value, 1 - odds), odds)
                   )
-                  setYesInput(yesInput)
+                  setYesInput(e.target.value !== "" ? yesInput : "")
                   setNoInput(e.target.value)
                 }}
               />
