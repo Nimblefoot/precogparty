@@ -271,7 +271,7 @@ describe("orderbook", async () => {
     assert.equal(
       vaultBalance.value.amount,
       "7000000",
-      "Vault Balance should be reduced to 5000000." // 1*2 + 5*1
+      "Vault Balance should be reduced to 7000000." // 1*2 + 5*1
     )
 
     // re-compute nextOpenPage before placing an order but we know its still the first page lol.
@@ -360,7 +360,7 @@ describe("orderbook", async () => {
     assert.equal(
       vaultBalance.value.amount,
       "5000000",
-      "Vault Balance should be reduced to 5000000." // sum 2 to 10 = 54. 54*2 = 108
+      "Vault Balance should be reduced to 5000000."
     )
 
     const info2 = await program.account.orderbookInfo.fetchNullable(
@@ -399,7 +399,9 @@ describe("orderbook", async () => {
         })
       )
     )
+
     // the max size is 5e6. Going to take for 2e6. the order is in position 0,1 cause of how deletion works (swap and pop)!
+
     await program.methods
       .takeOrder(new anchor.BN(2e6), 0, 1)
       .accounts({
@@ -455,6 +457,13 @@ describe("orderbook", async () => {
       )
     )
 
+    let userCurrencyAmount1 =
+      await program.provider.connection.getTokenAccountBalance(
+        user_currency_ata
+      )
+    const userCurrencyBalance1 =
+      parseInt(userCurrencyAmount1.value.amount) / 1e6
+
     await program.methods
       .takeOrder(new anchor.BN(5e6), 0, 0)
       .accounts({
@@ -491,6 +500,19 @@ describe("orderbook", async () => {
       "Admin sold 2 tokens for 1usdc each and 5 tokens for 3usdc each"
     )
 
+    let userCurrencyAmount2 =
+      await program.provider.connection.getTokenAccountBalance(
+        user_currency_ata
+      )
+    const userCurrencyBalance2 =
+      parseInt(userCurrencyAmount2.value.amount) / 1e6
+
+    assert.equal(
+      userCurrencyBalance1 - userCurrencyBalance2,
+      15,
+      "User spent 15 usdc to buy 5 tokens for 3 usdc each"
+    )
+
     console.log("order taken for max amount")
     firstPage = await program.account.orderbookPage.fetch(lastPageKey)
     console.log(
@@ -501,98 +523,6 @@ describe("orderbook", async () => {
           return d
         })
       )
-    )
-  })
-
-  it("modifies an order", async () => {
-    const [lastPageKey] = await PublicKey.findProgramAddress(
-      [
-        orderbookName.toBytes(),
-        utf8.encode("page"),
-        new anchor.BN(0).toArrayLike(Buffer, "le", 4),
-      ],
-      program.programId
-    )
-
-    // currently the order should have a size of 3 and a price of 1. 10x2 - 3x1 = 17
-    const newOrder = {
-      size: new anchor.BN(10e6),
-      price: new anchor.BN(2),
-      user: user.publicKey,
-      buy: true,
-    }
-
-    let currencyVaultAmount1 =
-      await program.provider.connection.getTokenAccountBalance(currencyVault)
-    let userCurrencyAmount1 =
-      await program.provider.connection.getTokenAccountBalance(
-        user_currency_ata
-      )
-
-    const currencyVaultBalance1 =
-      parseInt(currencyVaultAmount1.value.amount) / 1e6
-    const userCurrencyBalance1 =
-      parseInt(userCurrencyAmount1.value.amount) / 1e6
-
-    await program.methods
-      .modifyOrder(newOrder, 0, 0)
-      .accounts({
-        user: user.publicKey,
-        orderPage: lastPageKey,
-        userAccount: userAccountAddress,
-        userAta: user_currency_ata,
-        vault: currencyVault,
-        orderbookInfo,
-      })
-      .signers([user])
-      .rpc({
-        skipPreflight: true,
-      })
-
-    console.log("order modified")
-    const lastPage = await program.account.orderbookPage.fetch(lastPageKey)
-    console.log(
-      JSON.stringify(
-        // @ts-ignore
-        lastPage.list.map((d) => {
-          d.size = d.size.toString()
-          return d
-        })
-      )
-    )
-
-    let currencyVaultAmount2 =
-      await program.provider.connection.getTokenAccountBalance(currencyVault)
-    let userCurrencyAmount2 =
-      await program.provider.connection.getTokenAccountBalance(
-        user_currency_ata
-      )
-
-    const currencyVaultBalance2 =
-      parseInt(currencyVaultAmount2.value.amount) / 1e6
-    const userCurrencyBalance2 =
-      parseInt(userCurrencyAmount2.value.amount) / 1e6
-
-    assert.equal(
-      currencyVaultBalance2 - currencyVaultBalance1,
-      17,
-      "vault should have increased by 17"
-    )
-    assert.equal(
-      userCurrencyBalance2 - userCurrencyBalance1,
-      -17,
-      "user should have transfered out 17"
-    )
-
-    assert.equal(
-      lastPage.list[0].size.toString(),
-      (10e6).toString(),
-      "correct modifed size"
-    )
-    assert.equal(
-      lastPage.list[0].price.toString(),
-      (2).toString(),
-      "correct modifed price"
     )
   })
 })

@@ -268,72 +268,6 @@ pub mod syrup {
 
         Ok(())
     }
-
-    #[allow(unused_variables)]
-    pub fn modify_order(ctx: Context<ModifyOrder>, new_order: Order, page_number: u32, index: u32) -> Result<()> {
-        let orderbook_name = ctx.accounts.orderbook_info.name;
-        let orderbook_bump = ctx.accounts.orderbook_info.bump;
-        let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
-
-        let order_page = &mut ctx.accounts.order_page;
-        let user_account = &mut ctx.accounts.user_account;
-
-        // user either adds more funds or withdraws funds
-        let existing_order: Order = order_page.get(index);
-        if *ctx.accounts.user.key != existing_order.user {
-            return err!(ErrorCode::IncorrectUser);
-        } else if new_order.buy != existing_order.buy {
-            return err!(ErrorCode::CantConvertOrder);
-        };
-
-        let existing_locked_funds = if existing_order.buy { 
-            existing_order.size * existing_order.price 
-        } else { 
-            existing_order.size
-        };
-
-        let new_locked_funds = if new_order.buy { 
-            new_order.size * new_order.price 
-        } else { 
-            new_order.size
-        }; 
-
-        match new_locked_funds.cmp(&existing_locked_funds) {
-            Ordering::Greater => {
-                transfer_tokens(
-                    new_locked_funds - existing_locked_funds,
-                    ctx.accounts.user_ata.to_account_info(),
-                    ctx.accounts.vault.to_account_info(),
-                    ctx.accounts.user.to_account_info(),
-                    ctx.accounts.token_program.to_account_info(),
-                    None
-                )?;
-            },
-            Ordering::Less => {
-                let seeds = &[
-                    &orderbook_name.to_bytes(),
-                    "orderbook-info".as_bytes(),
-                    &[orderbook_bump],
-                ];
-                let signer_seeds = &[&seeds[..]];
-        
-                transfer_tokens(
-                    existing_locked_funds - new_locked_funds,
-                    ctx.accounts.vault.to_account_info(),
-                    ctx.accounts.user_ata.to_account_info(),
-                    orderbook_account_info,
-                    ctx.accounts.token_program.to_account_info(),
-                    Some(signer_seeds)
-                )?;
-            },
-            Ordering::Equal => {}
-        };
-
-        // actually edit the order
-        edit_order(index, new_order.price, new_order.size, order_page, user_account)?;
-
-        Ok(())
-    }
 }
 
 #[derive(Accounts)]
@@ -496,34 +430,5 @@ pub struct CancelOrder<'info> {
         bump
     )]
     pub last_page: Account<'info, OrderbookPage>,
-    pub token_program: Program<'info, Token>,
-}
-
-#[derive(Accounts)]
-#[instruction(new_order: Order, page_number: u32, index: u32)]
-pub struct ModifyOrder<'info> {
-    pub user: Signer<'info>,
-    #[account(
-        mut,
-        seeds = ["user-account".as_ref(), user.key().as_ref()],
-        bump
-    )]
-    pub user_account: Box<Account<'info, UserAccount>>,
-    #[account(mut)]
-    pub user_ata: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub vault: Box<Account<'info, TokenAccount>>,
-    #[account(
-        mut, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "orderbook-info".as_ref()], 
-        bump
-    )]
-    pub orderbook_info: Account<'info, OrderbookInfo>,
-    #[account(
-        mut, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
-        bump
-    )]
-    pub order_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
 }
