@@ -329,7 +329,10 @@ pub struct InitializeOrderbook<'info> {
 #[derive(Accounts)]
 #[instruction(order: Order)]
 pub struct PlaceOrder<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        address = order.user
+    )]
     pub user: Signer<'info>,
     #[account(
         mut, 
@@ -399,6 +402,10 @@ pub struct TakeOrder<'info> {
 #[derive(Accounts)]
 #[instruction(order: Order, page_number: u32, index: u32)]
 pub struct CancelOrder<'info> {
+    #[account(
+        mut,
+        address = order.user
+    )]
     pub user: Signer<'info>,
     #[account(
         mut,
