@@ -88,57 +88,53 @@ const useCreateMarket = () => {
         }
       )
 
-      const createBooks = await Promise.all(
-        [yesMint, noMint].map(async (mint) => {
-          const [orderbookInfo] = await PublicKey.findProgramAddress(
-            [mint.toBuffer(), utf8.encode("orderbook-info")],
-            SYRUP_ID
-          )
-          const [firstPage] = await PublicKey.findProgramAddress(
-            [
-              mint.toBuffer(),
-              utf8.encode("page"),
-              new BN(0).toArrayLike(Buffer, "le", 4),
-            ],
-            SYRUP_ID
-          )
+      const [orderbookInfo] = await PublicKey.findProgramAddress(
+        [yesMint.toBuffer(), utf8.encode("orderbook-info")],
+        SYRUP_ID
+      )
+      const [firstPage] = await PublicKey.findProgramAddress(
+        [
+          yesMint.toBuffer(),
+          utf8.encode("page"),
+          new BN(0).toArrayLike(Buffer, "le", 4),
+        ],
+        SYRUP_ID
+      )
 
-          const currencyVault = await getAssociatedTokenAddress(
-            collateralMint,
-            orderbookInfo,
-            true
-          )
-          const tokenVault = await getAssociatedTokenAddress(
-            mint,
-            orderbookInfo,
-            true
-          )
+      const currencyVault = await getAssociatedTokenAddress(
+        yesMint,
+        orderbookInfo,
+        true
+      )
+      const tokenVault = await getAssociatedTokenAddress(
+        noMint,
+        orderbookInfo,
+        true
+      )
 
-          return initializeOrderbook(
-            {
-              name: mint,
-            },
-            {
-              admin: authority,
-              currencyMint: collateralMint,
-              currencyVault,
-              tokenMint: mint,
-              tokenVault,
-              orderbookInfo,
-              firstPage,
-              systemProgram: SystemProgram.programId,
-              tokenProgram: TOKEN_PROGRAM_ID,
-              associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-              rent: SYSVAR_RENT_PUBKEY,
-            }
-          )
-        })
+      const createBook = initializeOrderbook(
+        {
+          name: yesMint,
+        },
+        {
+          admin: authority,
+          currencyMint: yesMint,
+          currencyVault,
+          tokenMint: noMint,
+          tokenVault,
+          orderbookInfo,
+          firstPage,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        }
       )
 
       const txn = new Transaction().add(
         requestAdditionalBudgetIx(341007),
         x,
-        ...createBooks
+        createBook
       )
       return txn
     },
