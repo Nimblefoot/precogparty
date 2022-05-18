@@ -17,6 +17,9 @@ pub enum ErrorCode {
     #[msg("Orberbook name does not match Order")]
     OrderbookMismatch,
 
+    #[msg("Orderbook page orderbook name already set")]
+    OrderbookNameAlreadySet,
+
     #[msg("User already placed the maximum number of orders!")]
     MaxOrdersPlaced,
 

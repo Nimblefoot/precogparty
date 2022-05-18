@@ -78,14 +78,12 @@ pub mod syrup {
 
     #[allow(unused_variables)]
     pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: Pubkey) -> Result<()> {
-        // ToDo - insist names are unique and max 16 characters
-
         ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
         ctx.accounts.orderbook_info.length = 0;
         ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
         ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
         ctx.accounts.orderbook_info.bump = *ctx.bumps.get("orderbook_info").unwrap();
-        ctx.accounts.orderbook_info.name = name.clone();
+        ctx.accounts.orderbook_info.name = name;
 
         ctx.accounts.first_page.set_orderbook_name(name);
 

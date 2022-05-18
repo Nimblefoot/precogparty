@@ -27,6 +27,7 @@ import {
 } from "@solana/spl-token"
 
 const maxLength = 100 //
+const orderbookName = Keypair.generate().publicKey
 
 describe("orderbook", async () => {
   // Configure the client to use the local cluster.
@@ -36,7 +37,6 @@ describe("orderbook", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>
   const admin = Keypair.generate()
   const user = Keypair.generate()
-  let orderbookName = Keypair.generate().publicKey
 
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey
@@ -366,7 +366,7 @@ describe("orderbook", async () => {
     const info2 = await program.account.orderbookInfo.fetchNullable(
       orderbookInfo
     )
-    assert.equal(info2.length, 2, "correct orderbook length")
+    assert.equal(info2.length, 2, "correct orderbook length is 2")
 
     const userAccount = await program.account.userAccount.fetch(
       userAccountAddress
@@ -431,7 +431,7 @@ describe("orderbook", async () => {
     assert.equal(
       userTokenBalance.value.amount,
       "2000000",
-      "User should have bought 2 tokens at a price of 1 usdc" //
+      "User should have bought 2 oranges at a price of 1 apples each" //
     )
 
     const adminCurrencyBalance =
@@ -441,7 +441,7 @@ describe("orderbook", async () => {
     assert.equal(
       adminCurrencyBalance.value.amount,
       "2000000",
-      "Admin sold 2 tokens for 1usdc each."
+      "Admin sold 2 oranges for 1 apple each."
     )
 
     // User will take the admins sell order for the full amount
@@ -487,7 +487,7 @@ describe("orderbook", async () => {
     assert.equal(
       userTokenBalance2.value.amount,
       "7000000",
-      "User should have bought 7 tokens" //
+      "User should have bought 7 oranges" //
     )
 
     const adminCurrencyBalance2 =
@@ -497,7 +497,7 @@ describe("orderbook", async () => {
     assert.equal(
       adminCurrencyBalance2.value.amount,
       "17000000",
-      "Admin sold 2 tokens for 1usdc each and 5 tokens for 3usdc each"
+      "Admin sold 2 oranges for 1 apple each and 5 oranges for 3 apples each"
     )
 
     let userCurrencyAmount2 =
@@ -510,7 +510,7 @@ describe("orderbook", async () => {
     assert.equal(
       userCurrencyBalance1 - userCurrencyBalance2,
       15,
-      "User spent 15 usdc to buy 5 tokens for 3 usdc each"
+      "User spent 15 apples to buy 5 oranges for 3 apples each"
     )
 
     console.log("order taken for max amount")
@@ -523,6 +523,29 @@ describe("orderbook", async () => {
           return d
         })
       )
+    )
+  })
+
+  it("checks security assumption hold", async () => {
+    const result = await program.methods
+      .initializeOrderbook(orderbookName)
+      .accounts({
+        admin: provider.wallet.publicKey,
+        currencyMint,
+        currencyVault,
+        tokenMint,
+        tokenVault,
+        // orderbookInfo, //derivable from seeds
+        firstPage,
+      })
+      .rpc({
+        skipPreflight: true,
+      })
+      .catch((e) => "it failed")
+
+    assert(
+      result == "it failed",
+      "Cannot have two orderbooks with the same name"
     )
   })
 })
