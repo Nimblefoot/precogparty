@@ -17,23 +17,23 @@ export type Orderbook = {
   pages: [OrderbookPage, ...OrderbookPage[]]
 }
 
-export const useOrderbookForCoin = (mint: PublicKey) => {
+export const useOrderbook = (marketAddress: PublicKey) => {
   const { connection } = useConnection()
 
   const [orderbookInfo] = useMemo(
     () =>
       PublicKey.findProgramAddressSync(
-        [mint.toBuffer(), utf8.encode("orderbook-info")],
+        [marketAddress.toBuffer(), utf8.encode("orderbook-info")],
         SYRUP_ID
       ),
-    [mint]
+    [marketAddress]
   )
 
   const fetchData = useCallback(async () => {
     return await OrderbookInfo.fetch(connection, orderbookInfo)
   }, [connection, orderbookInfo])
 
-  const query = useQuery(orderbookKeys.book(mint), fetchData)
+  const query = useQuery(orderbookKeys.book(marketAddress), fetchData)
 
   return query
 }

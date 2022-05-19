@@ -89,12 +89,12 @@ const useCreateMarket = () => {
       )
 
       const [orderbookInfo] = await PublicKey.findProgramAddress(
-        [yesMint.toBuffer(), utf8.encode("orderbook-info")],
+        [marketAccount.toBuffer(), utf8.encode("orderbook-info")],
         SYRUP_ID
       )
       const [firstPage] = await PublicKey.findProgramAddress(
         [
-          yesMint.toBuffer(),
+          marketAccount.toBuffer(),
           utf8.encode("page"),
           new BN(0).toArrayLike(Buffer, "le", 4),
         ],
@@ -114,7 +114,7 @@ const useCreateMarket = () => {
 
       const createBook = initializeOrderbook(
         {
-          name: yesMint,
+          name: marketAccount,
         },
         {
           admin: authority,

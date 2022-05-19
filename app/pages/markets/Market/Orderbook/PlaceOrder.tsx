@@ -77,7 +77,7 @@ export function PlaceOrderPanel({
       <div className="shadow bg-white rounded-lg">
         <div className="px-4 pt-5 border-b border-gray-200 sm:px-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Tokens
+            Offer odds
           </h3>
           <nav className="-mb-px flex space-x-8 mt-3 sm:mt-4">
             {(["buy", "trade"] as const).map((tab) => (

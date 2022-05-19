@@ -13,7 +13,7 @@ import { createUserAccount, placeOrder } from "@/generated/syrup/instructions"
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
 import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
-import { useOrderbookForCoin } from "./orderbookQueries"
+import { useOrderbook } from "./orderbookQueries"
 import { ASSOCIATED_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token"
 import { UserAccount } from "@/generated/syrup/accounts"
 import { PROGRAM_ID } from "@/generated/client/programId"
@@ -60,7 +60,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
   const yesMint = useResolutionMint(marketAddress, "yes")
   const noMint = useResolutionMint(marketAddress, "no")
 
-  const orderbookQuery = useOrderbookForCoin(yesMint)
+  const orderbookQuery = useOrderbook(marketAddress)
 
   const callback = useCallback(
     async ({
@@ -81,7 +81,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
         )
 
       const [orderbookInfo] = await PublicKey.findProgramAddress(
-        [yesMint.toBuffer(), utf8.encode("orderbook-info")],
+        [marketAddress.toBuffer(), utf8.encode("orderbook-info")],
         SYRUP_ID
       )
 
@@ -103,7 +103,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
 
       const [currentPage] = await PublicKey.findProgramAddress(
         [
-          yesMint.toBuffer(),
+          marketAddress.toBuffer(),
           utf8.encode("page"),
           new BN(currentPageIndex).toArrayLike(Buffer, "le", 4),
         ],
@@ -143,7 +143,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
         : new Transaction().add(ix)
       return txn
     },
-    [connection, noMint, orderbookQuery.data, publicKey, yesMint]
+    [connection, marketAddress, noMint, orderbookQuery.data, publicKey, yesMint]
   )
 
   return callback
