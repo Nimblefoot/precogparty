@@ -98,7 +98,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
       )
 
       const currentPageIndex = Math.floor(
-        orderbookQuery.data.length / ORDERBOOK_PAGE_MAX_LENGTH
+        orderbookQuery.data.info.length / ORDERBOOK_PAGE_MAX_LENGTH
       )
 
       const [currentPage] = await PublicKey.findProgramAddress(

@@ -9,6 +9,7 @@ import { useMarket } from "./hooks/marketQueries"
 import { TokenControls } from "./TokenControls"
 import { PlaceOrderPanel } from "./Orderbook/PlaceOrder"
 import { Swap } from "./Orderbook/Swap"
+import Orders from "./Orderbook/Orders"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -67,6 +68,9 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                       }
                     </h1>
                   </div>
+                </div>
+                <div>
+                  <Orders marketAddress={address} />
                 </div>
                 <p className="mt-4">{market.data.description}</p>
               </div>
