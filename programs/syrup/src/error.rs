@@ -16,6 +16,8 @@ pub enum ErrorCode {
     CantConvertOrder,
     #[msg("Orberbook name does not match Order")]
     OrderbookMismatch,
+    #[msg("Order too small")]
+    OrderTooSmall,
 
     #[msg("Orderbook page orderbook name already set")]
     OrderbookNameAlreadySet,

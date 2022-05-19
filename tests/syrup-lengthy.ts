@@ -220,7 +220,7 @@ describe("orderbook", async () => {
           user: user.publicKey,
           size: new anchor.BN(1e6),
           buy: true,
-          price: new anchor.BN(2),
+          price: new anchor.BN(2e9),
         })
         .accounts({
           user: user.publicKey,
@@ -282,14 +282,14 @@ describe("orderbook", async () => {
     assert.equal(
       currencyVaultBalance.value.amount,
       "280000000",
-      "Currency Vault Balance should match sum of orders." // 300e6
+      "Currency Vault Balance should match sum of orders."
     )
     let tokenVaultBalance =
       await program.provider.connection.getTokenAccountBalance(tokenVault)
     assert.equal(
       tokenVaultBalance.value.amount,
       "140000000",
-      "Token Vault Balance should match sum of orders." // 100e6
+      "Token Vault Balance should match sum of orders."
     )
 
     const [infoKey] = await PublicKey.findProgramAddress(
