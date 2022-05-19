@@ -10,6 +10,7 @@ import { COLLATERAL_DECIMALS, Resolution } from "config"
 import { useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useMemo, useRef, useState } from "react"
 import { useMarket } from "../hooks/marketQueries"
+import useMintContingentSet from "../hooks/useMintContingentSet"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
 
 function classNames(...classes: string[]) {
@@ -42,24 +43,28 @@ export function PlaceOrderPanel({
   const yesAccount = useTokenAccount(yesMint)
   const noAccount = useTokenAccount(noMint)
 
-  const swap = usePlaceOrderTxn(marketAddress)
+  const mintSet = useMintContingentSet(marketAddress)
+  const buy = usePlaceOrderTxn(marketAddress)
 
   const inputRef = useRef(null)
 
   const { callback, status } = useTransact()
 
   const onSubmit = useCallback(async () => {
-    /* if (price === "") return
+    if (inputSize === 0) return
 
-    const getTxn = resolution === "yes" ? placeYesOrder : placeNoOrder
+    const price = resolution === "yes" ? odds / (1 - odds) : (1 - odds) / odds
+    const size = new BN(inputSize).mul(new BN(10 ** COLLATERAL_DECIMALS))
 
-    const txn = await getTxn({
+    const mintTxn = await mintSet({ amount: size })
+
+    const txn = await buy({
       price: new BN(price).mul(new BN(10 ** COLLATERAL_DECIMALS)),
-      buying: mode === "buy",
-      size: new BN(price).mul(new BN(10 ** COLLATERAL_DECIMALS)),
+      yesForNo: resolution === "yes",
+      size: new BN(inputSize).mul(new BN(10 ** COLLATERAL_DECIMALS)),
     })
     console.log(txn)
-    await callback(txn) */
+    await callback(txn)
   }, [])
 
   const yesOutput = inputSize / odds
@@ -100,8 +105,8 @@ export function PlaceOrderPanel({
           <div className="relative pt-1">
             <input
               type="range"
-              min="0"
-              max="1"
+              min=".01"
+              max=".99"
               step="0.01"
               value={odds}
               onChange={(e) => setOdds(parseFloat(e.target.value))}
