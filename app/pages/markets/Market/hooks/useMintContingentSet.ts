@@ -7,6 +7,7 @@ import { useMarket } from "./marketQueries"
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { COLLATERAL_MINT } from "config"
 import getATAandCreateIxIfNeeded from "@/utils/getATAandCreateIxIfNeeded"
+import { BN_ } from "../Orderbook/util"
 
 const useMintContingentSet = (address: PublicKey) => {
   const { publicKey } = useWallet()
@@ -15,7 +16,7 @@ const useMintContingentSet = (address: PublicKey) => {
   const market = useMarket(address)
 
   const callback = useCallback(
-    async ({ amount }: { amount: number }) => {
+    async ({ amount }: { amount: BN_ }) => {
       if (!publicKey) throw new Error("no publickey connected")
       if (!market.data)
         throw new Error(
@@ -41,7 +42,7 @@ const useMintContingentSet = (address: PublicKey) => {
 
       const x = mintContingentSet(
         {
-          amount: new BN(amount),
+          amount,
         },
         {
           user: publicKey,

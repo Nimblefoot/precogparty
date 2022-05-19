@@ -2,14 +2,13 @@ import {
   StatelessTransactButton,
   useTransact,
 } from "@/components/TransactButton"
-import { PROGRAM_ID } from "@/generated/client/programId"
-import { getAssociatedTokenAddress } from "@solana/spl-token"
 import { PublicKey } from "@solana/web3.js"
 import { BN } from "bn.js"
-import { COLLATERAL_DECIMALS, Resolution } from "config"
+import { COLLATERAL_DECIMALS } from "config"
 import { useTokenAccount } from "pages/tokenAccountQuery"
-import React, { useCallback, useMemo, useRef, useState } from "react"
+import React, { useCallback, useState } from "react"
 import { useMarket } from "../hooks/marketQueries"
+import { timesOdds, divOdds, displayBN } from "./util"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
 
 function classNames(...classes: string[]) {
@@ -18,18 +17,6 @@ function classNames(...classes: string[]) {
 function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
-
-type BN_ = InstanceType<typeof BN>
-
-const displayBN = (bn: BN_) =>
-  (bn.toNumber() / 10 ** COLLATERAL_DECIMALS)
-    .toFixed(2)
-    .replace(/0+$/, "")
-    .replace(/[.]$/, "")
-const timesOdds = (bn: BN_, odds: number) =>
-  bn.mul(new BN(odds * 100000)).div(new BN(100000))
-const divOdds = (bn: BN_, odds: number) =>
-  bn.div(new BN(odds * 100000)).mul(new BN(100000))
 
 const modes = ["Buy YES", "Buy NO"] as const
 type Mode = typeof modes[number]
@@ -42,12 +29,8 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
 
   const [mode, setMode] = useState<Mode>("Buy YES")
 
-  const market = useMarket(marketAddress)
-  console.log(market.data?.yesMint.toString())
-
   const yesMint = useResolutionMint(marketAddress, "yes")
   const noMint = useResolutionMint(marketAddress, "no")
-  console.log("yes", yesMint.toString())
 
   const yesAccount = useTokenAccount(yesMint)
   const noAccount = useTokenAccount(noMint)
@@ -69,6 +52,19 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
     console.log(txn)
     await callback(txn) */
   }, [])
+
+  const handleOddsChange = (newOdds: number) => {
+    const initialInputBN = timesOdds(
+      new BN(parseFloat(yesInput) * 10 ** COLLATERAL_DECIMALS),
+      odds
+    )
+
+    const yesInputBN = divOdds(initialInputBN, newOdds)
+    const noInputBN = divOdds(initialInputBN, 1 - newOdds)
+
+    setYesInput(yesInput !== "" ? displayBN(yesInputBN) : "")
+    setNoInput(noInput !== "" ? displayBN(noInputBN) : "")
+  }
 
   return (
     <>
@@ -111,7 +107,10 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
                 max="1"
                 step="0.01"
                 value={odds}
-                onChange={(e) => setOdds(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  setOdds(parseFloat(e.target.value))
+                  handleOddsChange(parseFloat(e.target.value))
+                }}
               />
             </div>
             <div className="relative pt-1">
@@ -121,7 +120,10 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
                 max="1"
                 step="0.01"
                 value={odds}
-                onChange={(e) => setOdds(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  setOdds(parseFloat(e.target.value))
+                  handleOddsChange(parseFloat(e.target.value))
+                }}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
               />
             </div>

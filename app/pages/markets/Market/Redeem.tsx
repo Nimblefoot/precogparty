@@ -2,14 +2,12 @@ import {
   StatelessTransactButton,
   useTransact,
 } from "@/components/TransactButton"
-import BN from "bn.js"
 import { PublicKey } from "@solana/web3.js"
-import { COLLATERAL_DECIMALS, RESOLUTION_MAPPING_INVERSE } from "config"
+import { RESOLUTION_MAPPING_INVERSE } from "config"
 import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
-import React, { useCallback, useRef, useState } from "react"
+import React, { useCallback } from "react"
 import { useMarket } from "./hooks/marketQueries"
-import useMergeContingentSet from "./hooks/useMergeContingentSet"
-import useMintContingentSet from "./hooks/useMintContingentSet"
+
 import useRedeemTxn from "./hooks/useRedeemTxn"
 import { queryClient } from "pages/providers"
 

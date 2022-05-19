@@ -3,6 +3,7 @@ import {
   useTransact,
 } from "@/components/TransactButton"
 import { PublicKey } from "@solana/web3.js"
+import { BN } from "bn.js"
 import { COLLATERAL_DECIMALS } from "config"
 import React, { useCallback, useRef, useState } from "react"
 import useMergeContingentSet from "./hooks/useMergeContingentSet"
@@ -32,7 +33,7 @@ export function TokenControls({ address }: { address: PublicKey }) {
     const getTxn = mode === "split" ? getMintTxn : getMergeTxn
 
     const txn = await getTxn({
-      amount: parseFloat(amount) * 10 ** COLLATERAL_DECIMALS,
+      amount: new BN(parseFloat(amount) * 10 ** COLLATERAL_DECIMALS),
     })
     console.log(txn)
     await callback(txn)

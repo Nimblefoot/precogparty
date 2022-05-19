@@ -4,7 +4,7 @@ import {
 } from "@/components/TransactButton"
 import { PROGRAM_ID } from "@/generated/client/programId"
 import { getAssociatedTokenAddress } from "@solana/spl-token"
-import { PublicKey } from "@solana/web3.js"
+import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
 import { COLLATERAL_DECIMALS, Resolution } from "config"
 import { useTokenAccount } from "pages/tokenAccountQuery"
@@ -33,12 +33,8 @@ export function PlaceOrderPanel({
   const [mode, setMode] = useState<Mode>("buy")
   const [resolution, setResolution] = useState<Resolution>("yes")
 
-  const market = useMarket(marketAddress)
-  console.log(market.data?.yesMint.toString())
-
   const yesMint = useResolutionMint(marketAddress, "yes")
   const noMint = useResolutionMint(marketAddress, "no")
-  console.log("yes", yesMint.toString())
 
   const yesAccount = useTokenAccount(yesMint)
   const noAccount = useTokenAccount(noMint)
@@ -58,14 +54,20 @@ export function PlaceOrderPanel({
 
     const mintTxn = await mintSet({ amount: size })
 
-    const txn = await buy({
+    const buyTxn = await buy({
       price: new BN(price).mul(new BN(10 ** COLLATERAL_DECIMALS)),
       yesForNo: resolution === "yes",
       size: new BN(inputSize).mul(new BN(10 ** COLLATERAL_DECIMALS)),
     })
+
+    const txn = new Transaction().add(
+      ...mintTxn.instructions,
+      ...buyTxn.instructions
+    )
+
     console.log(txn)
     await callback(txn)
-  }, [])
+  }, [buy, callback, inputSize, mintSet, odds, resolution])
 
   const yesOutput = inputSize / odds
   const noOutput = inputSize / (1 - odds)
@@ -242,7 +244,7 @@ export function PlaceOrderPanel({
             verb={capitalizeFirstLetter(mode)}
             onClick={onSubmit}
             className="w-full"
-            disabled={true}
+            disabled={inputSize === 0}
           />
         </div>
       </div>
