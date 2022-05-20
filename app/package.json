@@ -21,6 +21,7 @@
     "@types/bn.js": "^5.1.0",
     "@types/react-blockies": "^1.4.1",
     "bn.js": "^5.2.0",
+    "clsx": "^1.1.1",
     "fuse.js": "^6.6.2",
     "next": "12.1.5",
     "react": "^17.0.2",

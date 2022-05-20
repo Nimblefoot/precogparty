@@ -1,7 +1,11 @@
 import { OrderFields } from "@/generated/syrup/types"
 import { PublicKey } from "@solana/web3.js"
+import { BN } from "bn.js"
+import { COLLATERAL_DECIMALS, ORDERBOOK_PRICE_RATIO_DECIMALS } from "config"
 import React, { useMemo } from "react"
 import { useOrderbook } from "./orderbookQueries"
+import { BN_, displayBN, displayOddsBN, order2ui } from "./util"
+import clsx from "clsx"
 
 const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const orderbook = useOrderbook(marketAddress)
@@ -21,6 +25,7 @@ const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
       <div className="grid grid-cols-2">
         {[yesOrders, noOrders].map((orderCol, i) => (
           <div key={i}>
+            <div>{["YES orders", "NO orders"][i]}</div>
             {orderCol?.map((order) => (
               <Order key={JSON.stringify(order)} {...order} />
             ))}{" "}
@@ -33,10 +38,21 @@ const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
   )
 }
 
-const Order = ({ price, size, buy }: OrderFields) => (
-  <>
-    <div>poopy</div>
-  </>
-)
+const DECIMAL_MULTIPLIER = new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS)
+const AMOUNT_MULTIPLIER = new BN(10 ** COLLATERAL_DECIMALS)
+
+const Order = (order: OrderFields) => {
+  const { price, size, buy: yesForNo } = order
+  const { odds, collateralSize } = order2ui(order)
+
+  return (
+    <>
+      <div className="grid grid-cols-3">
+        <div className={clsx(!yesForNo && "order-last")}>{collateralSize}</div>
+        <div>{(100 * odds).toFixed(0)}%</div>
+      </div>
+    </>
+  )
+}
 
 export default Orders

@@ -58,11 +58,17 @@ export function PlaceOrderPanel({
     const price = new BN(
       Math.round((odds / (1 - odds)) * 10 ** ORDERBOOK_PRICE_RATIO_DECIMALS)
     )
-    const size = new BN(inputSize * 10 ** COLLATERAL_DECIMALS)
 
-    const mintTxn = await mintSet({ amount: size })
+    const inputAmount = new BN(inputSize * 10 ** COLLATERAL_DECIMALS)
+    const mintTxn = await mintSet({ amount: inputAmount })
 
-    console.log("price", price.toString(), odds / 1 - odds)
+    // due to convention, size is always the amount of NO token on the trade
+    const size =
+      resolution === "yes"
+        ? inputAmount
+            .mul(price)
+            .div(new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS))
+        : inputAmount
 
     const buyTxn = await buy({
       price: price,
