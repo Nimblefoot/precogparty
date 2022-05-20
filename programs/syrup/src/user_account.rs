@@ -5,10 +5,10 @@ use crate::error::ErrorCode;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct OrderRecord {
-    pub market: Pubkey, // 32
-    pub size: u64,      // 8
-    pub buy: bool,      // 1
-    pub price: u64,     // 8
+    pub market: Pubkey,        // 32
+    pub num_apples: u64,       // 8
+    pub offering_apples: bool, // 1
+    pub num_oranges: u64,      // 8
 }
 
 #[account]
@@ -36,16 +36,16 @@ impl UserAccount {
 
     pub fn find_order(&self, order: Order, orderbook_name: Pubkey) -> Option<usize> {
         self.orders.iter().position(|record| {
-            record.buy == order.buy
-                && record.size == order.size
-                && record.price == order.price
+            record.offering_apples == order.offering_apples
+                && record.num_apples == order.num_apples
+                && record.num_oranges == order.num_oranges
                 && record.market == orderbook_name
         })
     }
 
-    pub fn set(&mut self, index: usize, price: u64, size: u64) {
-        self.orders[index].size = size;
-        self.orders[index].price = price;
+    pub fn set(&mut self, index: usize, num_apples: u64, num_oranges: u64) {
+        self.orders[index].num_apples = num_apples;
+        self.orders[index].num_oranges = num_oranges;
     }
 
     pub fn push(

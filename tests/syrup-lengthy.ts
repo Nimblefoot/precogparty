@@ -195,7 +195,7 @@ describe("orderbook", async () => {
       6 // decimals
     )
 
-    // user places 140 buy orders. Should deposit 400 units of currency
+    // user places 140 offering_apples orders. Should deposit 400 units of currency
     for (let i = 0; i < 140; i++) {
       if ((i + 1) % 10 == 0) {
         console.log("place user order: " + (i + 1))
@@ -219,7 +219,7 @@ describe("orderbook", async () => {
         .placeOrder({
           user: user.publicKey,
           size: new anchor.BN(1e6),
-          buy: true,
+          offering_apples: true,
           price: new anchor.BN(2e9),
         })
         .accounts({
@@ -260,7 +260,7 @@ describe("orderbook", async () => {
         .placeOrder({
           user: admin.publicKey,
           size: new anchor.BN(1e6),
-          buy: false,
+          offering_apples: false,
           price: new anchor.BN(3),
         })
         .accounts({

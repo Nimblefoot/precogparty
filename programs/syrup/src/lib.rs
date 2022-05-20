@@ -23,11 +23,6 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
         msg!("just need to pop!!!");
         last_page.pop();
     } else if let Some(last_order) = last_page.pop() {
-        msg!("setting data in position: ");
-        msg!(&index.to_string());
-        msg!("last order has price");
-        msg!(&last_order.price.to_string());
-
         // there is probably a better way to handle this problem. Rust does not allow you to have two mutable references to the same data!
         if order_page.key() == last_page.key() {
             last_page.set(index, last_order);
@@ -50,29 +45,25 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     Ok(())
 }
 
-pub fn edit_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
+pub fn edit_order(index: u32, new_num_apples: u64, new_num_oranges: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
     let mut order_data = order_page.get(index);
     let orderbook_name = order_page.orderbook_name.clone();
 
     // Modify the order in the user's orders
     if let Some(user_orders_index) = user_account.find_order(order_data, orderbook_name) {
-        user_account.set(user_orders_index, new_price, new_size);
+        user_account.set(user_orders_index, new_num_apples, new_num_oranges);
     } else {
         return err!(ErrorCode::UserMissingOrder);
     };
 
-    order_data.price = new_price;
-    order_data.size = new_size;
+    order_data.num_apples = new_num_apples;
+    order_data.num_oranges = new_num_oranges;
     order_page.set(index, order_data);
 
     Ok(())
 }
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
-
-const PRICE_DECIMALS: u32 = 9;
-const MULTIPLIER_BASE: u64 = 10;
-const DECIMAL_MULTIPLIER: u64 = MULTIPLIER_BASE.pow(PRICE_DECIMALS);
 
 #[program]
 pub mod syrup {
@@ -84,8 +75,8 @@ pub mod syrup {
     pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: Pubkey) -> Result<()> {
         ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
         ctx.accounts.orderbook_info.length = 0;
-        ctx.accounts.orderbook_info.currency_mint = ctx.accounts.currency_mint.key();
-        ctx.accounts.orderbook_info.token_mint = ctx.accounts.token_mint.key();
+        ctx.accounts.orderbook_info.apples_mint = ctx.accounts.apples_mint.key();
+        ctx.accounts.orderbook_info.oranges_mint = ctx.accounts.oranges_mint.key();
         ctx.accounts.orderbook_info.bump = *ctx.bumps.get("orderbook_info").unwrap();
         ctx.accounts.orderbook_info.name = name;
 
@@ -112,19 +103,14 @@ pub mod syrup {
             ctx.accounts.current_page.set_orderbook_name(ctx.accounts.orderbook_info.name.clone());
         }
 
-        // transfer tokens from user to the vault
-        let token_amount = if order.buy {
-            (order.size * order.price) / DECIMAL_MULTIPLIER
+        let amount_transferred = if order.offering_apples {
+            order.num_apples
         } else {
-            order.size
+            order.num_oranges
         };
-
-        if token_amount == 0 {
-            return err!(ErrorCode::OrderTooSmall);
-        }
         
         transfer_tokens(
-            token_amount, 
+            amount_transferred, 
             ctx.accounts.user_ata.to_account_info(),
             ctx.accounts.vault.to_account_info(),
             ctx.accounts.user.to_account_info(),
@@ -135,9 +121,9 @@ pub mod syrup {
         // create and append order record
         let order_record = OrderRecord {
             market: ctx.accounts.orderbook_info.name,
-            buy: order.buy,
-            size: order.size,
-            price: order.price,
+            offering_apples: order.offering_apples,
+            num_apples: order.num_apples,
+            num_oranges: order.num_oranges,
         };
 
         // add to the lists of offers
@@ -151,21 +137,43 @@ pub mod syrup {
     }
 
     #[allow(unused_variables)] 
-    pub fn take_order(ctx: Context<TakeOrder>, size: u64, page_number: u32, index: u32) -> Result<()> {
+    pub fn take_order(ctx: Context<TakeOrder>, order: Order, amount_to_exchange: u64, page_number: u32, index: u32) -> Result<()> {
         let order_data: Order = ctx.accounts.order_page.get(index);
-        msg!("order price");
-        msg!(&order_data.price.to_string());
-        msg!("order page length");
-        msg!(&ctx.accounts.order_page.len().to_string());
 
-        if ctx.accounts.offerer_user_account.user != order_data.user {
+        // set new num_apples and new_num_oranges and determine vault outgoing
+        let vault_outgoing_amount: u64;
+        let new_num_apples: u64;
+        let new_num_oranges: u64;
+        let vault_key: Pubkey;
+
+        let maximum_exchange = if order.offering_apples {
+            order_data.num_oranges
+        } else {
+            order_data.num_apples
+        };
+
+        if order_data.offering_apples {
+            vault_outgoing_amount = (amount_to_exchange * order.num_apples) / maximum_exchange;
+            new_num_apples = order.num_apples - amount_to_exchange;
+            new_num_oranges = order.num_oranges - vault_outgoing_amount;
+            vault_key = ctx.accounts.orderbook_info.apples_mint;
+        } else {
+            vault_outgoing_amount = (amount_to_exchange * order.num_oranges) / maximum_exchange;
+            new_num_apples = order.num_apples - vault_outgoing_amount;
+            new_num_oranges = order.num_oranges - amount_to_exchange;
+            vault_key = ctx.accounts.orderbook_info.oranges_mint;
+        }
+
+        // checks
+        if order_data != order {
             return err!(ErrorCode::IncorrectUser);
-        };
-        msg!("order data size");
-        msg!(&order_data.size.to_string());
-        if size > order_data.size {
+        } else if ctx.accounts.offerer_user_account.user != order_data.user {
+            return err!(ErrorCode::IncorrectUser);
+        } else if amount_to_exchange > maximum_exchange {
             return err!(ErrorCode::SizeTooLarge);
-        };
+        } else if vault_key != ctx.accounts.vault.key() {
+            return err!(ErrorCode::WrongVault);
+        }
 
         let last_page = &mut ctx.accounts.last_page; 
         let order_page = &mut ctx.accounts.order_page; // this could be a second mutable reference to same page!
@@ -185,12 +193,6 @@ pub mod syrup {
         ];
         let signer_seeds = &[&seeds[..]];
 
-        let vault_outgoing_amount = if order_data.buy { 
-            (size * order_data.price) / DECIMAL_MULTIPLIER
-        } else { 
-            size
-        };
-
         transfer_tokens(
             vault_outgoing_amount,
             ctx.accounts.vault.to_account_info(),
@@ -200,14 +202,8 @@ pub mod syrup {
             Some(signer_seeds)
         )?;
 
-        //Transfer from the taker to the offerer
-        let transfer_amount = if order_data.buy { 
-            size 
-        } else { 
-            (size * order_data.price) / DECIMAL_MULTIPLIER
-        };
         transfer_tokens(
-            transfer_amount,
+            amount_to_exchange,
             ctx.accounts.taker_sending_ata.to_account_info(),
             ctx.accounts.offerer_receiving_ata.to_account_info(),
             ctx.accounts.taker.to_account_info(),
@@ -215,12 +211,12 @@ pub mod syrup {
             None
         )?;
 
-        if size == order_data.size {
+        if amount_to_exchange == maximum_exchange {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
         } else if (last_page.key() == order_page.key()) {
-            edit_order(index, order_data.price, order_data.size - size, last_page, offerer_user_account)?;
+            edit_order(index, new_num_apples, new_num_oranges, last_page, offerer_user_account)?;
         } else {
-            edit_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
+            edit_order(index, new_num_apples, new_num_oranges, order_page, offerer_user_account)?;
         }
 
         Ok(())
@@ -230,7 +226,9 @@ pub mod syrup {
     pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
 
         let order_data: Order = ctx.accounts.order_page.get(index);
-        if ctx.accounts.user.key() != order_data.user {
+        if order_data != order {
+            return err!(ErrorCode::WrongOrder);
+        } else if ctx.accounts.user.key() != order_data.user {
             return err!(ErrorCode::IncorrectUser);
         };
 
@@ -252,10 +250,10 @@ pub mod syrup {
         ];
         let signer_seeds = &[&seeds[..]];
 
-        let amount = if order_data.buy { 
-            (order_data.size * order_data.price) / DECIMAL_MULTIPLIER
+        let amount = if order_data.offering_apples { 
+            order.num_apples
         } else { 
-            order_data.size
+            order.num_oranges
         };
 
         transfer_tokens(
@@ -268,8 +266,6 @@ pub mod syrup {
         )?;
 
         delete_order(index, last_page, order_page, user_account, orderbook_length)?;
-        order_page.list[0].price = 16;
-        msg!(&order_page.list[0].price.to_string());
 
         Ok(())
     }
@@ -311,22 +307,22 @@ pub struct InitializeOrderbook<'info> {
         bump
     )]
     pub first_page: Account<'info, OrderbookPage>,
-    pub currency_mint: Account<'info, Mint>,
+    pub apples_mint: Account<'info, Mint>,
     #[account(
         init,
         payer = admin,
-        associated_token::mint = currency_mint,
+        associated_token::mint = apples_mint,
         associated_token::authority = orderbook_info
     )]
-    pub currency_vault: Box<Account<'info, TokenAccount>>,
-    pub token_mint: Account<'info, Mint>,
+    pub apples_vault: Box<Account<'info, TokenAccount>>,
+    pub oranges_mint: Account<'info, Mint>,
     #[account(
         init,
         payer = admin,
-        associated_token::mint = token_mint,
+        associated_token::mint = oranges_mint,
         associated_token::authority = orderbook_info
     )]
-    pub token_vault: Box<Account<'info, TokenAccount>>,
+    pub oranges_vault: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,

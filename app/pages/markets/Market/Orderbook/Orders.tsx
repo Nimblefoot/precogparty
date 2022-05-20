@@ -16,8 +16,8 @@ const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
         .sort((a, b) => a.price.toNumber() - b.price.toNumber()),
     [orderbook.data?.pages]
   )
-  const yesOrders = useMemo(() => orders?.filter((x) => x.buy), [orders])
-  const noOrders = useMemo(() => orders?.filter((x) => !x.buy), [orders])
+  const yesOrders = useMemo(() => orders?.filter((x) => x.offering_apples), [orders])
+  const noOrders = useMemo(() => orders?.filter((x) => !x.offering_apples), [orders])
 
   return orderbook.data ? (
     <>
@@ -42,7 +42,7 @@ const DECIMAL_MULTIPLIER = new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS)
 const AMOUNT_MULTIPLIER = new BN(10 ** COLLATERAL_DECIMALS)
 
 const Order = (order: OrderFields) => {
-  const { price, size, buy: yesForNo } = order
+  const { price, size, offering_apples: yesForNo } = order
   const { odds, collateralSize } = order2ui(order)
 
   return (

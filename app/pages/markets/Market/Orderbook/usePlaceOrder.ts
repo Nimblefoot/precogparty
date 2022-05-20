@@ -121,7 +121,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
             user: publicKey,
             size,
             price,
-            buy: yesForNo,
+            offering_apples: yesForNo,
           },
         },
         {

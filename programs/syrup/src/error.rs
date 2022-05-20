@@ -12,12 +12,16 @@ pub enum ErrorCode {
     OrderbookMissingOrder,
     #[msg("Last Page of orders should not be empty")]
     LastPageEmpty,
-    #[msg("Can't convert a buy into a sell or vice versa")]
+    #[msg("Can't convert a offering_apples into a sell or vice versa")]
     CantConvertOrder,
     #[msg("Orberbook name does not match Order")]
     OrderbookMismatch,
     #[msg("Order too small")]
     OrderTooSmall,
+    #[msg("Orders need to match")]
+    WrongOrder,
+    #[msg("Vaults dont match")]
+    WrongVault,
 
     #[msg("Orderbook page orderbook name already set")]
     OrderbookNameAlreadySet,

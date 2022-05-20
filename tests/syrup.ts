@@ -230,7 +230,7 @@ describe("orderbook", async () => {
       .placeOrder({
         user: user.publicKey,
         size: new anchor.BN(1e6),
-        buy: true,
+        offering_apples: true,
         price: new anchor.BN(2e9),
       })
       .accounts({
@@ -250,7 +250,7 @@ describe("orderbook", async () => {
       .placeOrder({
         user: user.publicKey,
         size: new anchor.BN(5e6),
-        buy: true,
+        offering_apples: true,
         price: new anchor.BN(1e9),
       })
       .accounts({
@@ -279,7 +279,7 @@ describe("orderbook", async () => {
       .placeOrder({
         user: admin.publicKey,
         size: new anchor.BN(5e6),
-        buy: false,
+        offering_apples: false,
         price: new anchor.BN(3e9),
       })
       .accounts({
@@ -325,7 +325,7 @@ describe("orderbook", async () => {
         {
           user: user.publicKey,
           size: new anchor.BN(1e6),
-          buy: true,
+          offering_apples: true,
           price: new anchor.BN(2e9),
         },
         0,
@@ -510,7 +510,7 @@ describe("orderbook", async () => {
     assert.equal(
       userCurrencyBalance1 - userCurrencyBalance2,
       15,
-      "User spent 15 apples to buy 5 oranges for 3 apples each"
+      "User spent 15 apples to offering_apples 5 oranges for 3 apples each"
     )
 
     console.log("order taken for max amount")

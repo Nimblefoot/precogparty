@@ -18,7 +18,7 @@ function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-const modes = ["Buy YES", "Buy NO"] as const
+const modes = ["offering_apples YES", "offering_apples NO"] as const
 type Mode = typeof modes[number]
 // TODO cool css transitions when switching modes
 // TODO display balances
@@ -27,7 +27,7 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
   const [yesInput, setYesInput] = useState("")
   const [noInput, setNoInput] = useState("")
 
-  const [mode, setMode] = useState<Mode>("Buy YES")
+  const [mode, setMode] = useState<Mode>("offering_apples YES")
 
   const yesMint = useResolutionMint(marketAddress, "yes")
   const noMint = useResolutionMint(marketAddress, "no")
@@ -46,7 +46,7 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
 
     const txn = await getTxn({
       price: new BN(price).mul(new BN(10 ** COLLATERAL_DECIMALS)),
-      buying: mode === "buy",
+      offering_applesing: mode === "offering_apples",
       size: new BN(price).mul(new BN(10 ** COLLATERAL_DECIMALS)),
     })
     console.log(txn)
@@ -132,7 +132,7 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
           <div
             className={`
             flex gap-2 
-            ${mode === "Buy NO" ? "flex-col" : "flex-col-reverse"}
+            ${mode === "offering_apples NO" ? "flex-col" : "flex-col-reverse"}
             `}
           >
             <div className="mt-1 relative rounded-md shadow-sm">

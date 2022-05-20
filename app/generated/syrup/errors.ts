@@ -64,10 +64,10 @@ export class LastPageEmpty extends Error {
 export class CantConvertOrder extends Error {
   readonly code = 6005
   readonly name = "CantConvertOrder"
-  readonly msg = "Can't convert a buy into a sell or vice versa"
+  readonly msg = "Can't convert a offering_apples into a sell or vice versa"
 
   constructor() {
-    super("6005: Can't convert a buy into a sell or vice versa")
+    super("6005: Can't convert a offering_apples into a sell or vice versa")
   }
 }
 

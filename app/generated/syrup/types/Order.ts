@@ -4,27 +4,27 @@ import * as types from "."
 
 export interface OrderFields {
   size: BN
-  buy: boolean
+  offering_apples: boolean
   user: PublicKey
   price: BN
 }
 
 export interface OrderJSON {
   size: string
-  buy: boolean
+  offering_apples: boolean
   user: string
   price: string
 }
 
 export class Order {
   readonly size: BN
-  readonly buy: boolean
+  readonly offering_apples: boolean
   readonly user: PublicKey
   readonly price: BN
 
   constructor(fields: OrderFields) {
     this.size = fields.size
-    this.buy = fields.buy
+    this.offering_apples = fields.offering_apples
     this.user = fields.user
     this.price = fields.price
   }
@@ -33,7 +33,7 @@ export class Order {
     return borsh.struct(
       [
         borsh.u64("size"),
-        borsh.bool("buy"),
+        borsh.bool("offering_apples"),
         borsh.publicKey("user"),
         borsh.u64("price"),
       ],
@@ -45,7 +45,7 @@ export class Order {
   static fromDecoded(obj: any) {
     return new Order({
       size: obj.size,
-      buy: obj.buy,
+      offering_apples: obj.offering_apples,
       user: obj.user,
       price: obj.price,
     })
@@ -54,7 +54,7 @@ export class Order {
   static toEncodable(fields: OrderFields) {
     return {
       size: fields.size,
-      buy: fields.buy,
+      offering_apples: fields.offering_apples,
       user: fields.user,
       price: fields.price,
     }
@@ -63,7 +63,7 @@ export class Order {
   toJSON(): OrderJSON {
     return {
       size: this.size.toString(),
-      buy: this.buy,
+      offering_apples: this.offering_apples,
       user: this.user.toString(),
       price: this.price.toString(),
     }
@@ -72,7 +72,7 @@ export class Order {
   static fromJSON(obj: OrderJSON): Order {
     return new Order({
       size: new BN(obj.size),
-      buy: obj.buy,
+      offering_apples: obj.offering_apples,
       user: new PublicKey(obj.user),
       price: new BN(obj.price),
     })

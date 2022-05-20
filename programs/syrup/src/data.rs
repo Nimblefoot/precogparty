@@ -9,23 +9,23 @@ const MAX_SIZE: usize = 3;
 #[cfg(not(feature = "orderbook-page-small-size"))]
 const MAX_SIZE: usize = 100;
 
-#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
+#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
 pub struct Order {
-    pub size: u64,    // 8
-    pub buy: bool,    // 1
-    pub user: Pubkey, // 32
-    pub price: u64,   // 8 - 49 total
+    pub num_apples: u64,       // 8
+    pub offering_apples: bool, // 1
+    pub user: Pubkey,          // 32
+    pub num_oranges: u64,      // 8 - 49 total
 }
 
 #[account]
 #[derive(Default)]
 pub struct OrderbookInfo {
-    pub admin: Pubkey,         // 32
-    pub length: u32,           // 4
-    pub currency_mint: Pubkey, // 32
-    pub token_mint: Pubkey,    // 32
-    pub bump: u8,              // 1
-    pub name: Pubkey,          // 32
+    pub admin: Pubkey,        // 32
+    pub length: u32,          // 4
+    pub apples_mint: Pubkey,  // 32
+    pub oranges_mint: Pubkey, // 32
+    pub bump: u8,             // 1
+    pub name: Pubkey,         // 32
 }
 
 impl OrderbookInfo {
@@ -91,14 +91,8 @@ impl OrderbookPage {
     }
 
     pub fn set(&mut self, index: u32, data: Order) {
-        msg!("orderpage set method. incoming price is: ");
-        msg!(&data.price.to_string());
-
         let idx = index as usize;
         self.list[idx] = data;
-
-        msg!("we set price to: ");
-        msg!(&self.list[idx].price.to_string());
     }
 
     pub fn get(&mut self, index: u32) -> Order {

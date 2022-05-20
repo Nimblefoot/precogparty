@@ -27,7 +27,7 @@ const oddsFromRatio = (X: number) => X / (1 + X)
 export const order2ui = ({
   size: noAmount,
   price,
-  buy: yesForNo,
+  offering_apples: yesForNo,
 }: OrderFields): {
   collateralSize: number
   odds: number

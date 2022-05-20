@@ -26,7 +26,7 @@ function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-type Mode = "buy" | "trade"
+type Mode = "offering_apples" | "trade"
 // TODO cool css transitions when switching modes
 // TODO display balances
 export function PlaceOrderPanel({
@@ -36,7 +36,7 @@ export function PlaceOrderPanel({
 }) {
   const [odds, setOdds] = useState<number>(0.8)
   const [inputSize, setInputSize] = useState<number>(0)
-  const [mode, setMode] = useState<Mode>("buy")
+  const [mode, setMode] = useState<Mode>("offering_apples")
   const [resolution, setResolution] = useState<Resolution>("yes")
 
   const yesMint = useResolutionMint(marketAddress, "yes")
@@ -46,7 +46,7 @@ export function PlaceOrderPanel({
   const noAccount = useTokenAccount(noMint)
 
   const mintSet = useMintContingentSet(marketAddress)
-  const buy = usePlaceOrderTxn(marketAddress)
+  const offering_apples = usePlaceOrderTxn(marketAddress)
 
   const inputRef = useRef(null)
 
@@ -70,7 +70,7 @@ export function PlaceOrderPanel({
             .div(new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS))
         : inputAmount
 
-    const buyTxn = await buy({
+    const offering_applesTxn = await offering_apples({
       price: price,
       yesForNo: resolution === "yes",
       size,
@@ -78,13 +78,13 @@ export function PlaceOrderPanel({
 
     const txn = new Transaction().add(
       ...mintTxn.instructions,
-      ...buyTxn.instructions
+      ...offering_applesTxn.instructions
     )
 
     console.log(txn)
     await callback(txn)
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
-  }, [buy, callback, inputSize, marketAddress, mintSet, odds, resolution])
+  }, [offering_apples, callback, inputSize, marketAddress, mintSet, odds, resolution])
 
   const yesOutput = inputSize / odds
   const noOutput = inputSize / (1 - odds)
@@ -97,7 +97,7 @@ export function PlaceOrderPanel({
             Offer odds
           </h3>
           <nav className="-mb-px flex space-x-8 mt-3 sm:mt-4">
-            {(["buy", "trade"] as const).map((tab) => (
+            {(["offering_apples", "trade"] as const).map((tab) => (
               <a
                 key={tab}
                 onClick={(e) => {

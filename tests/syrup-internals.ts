@@ -147,7 +147,7 @@ describe("orderbook", async () => {
   const mockData = [...Array(size).keys()].map((i) => ({
     user: user.publicKey,
     size: new anchor.BN((1e8 / 100) * (i + 1)),
-    buy: true,
+    offering_apples: true,
     price: new anchor.BN(2e9),
   }))
 
