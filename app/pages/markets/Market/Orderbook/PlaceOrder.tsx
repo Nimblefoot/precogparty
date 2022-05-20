@@ -55,17 +55,24 @@ export function PlaceOrderPanel({
   const onSubmit = useCallback(async () => {
     if (inputSize === 0) return
 
-    const price = resolution === "yes" ? odds / (1 - odds) : (1 - odds) / odds
-    const size = new BN(inputSize).mul(new BN(10 ** COLLATERAL_DECIMALS))
+    const oddsOfResolution = resolution === "yes" ? odds : 1 - odds
+    const oddsOfOther = resolution === "yes" ? 1 - odds : odds
+
+    const price = new BN(
+      Math.round(
+        (oddsOfResolution / oddsOfOther) * 10 ** ORDERBOOK_PRICE_RATIO_DECIMALS
+      )
+    )
+    const size = new BN(inputSize * 10 ** COLLATERAL_DECIMALS)
 
     const mintTxn = await mintSet({ amount: size })
 
-    console.log("price", price.toString())
+    console.log("price", price.toString(), oddsOfResolution / oddsOfOther)
 
     const buyTxn = await buy({
-      price: new BN(price * 10 ** ORDERBOOK_PRICE_RATIO_DECIMALS),
+      price: price,
       yesForNo: resolution === "yes",
-      size: new BN(inputSize).mul(new BN(10 ** COLLATERAL_DECIMALS)),
+      size,
     })
 
     const txn = new Transaction().add(
