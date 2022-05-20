@@ -6,11 +6,17 @@ import { PROGRAM_ID } from "@/generated/client/programId"
 import { getAssociatedTokenAddress } from "@solana/spl-token"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
-import { COLLATERAL_DECIMALS, Resolution } from "config"
+import {
+  COLLATERAL_DECIMALS,
+  ORDERBOOK_PRICE_RATIO_DECIMALS,
+  Resolution,
+} from "config"
+import { queryClient } from "pages/providers"
 import { useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useMemo, useRef, useState } from "react"
 import { useMarket } from "../hooks/marketQueries"
 import useMintContingentSet from "../hooks/useMintContingentSet"
+import { orderbookKeys } from "./orderbookQueries"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
 
 function classNames(...classes: string[]) {
@@ -54,8 +60,10 @@ export function PlaceOrderPanel({
 
     const mintTxn = await mintSet({ amount: size })
 
+    console.log("price", price.toString())
+
     const buyTxn = await buy({
-      price: new BN(price).mul(new BN(10 ** COLLATERAL_DECIMALS)),
+      price: new BN(price * 10 ** ORDERBOOK_PRICE_RATIO_DECIMALS),
       yesForNo: resolution === "yes",
       size: new BN(inputSize).mul(new BN(10 ** COLLATERAL_DECIMALS)),
     })
@@ -67,7 +75,8 @@ export function PlaceOrderPanel({
 
     console.log(txn)
     await callback(txn)
-  }, [buy, callback, inputSize, mintSet, odds, resolution])
+    queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
+  }, [buy, callback, inputSize, marketAddress, mintSet, odds, resolution])
 
   const yesOutput = inputSize / odds
   const noOutput = inputSize / (1 - odds)

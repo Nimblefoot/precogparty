@@ -17,3 +17,5 @@ export const RESOLUTION_MAPPING_INVERSE = {
 export type Resolution = keyof typeof RESOLUTION_MAPPING
 
 export const ORDERBOOK_PAGE_MAX_LENGTH = 100
+
+export const ORDERBOOK_PRICE_RATIO_DECIMALS = 9
