@@ -120,7 +120,7 @@ const New = ({}) => {
                 {desc.length} / {descriptionMaxLength}
               </p>
             </div>
-            <div className="sm:col-span-4">
+            {/* <div className="sm:col-span-4">
               <label
                 htmlFor="about"
                 className="block text-sm font-medium text-gray-700"
@@ -138,7 +138,7 @@ const New = ({}) => {
                   min={Date.now()}
                 />
               </div>
-            </div>
+            </div> */}
             <div className="sm:col-span-4">
               <label
                 htmlFor="username"
