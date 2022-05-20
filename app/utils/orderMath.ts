@@ -9,20 +9,27 @@ export type BN_ = InstanceType<typeof BN>
 const oddsFromRatio = (X: number) => X / (1 + X)
 
 // ToDo: throw error if X doesn't represent an odds (0 < X < 1)
-const ratioFromOdds = (X: number) => X / (1 - X)
+export const ratioFromOdds = (X: number) => X / (1 - X)
+
+let decimalMultiplier = 10 ** 6
 
 export const order2ui = ({
-  numApples: numYes,
-  numOranges: numNo,
+  numApples: unitsYes,
+  numOranges: unitsNo,
   offeringApples: offeringYes,
 }: OrderFields): {
   collateralSize: number
   odds: number
+  forResolution: String
 } => {
-  let odds = numYes.div(numYes.add(numNo)).toNumber()
-  let collateralSize = offeringYes ? numYes.toNumber() : numNo.toNumber()
+  let numYes = unitsYes.toNumber() / decimalMultiplier
+  let numNo = unitsNo.toNumber() / decimalMultiplier
 
-  return { odds, collateralSize }
+  let odds = numNo / (numNo + numYes)
+  let collateralSize = offeringYes ? numYes : numNo
+  let forResolution = offeringYes ? "no" : "yes"
+
+  return { odds, collateralSize, forResolution }
 }
 
 export interface UIOrder {
@@ -31,25 +38,28 @@ export interface UIOrder {
   forResolution: String
 }
 
+export interface OrderbookEntry {
+  numApples: BN_
+  numOranges: BN_
+  offeringApples: boolean
+}
+
 export const ui2placeOrderFields = ({
   odds, // odds of yes
   collateralSize,
   forResolution,
-}: UIOrder): {
-  numApples: BN_
-  numOranges: BN_
-  offeringApples: boolean
-} => {
+}: UIOrder): OrderbookEntry => {
   let offeringYes, numNo, numYes
+  let collateralUnits = collateralSize * decimalMultiplier
 
   if (forResolution == "yes") {
     offeringYes = false
-    numNo = collateralSize
-    numYes = collateralSize / ratioFromOdds(odds)
+    numNo = collateralUnits
+    numYes = collateralUnits / ratioFromOdds(odds)
   } else {
     offeringYes = true
-    numYes = collateralSize
-    numNo = collateralSize * ratioFromOdds(odds)
+    numYes = collateralUnits
+    numNo = collateralUnits * ratioFromOdds(odds)
   }
 
   return {
