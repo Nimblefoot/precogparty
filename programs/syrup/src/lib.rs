@@ -15,8 +15,6 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount}
 };
 
-use std::cmp::Ordering;
-
 pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
     let order_data = order_page.get(index);
     let orderbook_name = order_page.orderbook_name.clone();
@@ -72,8 +70,14 @@ pub fn edit_order(index: u32, new_price: u64, new_size: u64, order_page:  &mut A
 
 declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
+const PRICE_DECIMALS: u32 = 9;
+const MULTIPLIER_BASE: u64 = 10;
+const DECIMAL_MULTIPLIER: u64 = MULTIPLIER_BASE.pow(PRICE_DECIMALS);
+
 #[program]
 pub mod syrup {
+    use anchor_lang::solana_program::clock::DEFAULT_DEV_SLOTS_PER_EPOCH;
+
     use super::*;
 
     #[allow(unused_variables)]
@@ -110,10 +114,15 @@ pub mod syrup {
 
         // transfer tokens from user to the vault
         let token_amount = if order.buy {
-            order.size * order.price
+            (order.size * order.price) / DECIMAL_MULTIPLIER
         } else {
             order.size
         };
+
+        if token_amount == 0 {
+            return err!(ErrorCode::OrderTooSmall);
+        }
+        
         transfer_tokens(
             token_amount, 
             ctx.accounts.user_ata.to_account_info(),
@@ -177,7 +186,7 @@ pub mod syrup {
         let signer_seeds = &[&seeds[..]];
 
         let vault_outgoing_amount = if order_data.buy { 
-            size * order_data.price 
+            (size * order_data.price) / DECIMAL_MULTIPLIER
         } else { 
             size
         };
@@ -195,7 +204,7 @@ pub mod syrup {
         let transfer_amount = if order_data.buy { 
             size 
         } else { 
-            size * order_data.price 
+            (size * order_data.price) / DECIMAL_MULTIPLIER
         };
         transfer_tokens(
             transfer_amount,
@@ -208,12 +217,10 @@ pub mod syrup {
 
         if size == order_data.size {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
+        } else if (last_page.key() == order_page.key()) {
+            edit_order(index, order_data.price, order_data.size - size, last_page, offerer_user_account)?;
         } else {
-            if (last_page.key() == order_page.key()) {
-                edit_order(index, order_data.price, order_data.size - size, last_page, offerer_user_account)?;
-            } else {
-                edit_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
-            }
+            edit_order(index, order_data.price, order_data.size - size, order_page, offerer_user_account)?;
         }
 
         Ok(())
@@ -246,7 +253,7 @@ pub mod syrup {
         let signer_seeds = &[&seeds[..]];
 
         let amount = if order_data.buy { 
-            order_data.size * order_data.price 
+            (order_data.size * order_data.price) / DECIMAL_MULTIPLIER
         } else { 
             order_data.size
         };

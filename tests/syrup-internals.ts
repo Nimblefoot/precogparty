@@ -148,7 +148,7 @@ describe("orderbook", async () => {
     user: user.publicKey,
     size: new anchor.BN((1e8 / 100) * (i + 1)),
     buy: true,
-    price: new anchor.BN(2),
+    price: new anchor.BN(2e9),
   }))
 
   it("creates a user account", async () => {
@@ -296,7 +296,7 @@ describe("orderbook", async () => {
       "7000000",
       "correct size for order"
     )
-    assert.equal(seventhOrder.price, 2, "correct price for order")
+    assert.equal(seventhOrder.price, 2e9, "correct price for order")
   })
 
   it("cancels an order", async () => {

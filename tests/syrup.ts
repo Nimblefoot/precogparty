@@ -231,7 +231,7 @@ describe("orderbook", async () => {
         user: user.publicKey,
         size: new anchor.BN(1e6),
         buy: true,
-        price: new anchor.BN(2),
+        price: new anchor.BN(2e9),
       })
       .accounts({
         user: user.publicKey,
@@ -251,7 +251,7 @@ describe("orderbook", async () => {
         user: user.publicKey,
         size: new anchor.BN(5e6),
         buy: true,
-        price: new anchor.BN(1),
+        price: new anchor.BN(1e9),
       })
       .accounts({
         user: user.publicKey,
@@ -280,7 +280,7 @@ describe("orderbook", async () => {
         user: admin.publicKey,
         size: new anchor.BN(5e6),
         buy: false,
-        price: new anchor.BN(3),
+        price: new anchor.BN(3e9),
       })
       .accounts({
         user: admin.publicKey,
@@ -326,7 +326,7 @@ describe("orderbook", async () => {
           user: user.publicKey,
           size: new anchor.BN(1e6),
           buy: true,
-          price: new anchor.BN(2),
+          price: new anchor.BN(2e9),
         },
         0,
         0
