@@ -41,16 +41,16 @@ describe("orderbook", async () => {
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey
   let userAccountAddress: PublicKey
-  let orderbookInfo: PublicKey
-  let firstPage: PublicKey
-  let currencyVault: PublicKey
-  let tokenVault: PublicKey
+  let orderbookInfoAddress: PublicKey
+  let firstPageAddress: PublicKey
+  let applesVault: PublicKey
+  let orangesVault: PublicKey
   let applesMint: PublicKey
   let orangesMint: PublicKey
-  let uuserApplesATA: PublicKey
-  let userorangesata: PublicKey
-  let adminapplesata: PublicKey
-  let adminorangesata: PublicKey
+  let userApplesATA: PublicKey
+  let userOrangesATA: PublicKey
+  let adminApplesATA: PublicKey
+  let adminOrangesATA: PublicKey
 
   before(async () => {
     /** SETUP */
@@ -85,28 +85,28 @@ describe("orderbook", async () => {
       6
     )
 
-    uuserApplesATA = await createAssociatedTokenAccount(
+    userApplesATA = await createAssociatedTokenAccount(
       program.provider.connection, // connection
       user, // fee payer
       applesMint, // mint
       user.publicKey // owner,
     )
 
-    userorangesata = await createAssociatedTokenAccount(
+    userOrangesATA = await createAssociatedTokenAccount(
       program.provider.connection, // connection
       user, // fee payer
       orangesMint, // mint
       user.publicKey // owner,
     )
 
-    adminapplesata = await createAssociatedTokenAccount(
+    adminApplesATA = await createAssociatedTokenAccount(
       program.provider.connection, // connection
       user, // fee payer
       applesMint, // mint
       admin.publicKey // owner,
     )
 
-    adminorangesata = await createAssociatedTokenAccount(
+    adminOrangesATA = await createAssociatedTokenAccount(
       program.provider.connection, // connection
       admin, // fee payer
       orangesMint, // mint
@@ -122,11 +122,11 @@ describe("orderbook", async () => {
       [utf8.encode("user-account"), user.publicKey.toBuffer()],
       program.programId
     )
-    ;[orderbookInfo] = await PublicKey.findProgramAddress(
+    ;[orderbookInfoAddress] = await PublicKey.findProgramAddress(
       [orderbookName.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
-    ;[firstPage] = await PublicKey.findProgramAddress(
+    ;[firstPageAddress] = await PublicKey.findProgramAddress(
       [
         orderbookName.toBytes(),
         utf8.encode("page"),
@@ -135,14 +135,16 @@ describe("orderbook", async () => {
       program.programId
     )
 
-    currencyVault = await getAssociatedTokenAddress(
+    // Vaults
+    applesVault = await getAssociatedTokenAddress(
       applesMint,
-      orderbookInfo,
+      orderbookInfoAddress,
       true
     )
-    tokenVault = await getAssociatedTokenAddress(
+
+    orangesVault = await getAssociatedTokenAddress(
       orangesMint,
-      orderbookInfo,
+      orderbookInfoAddress,
       true
     )
 
@@ -152,11 +154,11 @@ describe("orderbook", async () => {
       .accounts({
         admin: provider.wallet.publicKey,
         applesMint,
-        currencyVault,
+        applesVault,
         orangesMint,
-        tokenVault,
+        orangesVault,
         // orderbookInfo, //derivable from seeds
-        firstPage,
+        firstPage: firstPageAddress,
       })
       .rpc()
 
@@ -183,7 +185,7 @@ describe("orderbook", async () => {
       program.provider.connection, // connection
       user, // fee payer
       applesMint, // mint
-      uuserApplesATA, // receiver (sholud be a token account)
+      userApplesATA, // receiver (sholud be a token account)
       admin, // mint authority
       5e8, // amount. if your decimals is 6, this is 500 tokens
       6 // decimals
@@ -193,7 +195,7 @@ describe("orderbook", async () => {
       program.provider.connection, // connection
       admin, // fee payer
       orangesMint, // mint
-      adminorangesata, // receiver (sholud be a token account)
+      adminOrangesATA, // receiver (sholud be a token account)
       admin, // mint authority
       5e8, // amount. if your decimals is 6, this is 500 tokens
       6 // decimals
@@ -222,15 +224,15 @@ describe("orderbook", async () => {
       await program.methods
         .placeOrder({
           user: user.publicKey,
-          size: new anchor.BN(1e6),
-          offering_apples: true,
-          price: new anchor.BN(2e9),
+          numApples: new anchor.BN(2e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(1e6),
         })
         .accounts({
           user: user.publicKey,
-          userAta: uuserApplesATA,
-          vault: currencyVault,
-          orderbookInfo,
+          userAta: userApplesATA,
+          vault: applesVault,
+          orderbookInfo: orderbookInfoAddress,
           currentPage: currentPageKey,
           userAccount: userAccountAddress,
         })
@@ -263,15 +265,15 @@ describe("orderbook", async () => {
       await program.methods
         .placeOrder({
           user: admin.publicKey,
-          size: new anchor.BN(1e6),
-          offering_apples: false,
-          price: new anchor.BN(3),
+          numOranges: new anchor.BN(1e6),
+          offeringApples: false,
+          numApples: new anchor.BN(3e6),
         })
         .accounts({
           user: admin.publicKey,
-          userAta: adminorangesata,
-          vault: tokenVault,
-          orderbookInfo,
+          userAta: adminOrangesATA,
+          vault: orangesVault,
+          orderbookInfo: orderbookInfoAddress,
           currentPage: currentPageKey,
           userAccount: adminAccountAddress,
         })
@@ -281,19 +283,19 @@ describe("orderbook", async () => {
         })
     }
 
-    let currencyVaultBalance =
-      await program.provider.connection.getTokenAccountBalance(currencyVault)
+    let applesVaultBalance =
+      await program.provider.connection.getTokenAccountBalance(applesVault)
     assert.equal(
-      currencyVaultBalance.value.amount,
+      applesVaultBalance.value.amount,
       "280000000",
-      "Currency Vault Balance should match sum of orders."
+      "Apples Vault Balance should match sum of orders."
     )
-    let tokenVaultBalance =
-      await program.provider.connection.getTokenAccountBalance(tokenVault)
+    let orangesVaultBalance =
+      await program.provider.connection.getTokenAccountBalance(orangesVault)
     assert.equal(
-      tokenVaultBalance.value.amount,
+      orangesVaultBalance.value.amount,
       "140000000",
-      "Token Vault Balance should match sum of orders."
+      "Oranges Vault Balance should match sum of orders."
     )
 
     const [infoKey] = await PublicKey.findProgramAddress(
