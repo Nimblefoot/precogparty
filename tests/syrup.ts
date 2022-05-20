@@ -183,122 +183,133 @@ describe("orderbook", async () => {
       .rpc()
   })
 
-  // it("handles placing orders", async () => {
-  //   // MINT TOKENS
-  //   // user has '500' currency.
-  //   await mintToChecked(
-  //     program.provider.connection, // connection
-  //     user, // fee payer
-  //     applesMint, // mint
-  //     uuserApplesATA, // receiver (sholud be a token account)
-  //     admin, // mint authority
-  //     5e8, // amount. if your decimals is 6, this is 500 tokens
-  //     6 // decimals
-  //   )
+  it("handles placing orders", async () => {
+    // MINT TOKENS
+    // user has '500' apples.
+    await mintToChecked(
+      program.provider.connection, // connection
+      user, // fee payer
+      applesMint, // mint
+      userApplesATA, // receiver (sholud be a token account)
+      admin, // mint authority
+      5e8, // amount. if your decimals is 6, this is 500 tokens
+      6 // decimals
+    )
 
-  //   // admin has '500' tokens
-  //   await mintToChecked(
-  //     program.provider.connection, // connection
-  //     admin, // fee payer
-  //     orangesMint, // mint
-  //     adminOrangesATA, // receiver (sholud be a token account)
-  //     admin, // mint authority
-  //     5e8, // amount. if your decimals is 6, this is 500 tokens
-  //     6 // decimals
-  //   )
+    // admin has '500' oranges
+    await mintToChecked(
+      program.provider.connection, // connection
+      admin, // fee payer
+      orangesMint, // mint
+      adminOrangesATA, // receiver (sholud be a token account)
+      admin, // mint authority
+      5e8, // amount. if your decimals is 6, this is 500 tokens
+      6 // decimals
+    )
 
-  //   const orderbookInfoData = await program.account.orderbookInfo.fetchNullable(
-  //     orderbookInfo
-  //   )
-  //   const nextOpenPageIndex = Math.floor(orderbookInfoData.length / maxLength)
-  //   const [currentPageKey] = await PublicKey.findProgramAddress(
-  //     [
-  //       orderbookName.toBytes(),
-  //       utf8.encode("page"),
-  //       new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
-  //     ],
-  //     program.programId
-  //   )
+    const orderbookInfo = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
+    const nextOpenPageIndex = Math.floor(orderbookInfo.length / maxLength)
+    const [currentPageKey] = await PublicKey.findProgramAddress(
+      [
+        orderbookName.toBytes(),
+        utf8.encode("page"),
+        new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
 
-  //   const lastPageIndex = Math.floor((orderbookInfoData.length - 1) / maxLength)
-  //   const [lastPageKey] = await PublicKey.findProgramAddress(
-  //     [
-  //       orderbookName.toBytes(),
-  //       utf8.encode("page"),
-  //       new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
-  //     ],
-  //     program.programId
-  //   )
+    const lastPageIndex = Math.floor((orderbookInfo.length - 1) / maxLength)
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        orderbookName.toBytes(),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
 
-  //   await program.methods
-  //     .placeOrder({
-  //       user: user.publicKey,
-  //       size: new anchor.BN(1e6),
-  //       offering_apples: true,
-  //       price: new anchor.BN(2e9),
-  //     })
-  //     .accounts({
-  //       user: user.publicKey,
-  //       userAta: uuserApplesATA,
-  //       vault: currencyVault,
-  //       orderbookInfo,
-  //       currentPage: currentPageKey,
-  //       userAccount: userAccountAddress,
-  //     })
-  //     .signers([user])
-  //     .rpc({
-  //       skipPreflight: true,
-  //     })
+    // sell two apples for 1 orange
+    await program.methods
+      .placeOrder({
+        user: user.publicKey,
+        numApples: new anchor.BN(2e6),
+        offeringApples: true,
+        numOranges: new anchor.BN(1e6),
+      })
+      .accounts({
+        user: user.publicKey,
+        userAta: userApplesATA,
+        vault: applesVault,
+        orderbookInfo: orderbookInfoAddress,
+        currentPage: currentPageKey,
+        userAccount: userAccountAddress,
+      })
+      .signers([user])
+      .rpc({
+        skipPreflight: true,
+      })
 
-  //   await program.methods
-  //     .placeOrder({
-  //       user: user.publicKey,
-  //       size: new anchor.BN(5e6),
-  //       offering_apples: true,
-  //       price: new anchor.BN(1e9),
-  //     })
-  //     .accounts({
-  //       user: user.publicKey,
-  //       userAta: uuserApplesATA,
-  //       vault: currencyVault,
-  //       orderbookInfo,
-  //       currentPage: currentPageKey,
-  //       userAccount: userAccountAddress,
-  //     })
-  //     .signers([user])
-  //     .rpc({
-  //       skipPreflight: true,
-  //     })
+    // sell five apples for five oranges
+    await program.methods
+      .placeOrder({
+        user: user.publicKey,
+        numApples: new anchor.BN(5e6),
+        offeringApples: true,
+        numOranges: new anchor.BN(5e6),
+      })
+      .accounts({
+        user: user.publicKey,
+        userAta: userApplesATA,
+        vault: applesVault,
+        orderbookInfo: orderbookInfoAddress,
+        currentPage: currentPageKey,
+        userAccount: userAccountAddress,
+      })
+      .signers([user])
+      .rpc({
+        skipPreflight: true,
+      })
 
-  //   const vaultBalance =
-  //     await program.provider.connection.getTokenAccountBalance(currencyVault)
-  //   assert.equal(
-  //     vaultBalance.value.amount,
-  //     "7000000",
-  //     "Vault Balance should be reduced to 7000000." // 1*2 + 5*1
-  //   )
+    const vaultBalance =
+      await program.provider.connection.getTokenAccountBalance(applesVault)
+    assert.equal(
+      vaultBalance.value.amount,
+      "7000000",
+      "Vault Balance should be 7000000. Represnts 7 apples" // 1*2 + 5*1
+    )
 
-  //   // re-compute nextOpenPage before placing an order but we know its still the first page lol.
-  //   await program.methods
-  //     .placeOrder({
-  //       user: admin.publicKey,
-  //       size: new anchor.BN(5e6),
-  //       offering_apples: false,
-  //       price: new anchor.BN(3e9),
-  //     })
-  //     .accounts({
-  //       user: admin.publicKey,
-  //       userAta: adminOrangesATA,
-  //       vault: tokenVault,
-  //       orderbookInfo,
-  //       currentPage: currentPageKey,
-  //       userAccount: adminAccountAddress,
-  //     })
-  //     .signers([admin])
-  //     .rpc({
-  //       skipPreflight: true,
-  //     })
-  // })
+    // re-compute nextOpenPage before placing an order but we know its still the first page lol.
+    // offers to sell five oranges for fifteen apples
+    await program.methods
+      .placeOrder({
+        user: admin.publicKey,
+        numOranges: new anchor.BN(5e6),
+        offeringApples: false,
+        numApples: new anchor.BN(1.5e7),
+      })
+      .accounts({
+        user: admin.publicKey,
+        userAta: adminOrangesATA,
+        vault: orangesVault,
+        orderbookInfo: orderbookInfoAddress,
+        currentPage: currentPageKey,
+        userAccount: adminAccountAddress,
+      })
+      .signers([admin])
+      .rpc({
+        skipPreflight: true,
+      })
+
+    const orangesVaultBalance =
+      await program.provider.connection.getTokenAccountBalance(orangesVault)
+    assert.equal(
+      orangesVaultBalance.value.amount,
+      "5000000",
+      "Vault Balance should be 5000000. Represnts 5 oranges"
+    )
+  })
 
   // it("cancels an order", async () => {
   //   const orderbookInfoData = await program.account.orderbookInfo.fetchNullable(
