@@ -16,12 +16,12 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
             Take odds
           </h3>
         </div>
-        <div className="px-4 py-5 sm:px-6 flex flex-col gap-2 border-b border-gray-200 w-full">
+        <div className="px-4 py-5 sm:px-6 flex flex-col gap-4 border-b border-gray-200 w-full">
           <Orders marketAddress={marketAddress} />
           <div
             className={`
-          px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col
-        `}
+              flex gap-2 border-b border-gray-200 content-center flex-col
+            `}
           >
             <div className="flex gap-2">
               {/* USDC input */}
@@ -97,7 +97,6 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                       )}
                       placeholder="0.00"
                       aria-describedby="price-currency"
-                      readOnly
                     />
                     <div
                       className={clsx(
