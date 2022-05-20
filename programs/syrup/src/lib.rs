@@ -144,7 +144,7 @@ pub mod syrup {
         let vault_outgoing_amount: u64;
         let new_num_apples: u64;
         let new_num_oranges: u64;
-        let vault_key: Pubkey;
+        let vault_mint: Pubkey;
 
         let maximum_exchange = if order.offering_apples {
             order_data.num_oranges
@@ -156,12 +156,12 @@ pub mod syrup {
             vault_outgoing_amount = (amount_to_exchange * order.num_apples) / maximum_exchange;
             new_num_apples = order.num_apples - amount_to_exchange;
             new_num_oranges = order.num_oranges - vault_outgoing_amount;
-            vault_key = ctx.accounts.orderbook_info.apples_mint;
+            vault_mint = ctx.accounts.orderbook_info.apples_mint;
         } else {
             vault_outgoing_amount = (amount_to_exchange * order.num_oranges) / maximum_exchange;
             new_num_apples = order.num_apples - vault_outgoing_amount;
             new_num_oranges = order.num_oranges - amount_to_exchange;
-            vault_key = ctx.accounts.orderbook_info.oranges_mint;
+            vault_mint = ctx.accounts.orderbook_info.oranges_mint;
         }
 
         // checks
@@ -171,7 +171,7 @@ pub mod syrup {
             return err!(ErrorCode::IncorrectUser);
         } else if amount_to_exchange > maximum_exchange {
             return err!(ErrorCode::SizeTooLarge);
-        } else if vault_key != ctx.accounts.vault.key() {
+        } else if vault_mint != ctx.accounts.vault.mint {
             return err!(ErrorCode::WrongVault);
         }
 
@@ -364,7 +364,7 @@ pub struct PlaceOrder<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(price: u64, page_number: u32, index: u32)]
+#[instruction(order: Order, amount_to_exchange: u64, page_number: u32, index: u32)]
 pub struct TakeOrder<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,

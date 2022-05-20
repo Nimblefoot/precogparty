@@ -372,144 +372,153 @@ describe("orderbook", async () => {
     )
   })
 
-  // it("takes orders", async () => {
-  //   // we know the last page and don't need to recompute lengths
-  //   const [lastPageKey] = await PublicKey.findProgramAddress(
-  //     [
-  //       orderbookName.toBytes(),
-  //       utf8.encode("page"),
-  //       new anchor.BN(0).toArrayLike(Buffer, "le", 4),
-  //     ],
-  //     program.programId
-  //   )
-  //   let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-  //   console.log(
-  //     JSON.stringify(
-  //       // @ts-ignore
-  //       firstPage.list.map((d) => {
-  //         d.size = d.size.toString()
-  //         return d
-  //       })
-  //     )
-  //   )
+  it("takes orders", async () => {
+    // we know the last page and don't need to recompute lengths
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        orderbookName.toBytes(),
+        utf8.encode("page"),
+        new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
+    // let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    // console.log(
+    //   JSON.stringify(
+    //     // @ts-ignore
+    //     firstPage.list.map((d) => {
+    //       d.size = d.size.toString()
+    //       return d
+    //     })
+    //   )
+    // )
 
-  //   // the max size is 5e6. Going to take for 2e6. the order is in position 0,1 cause of how deletion works (swap and pop)!
+    // the max size is 5e6. Going to take for 2e6. the order is in position 0,1 cause of how deletion works (swap and pop)!
+    await program.methods
+      .takeOrder(
+        {
+          user: user.publicKey,
+          numApples: new anchor.BN(5e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(5e6),
+        },
+        new anchor.BN(2e6),
+        0,
+        1
+      )
+      .accounts({
+        taker: admin.publicKey,
+        takerSendingAta: adminOrangesATA,
+        takerReceivingAta: adminApplesATA,
+        offererUserAccount: userAccountAddress,
+        offererReceivingAta: userOrangesATA,
+        vault: applesVault,
+        orderbookInfo: orderbookInfoAddress,
+        orderPage: lastPageKey,
+        lastPage: lastPageKey,
+      })
+      .signers([admin])
+      .rpc()
 
-  //   await program.methods
-  //     .takeOrder(new anchor.BN(2e6), 0, 1)
-  //     .accounts({
-  //       taker: admin.publicKey,
-  //       takerSendingAta: adminOrangesATA,
-  //       takerReceivingAta: adminApplesATA,
-  //       offererUserAccount: userAccountAddress,
-  //       offererReceivingAta: userOrangesATA,
-  //       vault: currencyVault,
-  //       orderbookInfo,
-  //       orderPage: lastPageKey,
-  //       lastPage: lastPageKey,
-  //     })
-  //     .signers([admin])
-  //     .rpc()
+    const applesVaultBalance =
+      await program.provider.connection.getTokenAccountBalance(applesVault)
+    assert.equal(
+      applesVaultBalance.value.amount,
+      "3000000",
+      "Vault Balance should be reduced to 3000000."
+    )
 
-  //   const currencyVaultBalance =
-  //     await program.provider.connection.getTokenAccountBalance(currencyVault)
-  //   assert.equal(
-  //     currencyVaultBalance.value.amount,
-  //     "3000000",
-  //     "Vault Balance should be reduced to 3000000."
-  //   )
+    const userOrangesBalance =
+      await program.provider.connection.getTokenAccountBalance(userOrangesATA)
+    assert.equal(
+      userOrangesBalance.value.amount,
+      "2000000",
+      "User should have bought 2 oranges at a price of 1 apple each"
+    )
 
-  //   const userTokenBalance =
-  //     await program.provider.connection.getTokenAccountBalance(userOrangesATA)
-  //   assert.equal(
-  //     userTokenBalance.value.amount,
-  //     "2000000",
-  //     "User should have bought 2 oranges at a price of 1 apples each" //
-  //   )
+    const adminApplesBalance =
+      await program.provider.connection.getTokenAccountBalance(adminApplesATA)
+    assert.equal(
+      adminApplesBalance.value.amount,
+      "2000000",
+      "Admin sold 2 oranges for 1 apple each."
+    )
 
-  //   const adminCurrencyBalance =
-  //     await program.provider.connection.getTokenAccountBalance(adminApplesATA)
-  //   assert.equal(
-  //     adminCurrencyBalance.value.amount,
-  //     "2000000",
-  //     "Admin sold 2 oranges for 1 apple each."
-  //   )
+    //   // User will take the admins sell order for the full amount
+    //   console.log("order taken")
+    //   firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    //   console.log(
+    //     JSON.stringify(
+    //       // @ts-ignore
+    //       firstPage.list.map((d) => {
+    //         d.size = d.size.toString()
+    //         return d
+    //       })
+    //     )
+    //   )
 
-  //   // User will take the admins sell order for the full amount
-  //   console.log("order taken")
-  //   firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-  //   console.log(
-  //     JSON.stringify(
-  //       // @ts-ignore
-  //       firstPage.list.map((d) => {
-  //         d.size = d.size.toString()
-  //         return d
-  //       })
-  //     )
-  //   )
+    //   let userCurrencyAmount1 =
+    //     await program.provider.connection.getTokenAccountBalance(uuserApplesATA)
+    //   const userCurrencyBalance1 =
+    //     parseInt(userCurrencyAmount1.value.amount) / 1e6
 
-  //   let userCurrencyAmount1 =
-  //     await program.provider.connection.getTokenAccountBalance(uuserApplesATA)
-  //   const userCurrencyBalance1 =
-  //     parseInt(userCurrencyAmount1.value.amount) / 1e6
+    //   await program.methods
+    //     .takeOrder(new anchor.BN(5e6), 0, 0)
+    //     .accounts({
+    //       taker: user.publicKey,
+    //       takerSendingAta: uuserApplesATA,
+    //       takerReceivingAta: userOrangesATA,
+    //       offererUserAccount: adminAccountAddress,
+    //       offererReceivingAta: adminApplesATA,
+    //       vault: tokenVault,
+    //       orderbookInfo,
+    //       orderPage: lastPageKey,
+    //       lastPage: lastPageKey,
+    //     })
+    //     .signers([user])
+    //     .rpc({
+    //       skipPreflight: true,
+    //     })
 
-  //   await program.methods
-  //     .takeOrder(new anchor.BN(5e6), 0, 0)
-  //     .accounts({
-  //       taker: user.publicKey,
-  //       takerSendingAta: uuserApplesATA,
-  //       takerReceivingAta: userOrangesATA,
-  //       offererUserAccount: adminAccountAddress,
-  //       offererReceivingAta: adminApplesATA,
-  //       vault: tokenVault,
-  //       orderbookInfo,
-  //       orderPage: lastPageKey,
-  //       lastPage: lastPageKey,
-  //     })
-  //     .signers([user])
-  //     .rpc({
-  //       skipPreflight: true,
-  //     })
+    //   const userTokenBalance2 =
+    //     await program.provider.connection.getTokenAccountBalance(userOrangesATA)
+    //   assert.equal(
+    //     userTokenBalance2.value.amount,
+    //     "7000000",
+    //     "User should have bought 7 oranges" //
+    //   )
 
-  //   const userTokenBalance2 =
-  //     await program.provider.connection.getTokenAccountBalance(userOrangesATA)
-  //   assert.equal(
-  //     userTokenBalance2.value.amount,
-  //     "7000000",
-  //     "User should have bought 7 oranges" //
-  //   )
+    //   const adminCurrencyBalance2 =
+    //     await program.provider.connection.getTokenAccountBalance(adminApplesATA)
+    //   assert.equal(
+    //     adminCurrencyBalance2.value.amount,
+    //     "17000000",
+    //     "Admin sold 2 oranges for 1 apple each and 5 oranges for 3 apples each"
+    //   )
 
-  //   const adminCurrencyBalance2 =
-  //     await program.provider.connection.getTokenAccountBalance(adminApplesATA)
-  //   assert.equal(
-  //     adminCurrencyBalance2.value.amount,
-  //     "17000000",
-  //     "Admin sold 2 oranges for 1 apple each and 5 oranges for 3 apples each"
-  //   )
+    //   let userCurrencyAmount2 =
+    //     await program.provider.connection.getTokenAccountBalance(uuserApplesATA)
+    //   const userCurrencyBalance2 =
+    //     parseInt(userCurrencyAmount2.value.amount) / 1e6
 
-  //   let userCurrencyAmount2 =
-  //     await program.provider.connection.getTokenAccountBalance(uuserApplesATA)
-  //   const userCurrencyBalance2 =
-  //     parseInt(userCurrencyAmount2.value.amount) / 1e6
+    //   assert.equal(
+    //     userCurrencyBalance1 - userCurrencyBalance2,
+    //     15,
+    //     "User spent 15 apples to offering_apples 5 oranges for 3 apples each"
+    //   )
 
-  //   assert.equal(
-  //     userCurrencyBalance1 - userCurrencyBalance2,
-  //     15,
-  //     "User spent 15 apples to offering_apples 5 oranges for 3 apples each"
-  //   )
-
-  //   console.log("order taken for max amount")
-  //   firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-  //   console.log(
-  //     JSON.stringify(
-  //       // @ts-ignore
-  //       firstPage.list.map((d) => {
-  //         d.size = d.size.toString()
-  //         return d
-  //       })
-  //     )
-  //   )
-  // })
+    //   console.log("order taken for max amount")
+    //   firstPage = await program.account.orderbookPage.fetch(lastPageKey)
+    //   console.log(
+    //     JSON.stringify(
+    //       // @ts-ignore
+    //       firstPage.list.map((d) => {
+    //         d.size = d.size.toString()
+    //         return d
+    //       })
+    //     )
+    //   )
+  })
 
   // it("checks security assumption hold", async () => {
   //   const result = await program.methods
