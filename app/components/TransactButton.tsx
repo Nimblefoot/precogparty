@@ -39,7 +39,8 @@ export const useTransact = () => {
       const result = await connection.confirmTransaction(sig)
       console.log("confirmed tx", result)
       setStatus("done")
-    } catch {
+    } catch (e) {
+      console.log((e as any).message)
       console.log(txn)
       console.log(JSON.stringify(txn))
     }
