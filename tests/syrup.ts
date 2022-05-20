@@ -27,7 +27,7 @@ import {
 } from "@solana/spl-token"
 
 const maxLength = 100 //
-const orderbookName = Keypair.generate().publicKey
+const orderbookId = Keypair.generate().publicKey
 
 describe("orderbook", async () => {
   // Configure the client to use the local cluster.
@@ -123,12 +123,12 @@ describe("orderbook", async () => {
       program.programId
     )
     ;[orderbookInfoAddress] = await PublicKey.findProgramAddress(
-      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
+      [orderbookId.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     ;[firstPageAddress] = await PublicKey.findProgramAddress(
       [
-        orderbookName.toBytes(),
+        orderbookId.toBytes(),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
@@ -152,7 +152,7 @@ describe("orderbook", async () => {
   it("initializes an orderbook", async () => {
     // initialize orderbook
     await program.methods
-      .initializeOrderbook(orderbookName)
+      .initializeOrderbook(orderbookId)
       .accounts({
         admin: provider.wallet.publicKey,
         applesMint,
@@ -213,7 +213,7 @@ describe("orderbook", async () => {
     const nextOpenPageIndex = Math.floor(orderbookInfo.length / maxLength)
     const [currentPageKey] = await PublicKey.findProgramAddress(
       [
-        orderbookName.toBytes(),
+        orderbookId.toBytes(),
         utf8.encode("page"),
         new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -223,7 +223,7 @@ describe("orderbook", async () => {
     const lastPageIndex = Math.floor((orderbookInfo.length - 1) / maxLength)
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        orderbookName.toBytes(),
+        orderbookId.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -318,7 +318,7 @@ describe("orderbook", async () => {
     const lastPageIndex = Math.floor((orderbookInfo.length - 1) / maxLength)
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        orderbookName.toBytes(),
+        orderbookId.toBytes(),
         utf8.encode("page"),
         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
       ],
@@ -376,7 +376,7 @@ describe("orderbook", async () => {
     // we know the last page and don't need to recompute lengths
     const [lastPageKey] = await PublicKey.findProgramAddress(
       [
-        orderbookName.toBytes(),
+        orderbookId.toBytes(),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
@@ -520,7 +520,7 @@ describe("orderbook", async () => {
 
   it("checks security assumption hold", async () => {
     const result = await program.methods
-      .initializeOrderbook(orderbookName)
+      .initializeOrderbook(orderbookId)
       .accounts({
         admin: provider.wallet.publicKey,
         applesMint,

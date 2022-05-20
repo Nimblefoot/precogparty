@@ -25,7 +25,7 @@ pub struct OrderbookInfo {
     pub apples_mint: Pubkey,  // 32
     pub oranges_mint: Pubkey, // 32
     pub bump: u8,             // 1
-    pub name: Pubkey,         // 32
+    pub id: Pubkey,           // 32
 }
 
 impl OrderbookInfo {
@@ -47,15 +47,15 @@ impl OrderbookInfo {
 #[account]
 pub struct OrderbookPage {
     pub list: Vec<Order>,
-    pub orderbook_name: Pubkey,
-    pub name_set: bool,
+    pub orderbook_id: Pubkey,
+    pub id_set: bool,
 }
 
 impl Default for OrderbookPage {
     fn default() -> Self {
         Self {
-            orderbook_name: Pubkey::new_unique(),
-            name_set: false,
+            orderbook_id: Pubkey::new_unique(),
+            id_set: false,
             list: Vec::with_capacity(MAX_SIZE),
         }
     }
@@ -109,13 +109,13 @@ impl OrderbookPage {
         Some(result)
     }
 
-    pub fn set_orderbook_name(&mut self, name: Pubkey) {
-        // TODO: add error in case name is already set
-        self.orderbook_name = name;
-        self.name_set = true
+    pub fn set_orderbook_id(&mut self, id: Pubkey) {
+        // TODO: add error in case id is already set
+        self.orderbook_id = id;
+        self.id_set = true
     }
 
-    pub fn is_orderbook_name_blank(&self) -> bool {
-        !self.name_set
+    pub fn is_orderbook_id_blank(&self) -> bool {
+        !self.id_set
     }
 }

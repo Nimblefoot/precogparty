@@ -36,7 +36,7 @@ describe("orderbook", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>
   const admin = Keypair.generate()
   const user = Keypair.generate()
-  let orderbookName = Keypair.generate().publicKey
+  let orderbookId = Keypair.generate().publicKey
 
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey
@@ -123,12 +123,12 @@ describe("orderbook", async () => {
       program.programId
     )
     ;[orderbookInfoAddress] = await PublicKey.findProgramAddress(
-      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
+      [orderbookId.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     ;[firstPageAddress] = await PublicKey.findProgramAddress(
       [
-        orderbookName.toBytes(),
+        orderbookId.toBytes(),
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
@@ -150,7 +150,7 @@ describe("orderbook", async () => {
 
     // initialize orderbook
     await program.methods
-      .initializeOrderbook(orderbookName)
+      .initializeOrderbook(orderbookId)
       .accounts({
         admin: provider.wallet.publicKey,
         applesMint,
@@ -207,14 +207,14 @@ describe("orderbook", async () => {
         console.log("place user order: " + (i + 1))
       }
       const [infoKey] = await PublicKey.findProgramAddress(
-        [orderbookName.toBytes(), utf8.encode("orderbook-info")],
+        [orderbookId.toBytes(), utf8.encode("orderbook-info")],
         program.programId
       )
       const info = await program.account.orderbookInfo.fetchNullable(infoKey)
       const nextOpenPageIndex = Math.floor(info.length / maxLength)
       const [currentPageKey] = await PublicKey.findProgramAddress(
         [
-          orderbookName.toBytes(),
+          orderbookId.toBytes(),
           utf8.encode("page"),
           new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
         ],
@@ -248,14 +248,14 @@ describe("orderbook", async () => {
         console.log("place admin order: " + (i + 1))
       }
       const [infoKey] = await PublicKey.findProgramAddress(
-        [orderbookName.toBytes(), utf8.encode("orderbook-info")],
+        [orderbookId.toBytes(), utf8.encode("orderbook-info")],
         program.programId
       )
       const info = await program.account.orderbookInfo.fetchNullable(infoKey)
       const nextOpenPageIndex = Math.floor(info.length / maxLength)
       const [currentPageKey] = await PublicKey.findProgramAddress(
         [
-          orderbookName.toBytes(),
+          orderbookId.toBytes(),
           utf8.encode("page"),
           new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
         ],
@@ -299,7 +299,7 @@ describe("orderbook", async () => {
     )
 
     const [infoKey] = await PublicKey.findProgramAddress(
-      [orderbookName.toBytes(), utf8.encode("orderbook-info")],
+      [orderbookId.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     const info = await program.account.orderbookInfo.fetchNullable(infoKey)

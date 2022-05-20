@@ -17,7 +17,7 @@ use anchor_spl::{
 
 pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
     let order_data = order_page.get(index);
-    let orderbook_name = order_page.orderbook_name.clone();
+    let orderbook_id = order_page.orderbook_id.clone();
 
     if order_page.key() == last_page.key() && (index as usize) == last_page.len() - 1 {
         msg!("just need to pop!!!");
@@ -36,7 +36,7 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     *orderbook_length -= 1;
 
     // Delete from user account
-    if let Some(deletion_index) = user_account.find_order(order_data, orderbook_name) {
+    if let Some(deletion_index) = user_account.find_order(order_data, orderbook_id) {
         user_account.delete(deletion_index);
     } else {
         return err!(ErrorCode::UserMissingOrder);
@@ -47,10 +47,10 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
 
 pub fn edit_order(index: u32, new_num_apples: u64, new_num_oranges: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
     let mut order_data = order_page.get(index);
-    let orderbook_name = order_page.orderbook_name.clone();
+    let orderbook_id = order_page.orderbook_id.clone();
 
     // Modify the order in the user's orders
-    if let Some(user_orders_index) = user_account.find_order(order_data, orderbook_name) {
+    if let Some(user_orders_index) = user_account.find_order(order_data, orderbook_id) {
         user_account.set(user_orders_index, new_num_apples, new_num_oranges);
     } else {
         return err!(ErrorCode::UserMissingOrder);
@@ -72,15 +72,15 @@ pub mod syrup {
     use super::*;
 
     #[allow(unused_variables)]
-    pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, name: Pubkey) -> Result<()> {
+    pub fn initialize_orderbook(ctx: Context<InitializeOrderbook>, id: Pubkey) -> Result<()> {
         ctx.accounts.orderbook_info.admin = ctx.accounts.admin.key();
         ctx.accounts.orderbook_info.length = 0;
         ctx.accounts.orderbook_info.apples_mint = ctx.accounts.apples_mint.key();
         ctx.accounts.orderbook_info.oranges_mint = ctx.accounts.oranges_mint.key();
         ctx.accounts.orderbook_info.bump = *ctx.bumps.get("orderbook_info").unwrap();
-        ctx.accounts.orderbook_info.name = name;
+        ctx.accounts.orderbook_info.id = id;
 
-        ctx.accounts.first_page.set_orderbook_name(name);
+        ctx.accounts.first_page.set_orderbook_id(id);
 
         Ok(())
     }
@@ -98,9 +98,9 @@ pub mod syrup {
             return err!(ErrorCode::IncorrectUser);
         };
 
-        // set the name of the new page if you initialized it
-        if ctx.accounts.current_page.is_orderbook_name_blank() {
-            ctx.accounts.current_page.set_orderbook_name(ctx.accounts.orderbook_info.name.clone());
+        // set the id of the new page if you initialized it
+        if ctx.accounts.current_page.is_orderbook_id_blank() {
+            ctx.accounts.current_page.set_orderbook_id(ctx.accounts.orderbook_info.id.clone());
         }
 
         let amount_transferred = if order.offering_apples {
@@ -120,7 +120,7 @@ pub mod syrup {
 
         // create and append order record
         let order_record = OrderRecord {
-            market: ctx.accounts.orderbook_info.name,
+            market: ctx.accounts.orderbook_info.id,
             offering_apples: order.offering_apples,
             num_apples: order.num_apples,
             num_oranges: order.num_oranges,
@@ -180,14 +180,14 @@ pub mod syrup {
         let offerer_user_account = &mut ctx.accounts.offerer_user_account;
 
         // need to split up variables to avoid borrower check errors
-        let orderbook_name = ctx.accounts.orderbook_info.name;
+        let orderbook_id = ctx.accounts.orderbook_info.id;
         let orderbook_bump = ctx.accounts.orderbook_info.bump;
         let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
         let orderbook_length = &mut ctx.accounts.orderbook_info.length;
 
         // Transfer from the vault to the taker
         let seeds = &[
-            &orderbook_name.to_bytes(),
+            &orderbook_id.to_bytes(),
             "orderbook-info".as_bytes(),
             &[orderbook_bump],
         ];
@@ -237,14 +237,14 @@ pub mod syrup {
         let user_account = &mut ctx.accounts.user_account;
 
         // need to split up variables to avoid borrower check errors
-        let orderbook_name = ctx.accounts.orderbook_info.name.clone();
+        let orderbook_id = ctx.accounts.orderbook_info.id.clone();
         let orderbook_bump = ctx.accounts.orderbook_info.bump;
         let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
         let orderbook_length = &mut ctx.accounts.orderbook_info.length;
 
         // Refund order
         let seeds = &[
-            &orderbook_name.to_bytes(),
+            &orderbook_id.to_bytes(),
             "orderbook-info".as_bytes(),
             &[orderbook_bump],
         ];
@@ -287,14 +287,14 @@ pub struct CreateUserAccount<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name: Pubkey)]
+#[instruction(id: Pubkey)]
 pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(
         init, 
         payer = admin, 
-        seeds = [name.to_bytes().as_ref(), "orderbook-info".as_ref()], 
+        seeds = [id.to_bytes().as_ref(), "orderbook-info".as_ref()], 
         space = 8 + OrderbookInfo::LEN, 
         bump
     )]
@@ -302,7 +302,7 @@ pub struct InitializeOrderbook<'info> {
     #[account(
         init, 
         payer=admin, 
-        seeds=[name.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
+        seeds=[id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
         space = 8 + OrderbookPage::LEN, 
         bump
     )]
@@ -347,12 +347,12 @@ pub struct PlaceOrder<'info> {
     pub user_ata: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut, seeds=[orderbook_info.name.to_bytes().as_ref(), "orderbook-info".as_ref()], bump)]
+    #[account(mut, seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         init_if_needed, 
         payer=user, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
         space = 8 + OrderbookPage::LEN, 
         bump
     )]
@@ -380,19 +380,19 @@ pub struct TakeOrder<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "orderbook-info".as_ref()], 
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], 
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
         bump
     )]
     pub last_page: Account<'info, OrderbookPage>,
@@ -422,19 +422,19 @@ pub struct CancelOrder<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "orderbook-info".as_ref()], 
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], 
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
     #[account(
         mut, 
-        seeds=[orderbook_info.name.to_bytes().as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
         bump
     )]
     pub last_page: Account<'info, OrderbookPage>,

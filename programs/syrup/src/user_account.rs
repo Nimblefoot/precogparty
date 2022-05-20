@@ -34,12 +34,12 @@ impl UserAccount {
         self.orders.remove(index);
     }
 
-    pub fn find_order(&self, order: Order, orderbook_name: Pubkey) -> Option<usize> {
+    pub fn find_order(&self, order: Order, orderbook_id: Pubkey) -> Option<usize> {
         self.orders.iter().position(|record| {
             record.offering_apples == order.offering_apples
                 && record.num_apples == order.num_apples
                 && record.num_oranges == order.num_oranges
-                && record.market == orderbook_name
+                && record.market == orderbook_id
         })
     }
 
