@@ -3,9 +3,10 @@ import { PublicKey } from "@solana/web3.js"
 import { Resolution } from "config"
 import React, { useState } from "react"
 import Orders from "./Orders"
+import clsx from "clsx"
 
 const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
-  const [resolution, setResolution] = useState<Resolution>("yes")
+  const [taking, setTaking] = useState<Resolution>("yes")
 
   return (
     <div>
@@ -51,60 +52,76 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
             </div>
 
             {/* little splitter art :-) */}
-            <Splitty resolution={resolution} />
-            <div className="flex gap-2">
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-lime-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  className={`
-                  block w-full pl-7 pr-12 sm:text-sm border-lime-300 rounded-md bg-lime-100 text-lime-500 placeholder:text-lime-400
-                  ${resolution === "yes" ? "" : "opacity-50"}
-                `}
-                  placeholder="0.00"
-                  aria-describedby="price-currency"
-                  onClick={() => setResolution("yes")}
-                  readOnly
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span
-                    className="text-lime-500 sm:text-sm"
-                    id="price-currency"
+            <Splitty resolution={taking} />
+            <div className="flex gap-2 w-full">
+              {(["yes", "no"] as const).map((resolution) => {
+                return (
+                  <div
+                    key={resolution}
+                    className={clsx(
+                      "mt-1 relative rounded-md shadow-sm border",
+                      resolution === "yes"
+                        ? "border-lime-300 bg-lime-100"
+                        : "border-rose-300 bg-rose-100",
+                      taking === resolution && "w-full"
+                    )}
+                    onClick={() => setTaking(resolution)}
                   >
-                    YES
-                  </span>
-                </div>
-              </div>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-rose-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  className={`
-                  block w-full pl-7 pr-12 sm:text-sm border-rose-300 rounded-md bg-rose-100 text-rose-500 placeholder:text-rose-300
-                  ${resolution === "no" ? "" : "opacity-50"}
-                `}
-                  placeholder="0.00"
-                  aria-describedby="price-currency"
-                  onClick={() => setResolution("no")}
-                  readOnly
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span
-                    className="text-rose-500 sm:text-sm"
-                    id="price-currency"
-                  >
-                    NO
-                  </span>
-                </div>
-              </div>
+                    <div
+                      className={clsx(
+                        "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none",
+                        taking !== resolution && "hidden"
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          "sm:text-sm",
+                          resolution === "yes"
+                            ? "text-lime-500"
+                            : "text-rose-500"
+                        )}
+                      >
+                        $
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      className={clsx(
+                        "block w-full pl-7 pr-12 sm:text-sm border-0 rounded-md ",
+                        resolution === "yes"
+                          ? "bg-lime-100 text-lime-500 placeholder:text-lime-400"
+                          : "bg-rose-100 text-rose-500 placeholder:text-rose-400",
+                        taking === resolution ? "" : "opacity-50 hidden"
+                      )}
+                      placeholder="0.00"
+                      aria-describedby="price-currency"
+                      readOnly
+                    />
+                    <div
+                      className={clsx(
+                        "flex items-center pointer-events-none",
+                        taking === resolution
+                          ? "absolute inset-y-0 right-0 pr-3"
+                          : "mx-5 h-full"
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          "sm:text-sm",
+                          resolution === "yes"
+                            ? "text-lime-500"
+                            : "text-rose-500"
+                        )}
+                        id="price-currency"
+                      >
+                        {resolution.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
