@@ -5,7 +5,8 @@ import * as types from "../types"
 import { PROGRAM_ID } from "../programId"
 
 export interface TakeOrderArgs {
-  size: BN
+  order: types.OrderFields
+  amountToExchange: BN
   pageNumber: number
   index: number
 }
@@ -27,7 +28,8 @@ export interface TakeOrderAccounts {
 }
 
 export const layout = borsh.struct([
-  borsh.u64("size"),
+  types.Order.layout("order"),
+  borsh.u64("amountToExchange"),
   borsh.u32("pageNumber"),
   borsh.u32("index"),
 ])
@@ -56,7 +58,8 @@ export function takeOrder(args: TakeOrderArgs, accounts: TakeOrderAccounts) {
   const buffer = Buffer.alloc(1000)
   const len = layout.encode(
     {
-      size: args.size,
+      order: types.Order.toEncodable(args.order),
+      amountToExchange: args.amountToExchange,
       pageNumber: args.pageNumber,
       index: args.index,
     },

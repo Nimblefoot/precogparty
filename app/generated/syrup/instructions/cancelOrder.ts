@@ -32,7 +32,7 @@ export function cancelOrder(
   accounts: CancelOrderAccounts
 ) {
   const keys = [
-    { pubkey: accounts.user, isSigner: true, isWritable: false },
+    { pubkey: accounts.user, isSigner: true, isWritable: true },
     { pubkey: accounts.userAccount, isSigner: false, isWritable: true },
     { pubkey: accounts.userAta, isSigner: false, isWritable: true },
     { pubkey: accounts.vault, isSigner: false, isWritable: true },

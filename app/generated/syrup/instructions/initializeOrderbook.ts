@@ -13,9 +13,9 @@ export interface InitializeOrderbookAccounts {
   orderbookInfo: PublicKey
   firstPage: PublicKey
   applesMint: PublicKey
-  currencyVault: PublicKey
+  applesVault: PublicKey
   orangesMint: PublicKey
-  tokenVault: PublicKey
+  orangesVault: PublicKey
   tokenProgram: PublicKey
   associatedTokenProgram: PublicKey
   rent: PublicKey
@@ -33,9 +33,9 @@ export function initializeOrderbook(
     { pubkey: accounts.orderbookInfo, isSigner: false, isWritable: true },
     { pubkey: accounts.firstPage, isSigner: false, isWritable: true },
     { pubkey: accounts.applesMint, isSigner: false, isWritable: false },
-    { pubkey: accounts.currencyVault, isSigner: false, isWritable: true },
+    { pubkey: accounts.applesVault, isSigner: false, isWritable: true },
     { pubkey: accounts.orangesMint, isSigner: false, isWritable: false },
-    { pubkey: accounts.tokenVault, isSigner: false, isWritable: true },
+    { pubkey: accounts.orangesVault, isSigner: false, isWritable: true },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
     {
       pubkey: accounts.associatedTokenProgram,

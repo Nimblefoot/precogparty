@@ -3,39 +3,39 @@ import BN from "bn.js"
 import * as types from "."
 
 export interface OrderFields {
-  size: BN
-  offering_apples: boolean
+  numApples: BN
+  offeringApples: boolean
   user: PublicKey
-  price: BN
+  numOranges: BN
 }
 
 export interface OrderJSON {
-  size: string
-  offering_apples: boolean
+  numApples: string
+  offeringApples: boolean
   user: string
-  price: string
+  numOranges: string
 }
 
 export class Order {
-  readonly size: BN
-  readonly offering_apples: boolean
+  readonly numApples: BN
+  readonly offeringApples: boolean
   readonly user: PublicKey
-  readonly price: BN
+  readonly numOranges: BN
 
   constructor(fields: OrderFields) {
-    this.size = fields.size
-    this.offering_apples = fields.offering_apples
+    this.numApples = fields.numApples
+    this.offeringApples = fields.offeringApples
     this.user = fields.user
-    this.price = fields.price
+    this.numOranges = fields.numOranges
   }
 
   static layout(property?: string) {
     return borsh.struct(
       [
-        borsh.u64("size"),
-        borsh.bool("offering_apples"),
+        borsh.u64("numApples"),
+        borsh.bool("offeringApples"),
         borsh.publicKey("user"),
-        borsh.u64("price"),
+        borsh.u64("numOranges"),
       ],
       property
     )
@@ -44,37 +44,37 @@ export class Order {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static fromDecoded(obj: any) {
     return new Order({
-      size: obj.size,
-      offering_apples: obj.offering_apples,
+      numApples: obj.numApples,
+      offeringApples: obj.offeringApples,
       user: obj.user,
-      price: obj.price,
+      numOranges: obj.numOranges,
     })
   }
 
   static toEncodable(fields: OrderFields) {
     return {
-      size: fields.size,
-      offering_apples: fields.offering_apples,
+      numApples: fields.numApples,
+      offeringApples: fields.offeringApples,
       user: fields.user,
-      price: fields.price,
+      numOranges: fields.numOranges,
     }
   }
 
   toJSON(): OrderJSON {
     return {
-      size: this.size.toString(),
-      offering_apples: this.offering_apples,
+      numApples: this.numApples.toString(),
+      offeringApples: this.offeringApples,
       user: this.user.toString(),
-      price: this.price.toString(),
+      numOranges: this.numOranges.toString(),
     }
   }
 
   static fromJSON(obj: OrderJSON): Order {
     return new Order({
-      size: new BN(obj.size),
-      offering_apples: obj.offering_apples,
+      numApples: new BN(obj.numApples),
+      offeringApples: obj.offeringApples,
       user: new PublicKey(obj.user),
-      price: new BN(obj.price),
+      numOranges: new BN(obj.numOranges),
     })
   }
 

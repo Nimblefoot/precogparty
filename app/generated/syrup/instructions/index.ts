@@ -14,8 +14,3 @@ export {
   CancelOrderArgs,
   CancelOrderAccounts,
 } from "./cancelOrder"
-export {
-  modifyOrder,
-  ModifyOrderArgs,
-  ModifyOrderAccounts,
-} from "./modifyOrder"

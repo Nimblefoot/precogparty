@@ -6,35 +6,21 @@ import { COLLATERAL_DECIMALS, ORDERBOOK_PRICE_RATIO_DECIMALS } from "config"
 
 export type BN_ = InstanceType<typeof BN>
 
-export const ODDS_MULTIPLIER = new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS)
-
 const oddsFromRatio = (X: number) => X / (1 + X)
 
 // ToDo: throw error if X doesn't represent an odds (0 < X < 1)
 const ratioFromOdds = (X: number) => X / (1 - X)
 
 export const order2ui = ({
-  size: noAmount,
-  price,
-  offering_apples: yesForNo,
+  numApples: numYes,
+  numOranges: numNo,
+  offeringApples: offeringYes,
 }: OrderFields): {
   collateralSize: number
   odds: number
 } => {
-  let collateralSize: number
-  if (yesForNo) {
-    const yesAmount = noAmount
-      .mul(price)
-      .div(new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS))
-      .toNumber()
-    collateralSize = yesAmount / 10 ** COLLATERAL_DECIMALS
-  } else {
-    collateralSize = noAmount.toNumber() / 10 ** COLLATERAL_DECIMALS
-  }
-
-  const odds = oddsFromRatio(
-    price.toNumber() / 10 ** ORDERBOOK_PRICE_RATIO_DECIMALS
-  )
+  let odds = numYes.div(numYes.add(numNo)).toNumber()
+  let collateralSize = offeringYes ? numYes.toNumber() : numNo.toNumber()
 
   return { odds, collateralSize }
 }
@@ -46,14 +32,29 @@ export interface UIOrder {
 }
 
 export const ui2placeOrderFields = ({
-  odds,
+  odds, // odds of yes
   collateralSize,
   forResolution,
 }: UIOrder): {
-  collateralSize: number
-  odds: number
+  numApples: BN_
+  numOranges: BN_
+  offeringApples: boolean
 } => {
+  let offeringYes, numNo, numYes
+
   if (forResolution == "yes") {
+    offeringYes = false
+    numNo = collateralSize
+    numYes = collateralSize / ratioFromOdds(odds)
   } else {
+    offeringYes = true
+    numYes = collateralSize
+    numNo = collateralSize * ratioFromOdds(odds)
+  }
+
+  return {
+    offeringApples: offeringYes,
+    numApples: new BN(numYes),
+    numOranges: new BN(numNo),
   }
 }

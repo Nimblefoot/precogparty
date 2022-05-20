@@ -4,38 +4,38 @@ import * as types from "."
 
 export interface OrderRecordFields {
   market: PublicKey
-  size: BN
-  offering_apples: boolean
-  price: BN
+  numApples: BN
+  offeringApples: boolean
+  numOranges: BN
 }
 
 export interface OrderRecordJSON {
   market: string
-  size: string
-  offering_apples: boolean
-  price: string
+  numApples: string
+  offeringApples: boolean
+  numOranges: string
 }
 
 export class OrderRecord {
   readonly market: PublicKey
-  readonly size: BN
-  readonly offering_apples: boolean
-  readonly price: BN
+  readonly numApples: BN
+  readonly offeringApples: boolean
+  readonly numOranges: BN
 
   constructor(fields: OrderRecordFields) {
     this.market = fields.market
-    this.size = fields.size
-    this.offering_apples = fields.offering_apples
-    this.price = fields.price
+    this.numApples = fields.numApples
+    this.offeringApples = fields.offeringApples
+    this.numOranges = fields.numOranges
   }
 
   static layout(property?: string) {
     return borsh.struct(
       [
         borsh.publicKey("market"),
-        borsh.u64("size"),
-        borsh.bool("offering_apples"),
-        borsh.u64("price"),
+        borsh.u64("numApples"),
+        borsh.bool("offeringApples"),
+        borsh.u64("numOranges"),
       ],
       property
     )
@@ -45,36 +45,36 @@ export class OrderRecord {
   static fromDecoded(obj: any) {
     return new OrderRecord({
       market: obj.market,
-      size: obj.size,
-      offering_apples: obj.offering_apples,
-      price: obj.price,
+      numApples: obj.numApples,
+      offeringApples: obj.offeringApples,
+      numOranges: obj.numOranges,
     })
   }
 
   static toEncodable(fields: OrderRecordFields) {
     return {
       market: fields.market,
-      size: fields.size,
-      offering_apples: fields.offering_apples,
-      price: fields.price,
+      numApples: fields.numApples,
+      offeringApples: fields.offeringApples,
+      numOranges: fields.numOranges,
     }
   }
 
   toJSON(): OrderRecordJSON {
     return {
       market: this.market.toString(),
-      size: this.size.toString(),
-      offering_apples: this.offering_apples,
-      price: this.price.toString(),
+      numApples: this.numApples.toString(),
+      offeringApples: this.offeringApples,
+      numOranges: this.numOranges.toString(),
     }
   }
 
   static fromJSON(obj: OrderRecordJSON): OrderRecord {
     return new OrderRecord({
       market: new PublicKey(obj.market),
-      size: new BN(obj.size),
-      offering_apples: obj.offering_apples,
-      price: new BN(obj.price),
+      numApples: new BN(obj.numApples),
+      offeringApples: obj.offeringApples,
+      numOranges: new BN(obj.numOranges),
     })
   }
 

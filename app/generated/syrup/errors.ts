@@ -8,6 +8,10 @@ export type CustomError =
   | LastPageEmpty
   | CantConvertOrder
   | OrderbookMismatch
+  | OrderTooSmall
+  | WrongOrder
+  | WrongVault
+  | OrderbookNameAlreadySet
   | MaxOrdersPlaced
   | PageFull
 
@@ -81,23 +85,63 @@ export class OrderbookMismatch extends Error {
   }
 }
 
-export class MaxOrdersPlaced extends Error {
+export class OrderTooSmall extends Error {
   readonly code = 6007
+  readonly name = "OrderTooSmall"
+  readonly msg = "Order too small"
+
+  constructor() {
+    super("6007: Order too small")
+  }
+}
+
+export class WrongOrder extends Error {
+  readonly code = 6008
+  readonly name = "WrongOrder"
+  readonly msg = "Orders need to match"
+
+  constructor() {
+    super("6008: Orders need to match")
+  }
+}
+
+export class WrongVault extends Error {
+  readonly code = 6009
+  readonly name = "WrongVault"
+  readonly msg = "Vaults dont match"
+
+  constructor() {
+    super("6009: Vaults dont match")
+  }
+}
+
+export class OrderbookNameAlreadySet extends Error {
+  readonly code = 6010
+  readonly name = "OrderbookNameAlreadySet"
+  readonly msg = "Orderbook page orderbook name already set"
+
+  constructor() {
+    super("6010: Orderbook page orderbook name already set")
+  }
+}
+
+export class MaxOrdersPlaced extends Error {
+  readonly code = 6011
   readonly name = "MaxOrdersPlaced"
   readonly msg = "User already placed the maximum number of orders!"
 
   constructor() {
-    super("6007: User already placed the maximum number of orders!")
+    super("6011: User already placed the maximum number of orders!")
   }
 }
 
 export class PageFull extends Error {
-  readonly code = 6008
+  readonly code = 6012
   readonly name = "PageFull"
   readonly msg = "Order page is full"
 
   constructor() {
-    super("6008: Order page is full")
+    super("6012: Order page is full")
   }
 }
 
@@ -118,8 +162,16 @@ export function fromCode(code: number): CustomError | null {
     case 6006:
       return new OrderbookMismatch()
     case 6007:
-      return new MaxOrdersPlaced()
+      return new OrderTooSmall()
     case 6008:
+      return new WrongOrder()
+    case 6009:
+      return new WrongVault()
+    case 6010:
+      return new OrderbookNameAlreadySet()
+    case 6011:
+      return new MaxOrdersPlaced()
+    case 6012:
       return new PageFull()
   }
 
