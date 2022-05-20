@@ -7,8 +7,8 @@ import { PROGRAM_ID } from "../programId"
 export interface OrderbookInfoFields {
   admin: PublicKey
   length: number
-  currencyMint: PublicKey
-  tokenMint: PublicKey
+  applesMint: PublicKey
+  orangesMint: PublicKey
   bump: number
   name: PublicKey
 }
@@ -16,8 +16,8 @@ export interface OrderbookInfoFields {
 export interface OrderbookInfoJSON {
   admin: string
   length: number
-  currencyMint: string
-  tokenMint: string
+  applesMint: string
+  orangesMint: string
   bump: number
   name: string
 }
@@ -25,8 +25,8 @@ export interface OrderbookInfoJSON {
 export class OrderbookInfo {
   readonly admin: PublicKey
   readonly length: number
-  readonly currencyMint: PublicKey
-  readonly tokenMint: PublicKey
+  readonly applesMint: PublicKey
+  readonly orangesMint: PublicKey
   readonly bump: number
   readonly name: PublicKey
 
@@ -37,8 +37,8 @@ export class OrderbookInfo {
   static readonly layout = borsh.struct([
     borsh.publicKey("admin"),
     borsh.u32("length"),
-    borsh.publicKey("currencyMint"),
-    borsh.publicKey("tokenMint"),
+    borsh.publicKey("applesMint"),
+    borsh.publicKey("orangesMint"),
     borsh.u8("bump"),
     borsh.publicKey("name"),
   ])
@@ -46,8 +46,8 @@ export class OrderbookInfo {
   constructor(fields: OrderbookInfoFields) {
     this.admin = fields.admin
     this.length = fields.length
-    this.currencyMint = fields.currencyMint
-    this.tokenMint = fields.tokenMint
+    this.applesMint = fields.applesMint
+    this.orangesMint = fields.orangesMint
     this.bump = fields.bump
     this.name = fields.name
   }
@@ -78,8 +78,8 @@ export class OrderbookInfo {
     return new OrderbookInfo({
       admin: dec.admin,
       length: dec.length,
-      currencyMint: dec.currencyMint,
-      tokenMint: dec.tokenMint,
+      applesMint: dec.applesMint,
+      orangesMint: dec.orangesMint,
       bump: dec.bump,
       name: dec.name,
     })
@@ -89,8 +89,8 @@ export class OrderbookInfo {
     return {
       admin: this.admin.toString(),
       length: this.length,
-      currencyMint: this.currencyMint.toString(),
-      tokenMint: this.tokenMint.toString(),
+      applesMint: this.applesMint.toString(),
+      orangesMint: this.orangesMint.toString(),
       bump: this.bump,
       name: this.name.toString(),
     }
@@ -100,8 +100,8 @@ export class OrderbookInfo {
     return new OrderbookInfo({
       admin: new PublicKey(obj.admin),
       length: obj.length,
-      currencyMint: new PublicKey(obj.currencyMint),
-      tokenMint: new PublicKey(obj.tokenMint),
+      applesMint: new PublicKey(obj.applesMint),
+      orangesMint: new PublicKey(obj.orangesMint),
       bump: obj.bump,
       name: new PublicKey(obj.name),
     })

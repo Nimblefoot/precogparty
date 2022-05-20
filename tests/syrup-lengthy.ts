@@ -45,12 +45,12 @@ describe("orderbook", async () => {
   let firstPage: PublicKey
   let currencyVault: PublicKey
   let tokenVault: PublicKey
-  let currencyMint: PublicKey
-  let tokenMint: PublicKey
-  let user_currency_ata: PublicKey
-  let user_token_ata: PublicKey
-  let admin_currency_ata: PublicKey
-  let admin_token_ata: PublicKey
+  let applesMint: PublicKey
+  let orangesMint: PublicKey
+  let uuserApplesATA: PublicKey
+  let userorangesata: PublicKey
+  let adminapplesata: PublicKey
+  let adminorangesata: PublicKey
 
   before(async () => {
     /** SETUP */
@@ -69,7 +69,7 @@ describe("orderbook", async () => {
       "finalized"
     )
 
-    currencyMint = await createMint(
+    applesMint = await createMint(
       program.provider.connection,
       admin,
       admin.publicKey,
@@ -77,7 +77,7 @@ describe("orderbook", async () => {
       6
     )
 
-    tokenMint = await createMint(
+    orangesMint = await createMint(
       program.provider.connection,
       admin,
       admin.publicKey,
@@ -85,31 +85,31 @@ describe("orderbook", async () => {
       6
     )
 
-    user_currency_ata = await createAssociatedTokenAccount(
+    uuserApplesATA = await createAssociatedTokenAccount(
       program.provider.connection, // connection
       user, // fee payer
-      currencyMint, // mint
+      applesMint, // mint
       user.publicKey // owner,
     )
 
-    user_token_ata = await createAssociatedTokenAccount(
+    userorangesata = await createAssociatedTokenAccount(
       program.provider.connection, // connection
       user, // fee payer
-      tokenMint, // mint
+      orangesMint, // mint
       user.publicKey // owner,
     )
 
-    admin_currency_ata = await createAssociatedTokenAccount(
+    adminapplesata = await createAssociatedTokenAccount(
       program.provider.connection, // connection
       user, // fee payer
-      currencyMint, // mint
+      applesMint, // mint
       admin.publicKey // owner,
     )
 
-    admin_token_ata = await createAssociatedTokenAccount(
+    adminorangesata = await createAssociatedTokenAccount(
       program.provider.connection, // connection
       admin, // fee payer
-      tokenMint, // mint
+      orangesMint, // mint
       admin.publicKey // owner,
     )
 
@@ -136,20 +136,24 @@ describe("orderbook", async () => {
     )
 
     currencyVault = await getAssociatedTokenAddress(
-      currencyMint,
+      applesMint,
       orderbookInfo,
       true
     )
-    tokenVault = await getAssociatedTokenAddress(tokenMint, orderbookInfo, true)
+    tokenVault = await getAssociatedTokenAddress(
+      orangesMint,
+      orderbookInfo,
+      true
+    )
 
     // initialize orderbook
     await program.methods
       .initializeOrderbook(orderbookName)
       .accounts({
         admin: provider.wallet.publicKey,
-        currencyMint,
+        applesMint,
         currencyVault,
-        tokenMint,
+        orangesMint,
         tokenVault,
         // orderbookInfo, //derivable from seeds
         firstPage,
@@ -178,8 +182,8 @@ describe("orderbook", async () => {
     await mintToChecked(
       program.provider.connection, // connection
       user, // fee payer
-      currencyMint, // mint
-      user_currency_ata, // receiver (sholud be a token account)
+      applesMint, // mint
+      uuserApplesATA, // receiver (sholud be a token account)
       admin, // mint authority
       5e8, // amount. if your decimals is 6, this is 500 tokens
       6 // decimals
@@ -188,8 +192,8 @@ describe("orderbook", async () => {
     await mintToChecked(
       program.provider.connection, // connection
       admin, // fee payer
-      tokenMint, // mint
-      admin_token_ata, // receiver (sholud be a token account)
+      orangesMint, // mint
+      adminorangesata, // receiver (sholud be a token account)
       admin, // mint authority
       5e8, // amount. if your decimals is 6, this is 500 tokens
       6 // decimals
@@ -224,7 +228,7 @@ describe("orderbook", async () => {
         })
         .accounts({
           user: user.publicKey,
-          userAta: user_currency_ata,
+          userAta: uuserApplesATA,
           vault: currencyVault,
           orderbookInfo,
           currentPage: currentPageKey,
@@ -265,7 +269,7 @@ describe("orderbook", async () => {
         })
         .accounts({
           user: admin.publicKey,
-          userAta: admin_token_ata,
+          userAta: adminorangesata,
           vault: tokenVault,
           orderbookInfo,
           currentPage: currentPageKey,

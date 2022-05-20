@@ -180,7 +180,7 @@ pub mod syrup {
         let offerer_user_account = &mut ctx.accounts.offerer_user_account;
 
         // need to split up variables to avoid borrower check errors
-        let orderbook_name = ctx.accounts.orderbook_info.name.clone();
+        let orderbook_name = ctx.accounts.orderbook_info.name;
         let orderbook_bump = ctx.accounts.orderbook_info.bump;
         let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
         let orderbook_length = &mut ctx.accounts.orderbook_info.length;

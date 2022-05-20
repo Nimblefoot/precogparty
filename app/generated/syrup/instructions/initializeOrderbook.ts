@@ -12,9 +12,9 @@ export interface InitializeOrderbookAccounts {
   admin: PublicKey
   orderbookInfo: PublicKey
   firstPage: PublicKey
-  currencyMint: PublicKey
+  applesMint: PublicKey
   currencyVault: PublicKey
-  tokenMint: PublicKey
+  orangesMint: PublicKey
   tokenVault: PublicKey
   tokenProgram: PublicKey
   associatedTokenProgram: PublicKey
@@ -32,9 +32,9 @@ export function initializeOrderbook(
     { pubkey: accounts.admin, isSigner: true, isWritable: true },
     { pubkey: accounts.orderbookInfo, isSigner: false, isWritable: true },
     { pubkey: accounts.firstPage, isSigner: false, isWritable: true },
-    { pubkey: accounts.currencyMint, isSigner: false, isWritable: false },
+    { pubkey: accounts.applesMint, isSigner: false, isWritable: false },
     { pubkey: accounts.currencyVault, isSigner: false, isWritable: true },
-    { pubkey: accounts.tokenMint, isSigner: false, isWritable: false },
+    { pubkey: accounts.orangesMint, isSigner: false, isWritable: false },
     { pubkey: accounts.tokenVault, isSigner: false, isWritable: true },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
     {

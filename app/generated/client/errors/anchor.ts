@@ -19,7 +19,7 @@ export type AnchorError =
   | ConstraintClose
   | ConstraintAddress
   | ConstraintZero
-  | ConstraintTokenMint
+  | ConstraintOrangesMint
   | ConstraintTokenOwner
   | ConstraintMintMintAuthority
   | ConstraintMintFreezeAuthority
@@ -255,9 +255,9 @@ export class ConstraintZero extends Error {
   }
 }
 
-export class ConstraintTokenMint extends Error {
+export class ConstraintOrangesMint extends Error {
   readonly code = 2014
-  readonly name = "ConstraintTokenMint"
+  readonly name = "ConstraintOrangesMint"
   readonly msg = "A token mint constraint was violated"
 
   constructor() {
@@ -621,7 +621,7 @@ export function fromCode(code: number): AnchorError | null {
     case 2013:
       return new ConstraintZero()
     case 2014:
-      return new ConstraintTokenMint()
+      return new ConstraintOrangesMint()
     case 2015:
       return new ConstraintTokenOwner()
     case 2016:

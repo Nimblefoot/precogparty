@@ -118,9 +118,9 @@ const useCreateMarket = () => {
         },
         {
           admin: authority,
-          currencyMint: yesMint,
+          applesMint: yesMint,
           currencyVault,
-          tokenMint: noMint,
+          orangesMint: noMint,
           tokenVault,
           orderbookInfo,
           firstPage,
