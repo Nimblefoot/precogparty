@@ -17,6 +17,7 @@ import React, { useCallback, useMemo, useRef, useState } from "react"
 import { useMarket } from "../hooks/marketQueries"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "./orderbookQueries"
+import { Splitty } from "./Splitty"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
 
 function classNames(...classes: string[]) {
@@ -164,43 +165,7 @@ export function PlaceOrderPanel({
             </div>
           </div>
 
-          {/* little splitter art :-) */}
-          <div className="grid grid-cols-2 w-[50%] self-center">
-            <div
-              className={`border-r border-b rounded-br-md ml-2 mb-[-1px] mr-[-0.5px] h-2
-                ${
-                  resolution === "no" ? "border-transparent" : "border-gray-400"
-                }
-              `}
-            />
-            <div
-              className={`border-l border-b rounded-bl-md mr-2 mb-[-1px] ml-[-0.5px] h-2
-                ${
-                  resolution === "yes"
-                    ? "border-transparent"
-                    : "border-gray-400"
-                }
-
-              `}
-            />
-            <div
-              className={`border-l border-t rounded-tl-md mr-3 h-2
-                ${
-                  resolution === "no" ? "border-transparent" : "border-gray-400"
-                }
-
-              `}
-            />
-            <div
-              className={`border-r border-t rounded-tr-md ml-3 h-2
-                ${
-                  resolution === "yes"
-                    ? "border-transparent"
-                    : "border-gray-400"
-                }
-              `}
-            />
-          </div>
+          <Splitty resolution={resolution} />
           <div className="flex gap-2">
             <div className="mt-1 relative rounded-md shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

@@ -10,6 +10,7 @@ import { TokenControls } from "./TokenControls"
 import { PlaceOrderPanel } from "./Orderbook/PlaceOrder"
 import { Swap } from "./Orderbook/Swap"
 import Orders from "./Orderbook/Orders"
+import TakeOrder from "./Orderbook/TakeOrder"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -37,7 +38,7 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
       <div className="flex px-4 sm:px-6 md:px-8 max-w-7xl mx-auto gap-5">
         {/* Card */}
         <div className="flex-grow">
-          <div className="py-4 shadow bg-white rounded-lg h-96">
+          <div className="py-4 shadow bg-white rounded-lg">
             <div className="">
               {/* Main body */}
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,12 +70,13 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                     </h1>
                   </div>
                 </div>
-                <div>
-                  <Orders marketAddress={address} />
-                </div>
+
                 <p className="mt-4">{market.data.description}</p>
               </div>
             </div>
+          </div>
+          <div className="grid grid-cols-2 mt-4">
+            <TakeOrder marketAddress={address} />
           </div>
         </div>
         {/* 2nd column */}
