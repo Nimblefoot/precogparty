@@ -50,14 +50,14 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                       publicKey={new PublicKey(market.data.marketAuthority)}
                     />
                   </div>
-                  <div className="text-sm flex justify-center flex-col">
+                  {/* <div className="text-sm flex justify-center flex-col">
                     <div className="flex">
                       <div className="h-5 w-5 self-center mr-1">
                         <ClockIcon />
                       </div>
                       <div className="">Jan 25 2020</div>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
                 <div className="w-full flex justify-center">
                   <div>

@@ -70,14 +70,14 @@ export default function Browse() {
                     <div>
                       <User publicKey={market.account.marketAuthority} />
                     </div>
-                    <div className="text-sm flex justify-center flex-col">
+                    {/* <div className="text-sm flex justify-center flex-col">
                       <div className="flex">
                         <div className="h-5 w-5 self-center mr-1">
                           <ClockIcon />
                         </div>
                         <div className="">Jan 25 2020</div>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </li>
               </a>
