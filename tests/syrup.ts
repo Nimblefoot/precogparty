@@ -311,88 +311,66 @@ describe("orderbook", async () => {
     )
   })
 
-  // it("cancels an order", async () => {
-  //   const orderbookInfoData = await program.account.orderbookInfo.fetchNullable(
-  //     orderbookInfo
-  //   )
-  //   const lastPageIndex = Math.floor((orderbookInfoData.length - 1) / maxLength)
-  //   const [lastPageKey] = await PublicKey.findProgramAddress(
-  //     [
-  //       orderbookName.toBytes(),
-  //       utf8.encode("page"),
-  //       new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
-  //     ],
-  //     program.programId
-  //   )
-  //   let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-  //   console.log(
-  //     JSON.stringify(
-  //       // @ts-ignore
-  //       firstPage.list.map((d) => {
-  //         d.size = d.size.toString()
-  //         return d
-  //       })
-  //     )
-  //   )
+  it("cancels an order", async () => {
+    const orderbookInfo = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
+    const lastPageIndex = Math.floor((orderbookInfo.length - 1) / maxLength)
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        orderbookName.toBytes(),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
 
-  //   await program.methods
-  //     .cancelOrder(
-  //       {
-  //         user: user.publicKey,
-  //         size: new anchor.BN(1e6),
-  //         offering_apples: true,
-  //         price: new anchor.BN(2e9),
-  //       },
-  //       0,
-  //       0
-  //     )
-  //     .accounts({
-  //       user: user.publicKey,
-  //       userAccount: userAccountAddress,
-  //       userAta: uuserApplesATA,
-  //       vault: currencyVault,
-  //       orderbookInfo,
-  //       orderPage: lastPageKey,
-  //       lastPage: lastPageKey,
-  //     })
-  //     .signers([user])
-  //     .rpc()
+    await program.methods
+      .cancelOrder(
+        {
+          user: user.publicKey,
+          numApples: new anchor.BN(2e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(1e6),
+        },
+        0,
+        0
+      )
+      .accounts({
+        user: user.publicKey,
+        userAccount: userAccountAddress,
+        userAta: userApplesATA,
+        vault: applesVault,
+        orderbookInfo: orderbookInfoAddress,
+        orderPage: lastPageKey,
+        lastPage: lastPageKey,
+      })
+      .signers([user])
+      .rpc()
 
-  //   console.log("order canceled")
-  //   firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-  //   console.log(
-  //     JSON.stringify(
-  //       // @ts-ignore
-  //       firstPage.list.map((d) => {
-  //         d.size = d.size.toString()
-  //         return d
-  //       })
-  //     )
-  //   )
+    const vaultBalance =
+      await program.provider.connection.getTokenAccountBalance(applesVault)
+    assert.equal(
+      vaultBalance.value.amount,
+      "5000000",
+      "Vault Balance should be reduced to 5000000."
+    )
 
-  //   const vaultBalance =
-  //     await program.provider.connection.getTokenAccountBalance(currencyVault)
-  //   assert.equal(
-  //     vaultBalance.value.amount,
-  //     "5000000",
-  //     "Vault Balance should be reduced to 5000000."
-  //   )
+    const info2 = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
+    assert.equal(info2.length, 2, "correct orderbook length is 2")
 
-  //   const info2 = await program.account.orderbookInfo.fetchNullable(
-  //     orderbookInfo
-  //   )
-  //   assert.equal(info2.length, 2, "correct orderbook length is 2")
-
-  //   const userAccount = await program.account.userAccount.fetch(
-  //     userAccountAddress
-  //   )
-  //   assert.equal(
-  //     // @ts-ignore
-  //     userAccount.orders.length,
-  //     1,
-  //     "user should have one remaining orders"
-  //   )
-  // })
+    const userAccount = await program.account.userAccount.fetch(
+      userAccountAddress
+    )
+    assert.equal(
+      // @ts-ignore
+      userAccount.orders.length,
+      1,
+      "user should have one remaining orders"
+    )
+  })
 
   // it("takes orders", async () => {
   //   // we know the last page and don't need to recompute lengths
