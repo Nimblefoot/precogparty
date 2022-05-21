@@ -13,7 +13,7 @@ import {
   Resolution,
 } from "config"
 import { queryClient } from "pages/providers"
-import { useTokenAccount } from "pages/tokenAccountQuery"
+import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useMemo, useRef, useState } from "react"
 import { useMarket } from "../hooks/marketQueries"
 import useMintContingentSet from "../hooks/useMintContingentSet"
@@ -74,6 +74,8 @@ export function PlaceOrderPanel({
     console.log(txn)
     await callback(txn)
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
+    // TODO invalidate the correct keys
+    queryClient.invalidateQueries(tokenAccountKeys.all)
     setInputSize(0)
   }, [buy, callback, inputSize, marketAddress, mintSet, odds, resolution])
 

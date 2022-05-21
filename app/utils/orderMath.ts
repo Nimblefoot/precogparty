@@ -1,8 +1,8 @@
 import { PlaceOrderArgs } from "@/generated/syrup/instructions"
 import { OrderFields } from "@/generated/syrup/types"
-import { Resolution } from "config"
+import { Resolution } from "../config"
 import { BN } from "bn.js"
-import { COLLATERAL_DECIMALS, ORDERBOOK_PRICE_RATIO_DECIMALS } from "config"
+import { COLLATERAL_DECIMALS, ORDERBOOK_PRICE_RATIO_DECIMALS } from "../config"
 
 export type BN_ = InstanceType<typeof BN>
 
@@ -18,15 +18,17 @@ export const order2ui = ({
   numOranges: unitsNo,
   offeringApples: offeringYes,
 }: OrderFields): {
-  collateralSize: number
+  collateralSize: BN_
   odds: number
   forResolution: String
 } => {
-  let numYes = unitsYes.toNumber() / decimalMultiplier
-  let numNo = unitsNo.toNumber() / decimalMultiplier
-
-  let odds = numNo / (numNo + numYes)
-  let collateralSize = offeringYes ? numYes : numNo
+  let odds =
+    unitsNo
+      .muln(10 ** 6)
+      .div(unitsNo.add(unitsYes))
+      .toNumber() /
+    10 ** 6
+  let collateralSize = offeringYes ? unitsYes : unitsNo
   let forResolution = offeringYes ? "no" : "yes"
 
   return { odds, collateralSize, forResolution }

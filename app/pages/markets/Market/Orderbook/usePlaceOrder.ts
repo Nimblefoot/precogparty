@@ -19,7 +19,7 @@ import { UserAccount } from "@/generated/syrup/accounts"
 import { PROGRAM_ID } from "@/generated/client/programId"
 import { ui2placeOrderFields } from "@/utils/orderMath"
 
-const getMaybeCreateUserAccountAddress = async (
+export const getMaybeCreateUserAccountAddress = async (
   connection: Connection,
   user: PublicKey
 ) => {

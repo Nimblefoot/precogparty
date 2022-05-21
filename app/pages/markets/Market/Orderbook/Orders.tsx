@@ -78,10 +78,8 @@ const YesOrderColumn = ({
                   className="border-b border-gray-200"
                 >
                   <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
-                    peepo offers{" "}
-                    {order.numOranges.toNumber() / 10 ** COLLATERAL_DECIMALS} NO
-                    for {order.numApples.toNumber() / 10 ** COLLATERAL_DECIMALS}{" "}
-                    YES
+                    peepo offers {order.numOranges.toString()} NO for{" "}
+                    {order.numApples.toString()} YES
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-sm font-medium text-gray-900">
                     {(100 * odds).toFixed(0)}%
@@ -127,10 +125,8 @@ const NoOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
                     {(100 * odds).toFixed(0)}%
                   </td>
                   <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
-                    peepo offers{" "}
-                    {order.numApples.toNumber() / 10 ** COLLATERAL_DECIMALS} YES
-                    for{" "}
-                    {order.numOranges.toNumber() / 10 ** COLLATERAL_DECIMALS} NO
+                    peepo offers {order.numApples.toString()} YES for{" "}
+                    {order.numOranges.toString()} NO
                   </td>
                 </tr>
               )

@@ -1,13 +1,21 @@
 import { Splitty } from "./Splitty"
-import { PublicKey } from "@solana/web3.js"
+import { PublicKey, Transaction } from "@solana/web3.js"
 import { COLLATERAL_DECIMALS, Resolution } from "config"
 import React, { useMemo, useRef, useState } from "react"
 import Orders from "./Orders"
 import clsx from "clsx"
-import { order2ui } from "@/utils/orderMath"
-import { useOrderbook } from "./orderbookQueries"
+import { BN_, order2ui } from "@/utils/orderMath"
+import { orderbookKeys, useOrderbook } from "./orderbookQueries"
 import { BN } from "bn.js"
 import { displayBN } from "./util"
+import {
+  StatelessTransactButton,
+  useTransact,
+} from "@/components/TransactButton"
+import useTakeOrder from "./useTakeOrder"
+import useMintContingentSet from "../hooks/useMintContingentSet"
+import { queryClient } from "pages/providers"
+import { tokenAccountKeys } from "pages/tokenAccountQuery"
 
 const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const [taking, setTaking] = useState<Resolution>("yes")
@@ -48,47 +56,96 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
     [relevantOrders, taking]
   )
 
-  const positionInput = useMemo(() => {
+  const [positionInput, orderInteractions] = useMemo(() => {
     const value = new BN(parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS)
 
     // TODO allow input
-    if (!relevantOrders) return
+    if (!relevantOrders) return [undefined, undefined]
 
-    const { total, spent, fundsRemaining } = relevantOrders.reduce(
-      ({ total, fundsRemaining, spent }, x) => {
-        const offering = x.offeringApples ? x.numApples : x.numOranges
-        const cost = x.offeringApples ? x.numOranges : x.numApples
-        if (cost.lte(fundsRemaining)) {
-          return {
-            total: total.add(offering),
-            fundsRemaining: fundsRemaining.sub(cost),
-            spent: spent.add(cost),
+    const { total, spent, fundsRemaining, orderInteractions } =
+      relevantOrders.reduce(
+        (acc, x) => {
+          const { total, fundsRemaining, spent, orderInteractions } = acc
+          if (fundsRemaining.lten(0)) return acc
+
+          const offering = x.offeringApples ? x.numApples : x.numOranges
+          const cost = x.offeringApples ? x.numOranges : x.numApples
+          if (cost.lte(fundsRemaining)) {
+            return {
+              total: total.add(offering),
+              fundsRemaining: fundsRemaining.sub(cost),
+              spent: spent.add(cost),
+              orderInteractions: [
+                ...orderInteractions,
+                { order: x, amountToExchange: cost },
+              ],
+            }
+          } else {
+            const buying = fundsRemaining.mul(offering).div(cost)
+            return {
+              total: total.add(buying),
+              fundsRemaining: new BN(0),
+              spent: spent.add(fundsRemaining),
+              orderInteractions: [
+                ...orderInteractions,
+                { order: x, amountToExchange: fundsRemaining },
+              ],
+            }
           }
-        } else {
-          const buying = fundsRemaining.mul(offering).div(cost)
-          return {
-            total: total.add(buying),
-            fundsRemaining: new BN(0),
-            spent: spent.add(fundsRemaining),
-          }
+        },
+        {
+          total: new BN(0),
+          fundsRemaining: value,
+          spent: new BN(0),
+          orderInteractions: [] as {
+            order: typeof relevantOrders[number]
+            amountToExchange: BN_
+          }[],
         }
-      },
-      {
-        total: new BN(0),
-        fundsRemaining: value,
-        spent: new BN(0),
-      }
-    )
+      )
     /* 
     if (spent.lt(value)) {
       setUsdcInput(displayBN(spent))
     } else {
       setUsdcInput(e.target.value)
     } */
-    return displayBN(total)
+    return [displayBN(total), orderInteractions] as const
   }, [relevantOrders, usdcInput])
 
-  console.log("total offered", (totalOffered ?? 0) / 10 ** COLLATERAL_DECIMALS)
+  const takeOrder = useTakeOrder(marketAddress)
+  const mintSet = useMintContingentSet(marketAddress)
+  const { callback, status } = useTransact()
+
+  const onSubmit = async () => {
+    if (!orderInteractions) return
+
+    const txns = await Promise.all(
+      orderInteractions.map((x) =>
+        takeOrder({
+          order: x.order,
+          pageNumber: x.order.page,
+          index: x.order.index,
+          amountToExchange: x.amountToExchange,
+        })
+      )
+    )
+
+    const takeIxs = txns.flatMap((tx) => tx.instructions)
+
+    const inputAmount = new BN(
+      parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS
+    )
+    const mintTxn = await mintSet({ amount: inputAmount })
+
+    const txn = new Transaction().add(...mintTxn.instructions, ...takeIxs)
+    await callback(txn)
+    queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
+    // TODO invalidate the correct keys
+    queryClient.invalidateQueries(tokenAccountKeys.all)
+    setUsdcInput("")
+  }
+
+  console.log("total offered", totalOffered?.toString())
 
   return (
     <div>
@@ -174,7 +231,7 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                       type="number"
                       step="0.001"
                       min="0"
-                      max={totalOffered}
+                      //max={totalOffered?.toString()}
                       className={clsx(
                         "block w-full pl-7 pr-12 sm:text-sm border-0 rounded-md ",
                         resolution === "yes"
@@ -213,6 +270,15 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
               })}
             </div>
           </div>
+        </div>
+        <div className="px-4 py-5  sm:px-6 w-full">
+          <StatelessTransactButton
+            status={status}
+            verb={"Take Order"}
+            onClick={onSubmit}
+            className="w-full"
+            disabled={usdcInput === ""}
+          />
         </div>
       </div>
     </div>
