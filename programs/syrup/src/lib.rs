@@ -153,7 +153,7 @@ pub mod syrup {
         };
 
         if order_data.offering_apples {
-            vault_outgoing_amount = (amount_to_exchange * order.num_apples) / maximum_taker_payment;
+            vault_outgoing_amount = ((amount_to_exchange as u128) * (order.num_apples as u128) / (maximum_taker_payment as u128)) as u64;
             new_num_apples = order.num_apples - vault_outgoing_amount;
             new_num_oranges = order.num_oranges - amount_to_exchange;
             vault_mint = ctx.accounts.orderbook_info.apples_mint;
