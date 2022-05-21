@@ -74,6 +74,7 @@ export function PlaceOrderPanel({
     console.log(txn)
     await callback(txn)
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
+    setInputSize(0)
   }, [buy, callback, inputSize, marketAddress, mintSet, odds, resolution])
 
   const yesOutput = inputSize / odds
