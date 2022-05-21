@@ -14,15 +14,20 @@ import { order2ui } from "@/utils/orderMath"
 const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const orderbook = useOrderbook(marketAddress)
   const orders = useMemo(
-    () => orderbook.data?.pages.flatMap((page) => page.list),
-    //.sort((a, b) => a.price.toNumber() - b.price.toNumber()),
+    () =>
+      orderbook.data?.pages
+        .flatMap((page, i) =>
+          page.list.map((x, k) => ({ ...x, page: i, index: k }))
+        )
+        .map((x) => ({ ...x, odds: order2ui(x).odds }))
+        .sort((a, b) => b.odds - a.odds),
     [orderbook.data?.pages]
   )
-  const yesOrders = useMemo(
+  const yesOffers = useMemo(
     () => orders?.filter((x) => x.offeringApples),
     [orders]
   )
-  const noOrders = useMemo(
+  const noOffers = useMemo(
     () => orders?.filter((x) => !x.offeringApples),
     [orders]
   )
@@ -31,15 +36,19 @@ const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
     <>
       <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg w-full">
         <div className="grid grid-cols-2">
-          <YesOrderColumn orders={yesOrders} />
-          <NoOrderColumn orders={noOrders} />
+          <YesOrderColumn orders={noOffers} />
+          <NoOrderColumn orders={yesOffers} />
         </div>
       </div>
     </>
   )
 }
 
-const YesOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
+const YesOrderColumn = ({
+  orders,
+}: {
+  orders?: (OrderFields & { page: number; index: number })[]
+}) => {
   return (
     <div className="flex flex-col text-right border-r border-gray-300">
       <div className="inline-block min-w-full align-middle">
@@ -50,14 +59,12 @@ const YesOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
                 scope="col"
                 className="whitespace-nowrap py-3.5 px-2 text-sm font-semibold text-lime-900 "
               >
-                Buying
+                Offer
               </th>
               <th
                 scope="col"
                 className="whitespace-nowrap px-2 py-3.5 text-sm font-semibold text-lime-900"
-              >
-                YES %
-              </th>
+              ></th>
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -70,7 +77,9 @@ const YesOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
                   className="border-b border-gray-200"
                 >
                   <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
-                    {collateralSize}
+                    {order.numOranges.toNumber() / 10 ** COLLATERAL_DECIMALS} NO
+                    for {order.numApples.toNumber() / 10 ** COLLATERAL_DECIMALS}{" "}
+                    YES
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-sm font-medium text-gray-900">
                     {(100 * odds).toFixed(0)}%
@@ -94,14 +103,12 @@ const NoOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
               <th
                 scope="col"
                 className="whitespace-nowrap px-2 py-3.5 text-left text-sm font-semibold text-rose-900"
-              >
-                NO %
-              </th>
+              ></th>
               <th
                 scope="col"
                 className="whitespace-nowrap py-3.5 px-2 text-left text-sm font-semibold text-rose-900"
               >
-                Buying
+                Offer
               </th>
             </tr>
           </thead>
@@ -118,7 +125,9 @@ const NoOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
                     {(100 * odds).toFixed(0)}%
                   </td>
                   <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
-                    {collateralSize}
+                    {order.numApples.toNumber() / 10 ** COLLATERAL_DECIMALS} YES
+                    for{" "}
+                    {order.numOranges.toNumber() / 10 ** COLLATERAL_DECIMALS} NO
                   </td>
                 </tr>
               )

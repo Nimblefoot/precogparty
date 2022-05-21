@@ -11,7 +11,7 @@ const oddsFromRatio = (X: number) => X / (1 + X)
 // ToDo: throw error if X doesn't represent an odds (0 < X < 1)
 export const ratioFromOdds = (X: number) => X / (1 - X)
 
-let decimalMultiplier = 10 ** 6
+let decimalMultiplier = 10 ** COLLATERAL_DECIMALS
 
 export const order2ui = ({
   numApples: unitsYes,
@@ -46,7 +46,7 @@ export const ui2placeOrderFields = ({
   forResolution,
 }: UIOrder): OrderbookEntry => {
   let offeringYes, numNo, numYes
-  let collateralUnits = collateralSize * decimalMultiplier
+  let collateralUnits = collateralSize * 10 ** COLLATERAL_DECIMALS
 
   if (forResolution == "yes") {
     offeringYes = false

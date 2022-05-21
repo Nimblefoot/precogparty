@@ -75,7 +75,7 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 mt-4">
+          <div className="mt-4">
             <TakeOrder marketAddress={address} />
           </div>
         </div>
