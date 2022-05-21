@@ -101,12 +101,12 @@ const useCreateMarket = () => {
         SYRUP_ID
       )
 
-      const currencyVault = await getAssociatedTokenAddress(
+      const applesVault = await getAssociatedTokenAddress(
         yesMint,
         orderbookInfo,
         true
       )
-      const tokenVault = await getAssociatedTokenAddress(
+      const orangesVault = await getAssociatedTokenAddress(
         noMint,
         orderbookInfo,
         true
@@ -119,9 +119,9 @@ const useCreateMarket = () => {
         {
           admin: authority,
           applesMint: yesMint,
-          currencyVault,
+          applesVault,
           orangesMint: noMint,
-          tokenVault,
+          orangesVault,
           orderbookInfo,
           firstPage,
           systemProgram: SystemProgram.programId,

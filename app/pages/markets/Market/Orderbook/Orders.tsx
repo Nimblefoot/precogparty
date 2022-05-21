@@ -24,7 +24,8 @@ const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
     [orderbook.data?.pages]
   )
   const yesOffers = useMemo(
-    () => orders?.filter((x) => x.offeringApples),
+    () =>
+      orders?.filter((x) => x.offeringApples).sort((a, b) => a.odds - b.odds),
     [orders]
   )
   const noOffers = useMemo(
@@ -77,6 +78,7 @@ const YesOrderColumn = ({
                   className="border-b border-gray-200"
                 >
                   <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
+                    peepo offers{" "}
                     {order.numOranges.toNumber() / 10 ** COLLATERAL_DECIMALS} NO
                     for {order.numApples.toNumber() / 10 ** COLLATERAL_DECIMALS}{" "}
                     YES
@@ -125,6 +127,7 @@ const NoOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
                     {(100 * odds).toFixed(0)}%
                   </td>
                   <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
+                    peepo offers{" "}
                     {order.numApples.toNumber() / 10 ** COLLATERAL_DECIMALS} YES
                     for{" "}
                     {order.numOranges.toNumber() / 10 ** COLLATERAL_DECIMALS} NO

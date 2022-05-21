@@ -1,12 +1,94 @@
 import { Splitty } from "./Splitty"
 import { PublicKey } from "@solana/web3.js"
-import { Resolution } from "config"
-import React, { useState } from "react"
+import { COLLATERAL_DECIMALS, Resolution } from "config"
+import React, { useMemo, useRef, useState } from "react"
 import Orders from "./Orders"
 import clsx from "clsx"
+import { order2ui } from "@/utils/orderMath"
+import { useOrderbook } from "./orderbookQueries"
+import { BN } from "bn.js"
+import { displayBN } from "./util"
 
 const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const [taking, setTaking] = useState<Resolution>("yes")
+  const [usdcInput, setUsdcInput] = useState<string>("")
+
+  const orderbook = useOrderbook(marketAddress)
+
+  const orders = useMemo(
+    () =>
+      orderbook.data?.pages
+        .flatMap((page, i) =>
+          page.list.map((x, k) => ({ ...x, page: i, index: k }))
+        )
+        .map((x) => ({ ...x, odds: order2ui(x).odds }))
+        .sort((a, b) => b.odds - a.odds),
+    [orderbook.data?.pages]
+  )
+
+  const relevantOrders = useMemo(
+    () =>
+      orders
+        ?.filter((x) =>
+          taking === "yes" ? x.offeringApples : !x.offeringApples
+        )
+        .sort((a, b) => (taking === "yes" ? a.odds - b.odds : b.odds - a.odds)),
+    [orders, taking]
+  )
+
+  const totalOffered = useMemo(
+    () =>
+      relevantOrders
+        ?.reduce(
+          (total, x) =>
+            total.add(taking === "yes" ? x.numApples : x.numOranges),
+          new BN(0)
+        )
+        .toNumber(),
+    [relevantOrders, taking]
+  )
+
+  const positionInput = useMemo(() => {
+    const value = new BN(parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS)
+
+    // TODO allow input
+    if (!relevantOrders) return
+
+    const { total, spent, fundsRemaining } = relevantOrders.reduce(
+      ({ total, fundsRemaining, spent }, x) => {
+        const offering = x.offeringApples ? x.numApples : x.numOranges
+        const cost = x.offeringApples ? x.numOranges : x.numApples
+        if (cost.lte(fundsRemaining)) {
+          return {
+            total: total.add(offering),
+            fundsRemaining: fundsRemaining.sub(cost),
+            spent: spent.add(cost),
+          }
+        } else {
+          const buying = fundsRemaining.mul(offering).div(cost)
+          return {
+            total: total.add(buying),
+            fundsRemaining: new BN(0),
+            spent: spent.add(fundsRemaining),
+          }
+        }
+      },
+      {
+        total: new BN(0),
+        fundsRemaining: value,
+        spent: new BN(0),
+      }
+    )
+    /* 
+    if (spent.lt(value)) {
+      setUsdcInput(displayBN(spent))
+    } else {
+      setUsdcInput(e.target.value)
+    } */
+    return displayBN(total)
+  }, [relevantOrders, usdcInput])
+
+  console.log("total offered", (totalOffered ?? 0) / 10 ** COLLATERAL_DECIMALS)
 
   return (
     <div>
@@ -20,7 +102,7 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
           <Orders marketAddress={marketAddress} />
           <div
             className={`
-              flex gap-2 border-b border-gray-200 content-center flex-col
+              flex gap-2 content-center flex-col
             `}
           >
             <div className="flex gap-2">
@@ -39,6 +121,10 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                   className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
                   placeholder="0.00"
                   aria-describedby="price-currency"
+                  value={usdcInput}
+                  onChange={(e) => {
+                    setUsdcInput(e.target.value)
+                  }}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <span
@@ -59,11 +145,11 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                   <div
                     key={resolution}
                     className={clsx(
-                      "mt-1 relative rounded-md shadow-sm border",
+                      "mt-1 relative rounded-md shadow-sm border transition-all",
                       resolution === "yes"
                         ? "border-lime-300 bg-lime-100"
                         : "border-rose-300 bg-rose-100",
-                      taking === resolution && "w-full"
+                      taking === resolution ? "grow" : "grow-0"
                     )}
                     onClick={() => setTaking(resolution)}
                   >
@@ -88,6 +174,7 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                       type="number"
                       step="0.001"
                       min="0"
+                      max={totalOffered}
                       className={clsx(
                         "block w-full pl-7 pr-12 sm:text-sm border-0 rounded-md ",
                         resolution === "yes"
@@ -97,6 +184,8 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                       )}
                       placeholder="0.00"
                       aria-describedby="price-currency"
+                      value={positionInput}
+                      readOnly
                     />
                     <div
                       className={clsx(
@@ -108,13 +197,14 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                     >
                       <span
                         className={clsx(
-                          "sm:text-sm",
+                          "sm:text-sm whitespace-nowrap",
                           resolution === "yes"
                             ? "text-lime-500"
                             : "text-rose-500"
                         )}
                         id="price-currency"
                       >
+                        {resolution !== taking && "Buy "}
                         {resolution.toUpperCase()}
                       </span>
                     </div>
