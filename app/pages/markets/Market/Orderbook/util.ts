@@ -21,31 +21,3 @@ export const displayOddsBN = (bn: BN_) =>
     .toFixed(2)
     .replace(/0+$/, "")
     .replace(/[.]$/, "")
-
-const oddsFromRatio = (X: number) => X / (1 + X)
-
-export const order2ui = ({
-  size: noAmount,
-  price,
-  offering_apples: yesForNo,
-}: OrderFields): {
-  collateralSize: number
-  odds: number
-} => {
-  let collateralSize: number
-  if (yesForNo) {
-    const yesAmount = noAmount
-      .mul(price)
-      .div(new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS))
-      .toNumber()
-    collateralSize = yesAmount / 10 ** COLLATERAL_DECIMALS
-  } else {
-    collateralSize = noAmount.toNumber() / 10 ** COLLATERAL_DECIMALS
-  }
-
-  const odds = oddsFromRatio(
-    price.toNumber() / 10 ** ORDERBOOK_PRICE_RATIO_DECIMALS
-  )
-
-  return { odds, collateralSize }
-}

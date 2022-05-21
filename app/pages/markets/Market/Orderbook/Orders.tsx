@@ -8,20 +8,24 @@ import {
 } from "config"
 import React, { useMemo } from "react"
 import { useOrderbook } from "./orderbookQueries"
-import { BN_, displayBN, displayOddsBN, order2ui } from "./util"
 import clsx from "clsx"
+import { order2ui } from "@/utils/orderMath"
 
 const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const orderbook = useOrderbook(marketAddress)
   const orders = useMemo(
-    () =>
-      orderbook.data?.pages
-        .flatMap((page) => page.list)
-        .sort((a, b) => a.price.toNumber() - b.price.toNumber()),
+    () => orderbook.data?.pages.flatMap((page) => page.list),
+    //.sort((a, b) => a.price.toNumber() - b.price.toNumber()),
     [orderbook.data?.pages]
   )
-  const yesOrders = useMemo(() => orders?.filter((x) => x.offering_apples), [orders])
-  const noOrders = useMemo(() => orders?.filter((x) => !x.offering_apples), [orders])
+  const yesOrders = useMemo(
+    () => orders?.filter((x) => x.offeringApples),
+    [orders]
+  )
+  const noOrders = useMemo(
+    () => orders?.filter((x) => !x.offeringApples),
+    [orders]
+  )
 
   return (
     <>
@@ -34,9 +38,6 @@ const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
     </>
   )
 }
-
-const DECIMAL_MULTIPLIER = new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS)
-const AMOUNT_MULTIPLIER = new BN(10 ** COLLATERAL_DECIMALS)
 
 const YesOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
   return (

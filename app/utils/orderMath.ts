@@ -38,11 +38,7 @@ export interface UIOrder {
   forResolution: String
 }
 
-export interface OrderbookEntry {
-  numApples: BN_
-  numOranges: BN_
-  offeringApples: boolean
-}
+export type OrderbookEntry = Omit<OrderFields, "user">
 
 export const ui2placeOrderFields = ({
   odds, // odds of yes

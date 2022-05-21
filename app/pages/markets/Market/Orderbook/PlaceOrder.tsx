@@ -3,6 +3,7 @@ import {
   useTransact,
 } from "@/components/TransactButton"
 import { PROGRAM_ID } from "@/generated/client/programId"
+import { ui2placeOrderFields } from "@/utils/orderMath"
 import { getAssociatedTokenAddress } from "@solana/spl-token"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
@@ -27,7 +28,7 @@ function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-type Mode = "offering_apples" | "trade"
+type Mode = "buy" | "trade"
 // TODO cool css transitions when switching modes
 // TODO display balances
 export function PlaceOrderPanel({
@@ -37,7 +38,7 @@ export function PlaceOrderPanel({
 }) {
   const [odds, setOdds] = useState<number>(0.8)
   const [inputSize, setInputSize] = useState<number>(0)
-  const [mode, setMode] = useState<Mode>("offering_apples")
+  const [mode, setMode] = useState<Mode>("buy")
   const [resolution, setResolution] = useState<Resolution>("yes")
 
   const yesMint = useResolutionMint(marketAddress, "yes")
@@ -47,7 +48,7 @@ export function PlaceOrderPanel({
   const noAccount = useTokenAccount(noMint)
 
   const mintSet = useMintContingentSet(marketAddress)
-  const offering_apples = usePlaceOrderTxn(marketAddress)
+  const buy = usePlaceOrderTxn(marketAddress)
 
   const inputRef = useRef(null)
 
@@ -56,36 +57,24 @@ export function PlaceOrderPanel({
   const onSubmit = useCallback(async () => {
     if (inputSize === 0) return
 
-    const price = new BN(
-      Math.round((odds / (1 - odds)) * 10 ** ORDERBOOK_PRICE_RATIO_DECIMALS)
-    )
-
     const inputAmount = new BN(inputSize * 10 ** COLLATERAL_DECIMALS)
     const mintTxn = await mintSet({ amount: inputAmount })
 
-    // due to convention, size is always the amount of NO token on the trade
-    const size =
-      resolution === "yes"
-        ? inputAmount
-            .mul(price)
-            .div(new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS))
-        : inputAmount
-
-    const offering_applesTxn = await offering_apples({
-      price: price,
-      yesForNo: resolution === "yes",
-      size,
+    const buyTxn = await buy({
+      odds,
+      collateralSize: inputSize,
+      forResolution: resolution,
     })
 
     const txn = new Transaction().add(
       ...mintTxn.instructions,
-      ...offering_applesTxn.instructions
+      ...buyTxn.instructions
     )
 
     console.log(txn)
     await callback(txn)
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
-  }, [offering_apples, callback, inputSize, marketAddress, mintSet, odds, resolution])
+  }, [buy, callback, inputSize, marketAddress, mintSet, odds, resolution])
 
   const yesOutput = inputSize / odds
   const noOutput = inputSize / (1 - odds)
@@ -98,7 +87,7 @@ export function PlaceOrderPanel({
             Offer odds
           </h3>
           <nav className="-mb-px flex space-x-8 mt-3 sm:mt-4">
-            {(["offering_apples", "trade"] as const).map((tab) => (
+            {(["buy", "trade"] as const).map((tab) => (
               <a
                 key={tab}
                 onClick={(e) => {

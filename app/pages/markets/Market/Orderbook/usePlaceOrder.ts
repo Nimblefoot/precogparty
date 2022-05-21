@@ -17,6 +17,7 @@ import { useOrderbook } from "./orderbookQueries"
 import { ASSOCIATED_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token"
 import { UserAccount } from "@/generated/syrup/accounts"
 import { PROGRAM_ID } from "@/generated/client/programId"
+import { ui2placeOrderFields } from "@/utils/orderMath"
 
 const getMaybeCreateUserAccountAddress = async (
   connection: Connection,
@@ -64,15 +65,21 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
 
   const callback = useCallback(
     async ({
-      size,
-      price,
-      yesForNo,
+      odds,
+      collateralSize,
+      forResolution,
     }: {
-      size: BN
-      price: BN
-      yesForNo: boolean
+      odds: number
+      collateralSize: number
+      forResolution: Resolution
     }) => {
       if (!publicKey) throw new Error("no publickey connected")
+
+      const { numApples, numOranges, offeringApples } = ui2placeOrderFields({
+        odds,
+        collateralSize,
+        forResolution,
+      })
 
       // TODO [mild] - await this data
       if (!orderbookQuery.data)
@@ -87,12 +94,12 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
 
       // the ATA is for the token we are locking up
       const userAta = await getAssociatedTokenAddress(
-        yesForNo ? yesMint : noMint,
+        offeringApples ? yesMint : noMint,
         publicKey
       )
       // corresponding ATA owned by program
       const vault = await getAssociatedTokenAddress(
-        yesForNo ? yesMint : noMint,
+        offeringApples ? yesMint : noMint,
         orderbookInfo,
         true
       )
@@ -119,9 +126,9 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
         {
           order: {
             user: publicKey,
-            size,
-            price,
-            offering_apples: yesForNo,
+            numOranges,
+            numApples,
+            offeringApples,
           },
         },
         {
