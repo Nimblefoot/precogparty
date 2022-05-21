@@ -146,21 +146,21 @@ pub mod syrup {
         let new_num_oranges: u64;
         let vault_mint: Pubkey;
 
-        let maximum_exchange = if order.offering_apples {
+        let maximum_taker_payment = if order.offering_apples {
             order_data.num_oranges
         } else {
             order_data.num_apples
         };
 
         if order_data.offering_apples {
-            vault_outgoing_amount = (amount_to_exchange * order.num_apples) / maximum_exchange;
-            new_num_apples = order.num_apples - amount_to_exchange;
-            new_num_oranges = order.num_oranges - vault_outgoing_amount;
-            vault_mint = ctx.accounts.orderbook_info.apples_mint;
-        } else {
-            vault_outgoing_amount = (amount_to_exchange * order.num_oranges) / maximum_exchange;
+            vault_outgoing_amount = (amount_to_exchange * order.num_apples) / maximum_taker_payment;
             new_num_apples = order.num_apples - vault_outgoing_amount;
             new_num_oranges = order.num_oranges - amount_to_exchange;
+            vault_mint = ctx.accounts.orderbook_info.apples_mint;
+        } else {
+            vault_outgoing_amount = (amount_to_exchange * order.num_oranges) / maximum_taker_payment;
+            new_num_apples = order.num_apples - amount_to_exchange;
+            new_num_oranges = order.num_oranges - vault_outgoing_amount;
             vault_mint = ctx.accounts.orderbook_info.oranges_mint;
         }
 
@@ -169,7 +169,7 @@ pub mod syrup {
             return err!(ErrorCode::IncorrectUser);
         } else if ctx.accounts.offerer_user_account.user != order_data.user {
             return err!(ErrorCode::IncorrectUser);
-        } else if amount_to_exchange > maximum_exchange {
+        } else if amount_to_exchange > maximum_taker_payment {
             return err!(ErrorCode::SizeTooLarge);
         } else if vault_mint != ctx.accounts.vault.mint {
             return err!(ErrorCode::WrongVault);
@@ -211,7 +211,7 @@ pub mod syrup {
             None
         )?;
 
-        if amount_to_exchange == maximum_exchange {
+        if amount_to_exchange == maximum_taker_payment {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
         } else if (last_page.key() == order_page.key()) {
             edit_order(index, new_num_apples, new_num_oranges, last_page, offerer_user_account)?;
