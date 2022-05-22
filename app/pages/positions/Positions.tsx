@@ -97,14 +97,13 @@ const Positions = ({}) => {
     <div className="px-4 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">Tokens</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-xl font-semibold text-gray-900">Positions</h1>
+          {/* <p className="mt-2 text-sm text-gray-700">
             A list of all the users in your account including their name, title,
             email and role.
-          </p>
+          </p> */}
         </div>
       </div>
-      <div>{JSON.stringify(userOrders.data)}</div>
       <div className="mt-8 flex flex-col">
         <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
