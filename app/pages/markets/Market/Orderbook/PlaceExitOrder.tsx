@@ -24,10 +24,10 @@ export function PlaceExitOrder({
 }: {
   marketAddress: PublicKey
 }) {
-  const [odds, setOdds] = useState<number>(0.8)
+  const [percentOdds, setPercentOdds] = useState<number>(80)
   const [positionInput, setPositionInput] = useState<string>("")
 
-  const oddsNo = Math.round((1 - odds) * 100) / 100
+  const percentOddsNo = 100 - percentOdds
 
   const [selling, setSelling] = useState<Resolution>("yes")
 
@@ -60,7 +60,10 @@ export function PlaceExitOrder({
 
     const targetAmount = startingAmount
       .mul(
-        new BN((selling === "yes" ? odds : oddsNo) * 10 ** COLLATERAL_DECIMALS)
+        new BN(
+          (selling === "yes" ? percentOdds : percentOddsNo) *
+            10 ** (COLLATERAL_DECIMALS - 2)
+        )
       )
       .div(new BN(10 ** COLLATERAL_DECIMALS))
 
@@ -72,11 +75,7 @@ export function PlaceExitOrder({
       parseFloat(positionInput),
       startingAmount.toString(),
       targetAmount.toString(),
-      amountToSwap.toString(),
-      new BN(
-        (selling === "yes" ? odds : oddsNo) * 10 ** COLLATERAL_DECIMALS
-      ).toString(),
-      (1 - odds).toString()
+      amountToSwap.toString()
     )
 
     const txn = await buy({
@@ -91,10 +90,19 @@ export function PlaceExitOrder({
     // TODO invalidate the correct keys
     queryClient.invalidateQueries(tokenAccountKeys.all)
     setPositionInput("")
-  }, [buy, callback, marketAddress, odds, oddsNo, positionInput, selling])
+  }, [
+    buy,
+    callback,
+    marketAddress,
+    percentOdds,
+    percentOddsNo,
+    positionInput,
+    selling,
+  ])
 
   const usdcOutput = (
-    parseFloat(positionInput) * (selling === "yes" ? odds : 1 - odds)
+    parseFloat(positionInput) *
+    (selling === "yes" ? percentOdds : 1 - percentOdds)
   ).toFixed(2)
 
   return (
@@ -104,16 +112,23 @@ export function PlaceExitOrder({
           px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col
         `}
       >
-        <div className="relative pt-1">
-          <input
-            type="range"
-            min=".01"
-            max=".99"
-            step="0.01"
-            value={odds}
-            onChange={(e) => setOdds(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-          />
+        <div>
+          <div className="flex justify-center text-lg font-medium">
+            {percentOdds}%
+          </div>
+          <div className="relative pt-1">
+            <input
+              type="range"
+              min="1"
+              max="99"
+              step="1"
+              value={percentOdds}
+              onChange={(e) =>
+                setPercentOdds(Math.round(parseFloat(e.target.value)))
+              }
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+            />
+          </div>
         </div>
         <div className="flex gap-2 flex-col">
           <div className="flex gap-2 w-full">
@@ -220,7 +235,7 @@ export function PlaceExitOrder({
       <div className="px-4 py-5 sm:px-6 w-full">
         <StatelessTransactButton
           status={status}
-          verb={"Sell " + capitalizeFirstLetter(selling)}
+          verb={"Sell " + selling.toUpperCase()}
           onClick={onSubmit}
           className="w-full"
           disabled={positionInput === ""}

@@ -37,7 +37,7 @@ export function PlaceOrderPanel({
 }: {
   marketAddress: PublicKey
 }) {
-  const [odds, setOdds] = useState<number>(0.8)
+  const [percentOdds, setPercentOdds] = useState<number>(80)
   const [usdcInput, setUsdcInput] = useState<string>("")
 
   const [resolution, setResolution] = useState<Resolution>("yes")
@@ -62,7 +62,7 @@ export function PlaceOrderPanel({
     const mintTxn = await mintSet({ amount: inputAmount })
 
     const { offeringApples, numApples, numOranges } = ui2placeOrderFields({
-      odds,
+      odds: percentOdds / 100,
       collateralSize: parseFloat(usdcInput),
       forResolution: resolution,
     })
@@ -84,10 +84,18 @@ export function PlaceOrderPanel({
     // TODO invalidate the correct keys
     queryClient.invalidateQueries(tokenAccountKeys.all)
     setUsdcInput("")
-  }, [buy, callback, marketAddress, mintSet, odds, resolution, usdcInput])
+  }, [
+    buy,
+    callback,
+    marketAddress,
+    mintSet,
+    percentOdds,
+    resolution,
+    usdcInput,
+  ])
 
-  const yesOutput = (parseFloat(usdcInput) / odds).toFixed(2)
-  const noOutput = (parseFloat(usdcInput) / (1 - odds)).toFixed(2)
+  const yesOutput = (parseFloat(usdcInput) / percentOdds).toFixed(2)
+  const noOutput = (parseFloat(usdcInput) / (1 - percentOdds)).toFixed(2)
 
   return (
     <>
@@ -96,17 +104,25 @@ export function PlaceOrderPanel({
           px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col
         `}
       >
-        <div className="relative pt-1">
-          <input
-            type="range"
-            min=".01"
-            max=".99"
-            step="0.01"
-            value={odds}
-            onChange={(e) => setOdds(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-          />
+        <div>
+          <div className="flex justify-center text-lg font-medium">
+            {percentOdds}%
+          </div>
+          <div className="relative pt-1">
+            <input
+              type="range"
+              min="1"
+              max="99"
+              step="1"
+              value={percentOdds}
+              onChange={(e) =>
+                setPercentOdds(Math.round(parseFloat(e.target.value)))
+              }
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+            />
+          </div>
         </div>
+
         <div className="flex gap-2">
           {/* USDC input */}
 
@@ -192,7 +208,7 @@ export function PlaceOrderPanel({
       <div className="px-4 py-5  sm:px-6 w-full">
         <StatelessTransactButton
           status={status}
-          verb={"Buy" + capitalizeFirstLetter(resolution)}
+          verb={"Buy " + resolution.toUpperCase()}
           onClick={onSubmit}
           className="w-full"
           disabled={usdcInput === ""}
@@ -231,11 +247,12 @@ const PlaceOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
           ))}
         </nav>
       </div>
-      {mode === "buy" ? (
+      <div className={mode === "buy" ? "" : "hidden"}>
         <PlaceOrderPanel marketAddress={marketAddress} />
-      ) : (
+      </div>
+      <div className={mode === "sell" ? "" : "hidden"}>
         <PlaceExitOrder marketAddress={marketAddress} />
-      )}
+      </div>
     </div>
   )
 }
