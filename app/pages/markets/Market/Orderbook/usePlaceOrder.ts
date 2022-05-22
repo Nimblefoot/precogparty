@@ -65,21 +65,15 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
 
   const callback = useCallback(
     async ({
-      odds,
-      collateralSize,
-      forResolution,
+      offeringYes,
+      numYes,
+      numNo,
     }: {
-      odds: number
-      collateralSize: number
-      forResolution: Resolution
+      offeringYes: boolean
+      numYes: BN
+      numNo: BN
     }) => {
       if (!publicKey) throw new Error("no publickey connected")
-
-      const { numApples, numOranges, offeringApples } = ui2placeOrderFields({
-        odds,
-        collateralSize,
-        forResolution,
-      })
 
       // TODO [mild] - await this data
       if (!orderbookQuery.data)
@@ -94,12 +88,12 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
 
       // the ATA is for the token we are locking up
       const userAta = await getAssociatedTokenAddress(
-        offeringApples ? yesMint : noMint,
+        offeringYes ? yesMint : noMint,
         publicKey
       )
       // corresponding ATA owned by program
       const vault = await getAssociatedTokenAddress(
-        offeringApples ? yesMint : noMint,
+        offeringYes ? yesMint : noMint,
         orderbookInfo,
         true
       )
@@ -126,9 +120,9 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
         {
           order: {
             user: publicKey,
-            numOranges,
-            numApples,
-            offeringApples,
+            numOranges: numNo,
+            numApples: numYes,
+            offeringApples: offeringYes,
           },
         },
         {

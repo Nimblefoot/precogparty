@@ -11,6 +11,7 @@ import { PlaceOrderPanel } from "./Orderbook/PlaceOrder"
 import { Swap } from "./Orderbook/Swap"
 import Orders from "./Orderbook/Orders"
 import TakeOrder from "./Orderbook/TakeOrder"
+import { PlaceExitOrder } from "./Orderbook/PlaceExitOrder"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -81,6 +82,7 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
         </div>
         {/* 2nd column */}
         <div className="grow max-w-xs flex flex-col gap-4">
+          <PlaceExitOrder marketAddress={address} />
           <PlaceOrderPanel marketAddress={address} />
           {market.data.resolution === 0 && <Resolve market={address} />}
           <TokenControls address={address} />

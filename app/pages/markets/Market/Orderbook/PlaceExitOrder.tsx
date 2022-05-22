@@ -7,6 +7,7 @@ import { ui2placeOrderFields } from "@/utils/orderMath"
 import { getAssociatedTokenAddress } from "@solana/spl-token"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
+import clsx from "clsx"
 import {
   COLLATERAL_DECIMALS,
   ORDERBOOK_PRICE_RATIO_DECIMALS,
@@ -28,19 +29,17 @@ function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-type Mode = "buy" | "trade"
-// TODO cool css transitions when switching modes
 // TODO display balances
-export function PlaceOrderPanel({
+export function PlaceExitOrder({
   marketAddress,
 }: {
   marketAddress: PublicKey
 }) {
   const [odds, setOdds] = useState<number>(0.8)
   const [usdcInput, setUsdcInput] = useState<string>("")
+  const [positionInput, setPositionInput] = useState<string>("")
 
-  const [mode, setMode] = useState<Mode>("buy")
-  const [resolution, setResolution] = useState<Resolution>("yes")
+  const [selling, setSelling] = useState<Resolution>("yes")
 
   const yesMint = useResolutionMint(marketAddress, "yes")
   const noMint = useResolutionMint(marketAddress, "no")
@@ -61,16 +60,10 @@ export function PlaceOrderPanel({
     )
     const mintTxn = await mintSet({ amount: inputAmount })
 
-    const { offeringApples, numApples, numOranges } = ui2placeOrderFields({
+    const buyTxn = await buy({
       odds,
       collateralSize: parseFloat(usdcInput),
-      forResolution: resolution,
-    })
-
-    const buyTxn = await buy({
-      offeringYes: offeringApples,
-      numNo: numOranges,
-      numYes: numApples,
+      forResolution: selling === "yes" ? "no" : "yes",
     })
 
     const txn = new Transaction().add(
@@ -84,7 +77,7 @@ export function PlaceOrderPanel({
     // TODO invalidate the correct keys
     queryClient.invalidateQueries(tokenAccountKeys.all)
     setUsdcInput("")
-  }, [buy, callback, marketAddress, mintSet, odds, resolution, usdcInput])
+  }, [buy, callback, marketAddress, mintSet, odds, selling, usdcInput])
 
   const yesOutput = (parseFloat(usdcInput) / odds).toFixed(2)
   const noOutput = (parseFloat(usdcInput) / (1 - odds)).toFixed(2)
@@ -94,27 +87,8 @@ export function PlaceOrderPanel({
       <div className="shadow bg-white rounded-lg">
         <div className="px-4 pt-5 border-b border-gray-200 sm:px-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Offer odds
+            Exit order
           </h3>
-          <nav className="-mb-px flex space-x-8 mt-3 sm:mt-4">
-            {(["buy", "trade"] as const).map((tab) => (
-              <a
-                key={tab}
-                onClick={(e) => {
-                  setMode(tab)
-                  ;(inputRef as any)?.current.focus()
-                }}
-                className={classNames(
-                  tab === mode
-                    ? "border-indigo-500 text-indigo-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                  "whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm"
-                )}
-              >
-                {capitalizeFirstLetter(tab)}
-              </a>
-            ))}
-          </nav>
         </div>
         <div
           className={`
@@ -162,62 +136,81 @@ export function PlaceOrderPanel({
             </div>
           </div>
 
-          <Splitty resolution={resolution} />
-          <div className="flex gap-2">
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-lime-500 sm:text-sm">$</span>
-              </div>
-              <input
-                type="number"
-                step="0.001"
-                min="0"
-                className={`
-                  block w-full pl-7 pr-12 sm:text-sm border-lime-300 rounded-md bg-lime-100 text-lime-500 placeholder:text-lime-400
-                  ${resolution === "yes" ? "" : "opacity-50"}
-                `}
-                placeholder="0.00"
-                aria-describedby="price-currency"
-                onSelect={() => setResolution("yes")}
-                value={yesOutput}
-                readOnly
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-lime-500 sm:text-sm" id="price-currency">
-                  YES
-                </span>
-              </div>
-            </div>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-rose-500 sm:text-sm">$</span>
-              </div>
-              <input
-                type="number"
-                step="0.001"
-                min="0"
-                className={`
-                  block w-full pl-7 pr-12 sm:text-sm border-rose-300 rounded-md bg-rose-100 text-rose-500 placeholder:text-rose-300
-                  ${resolution === "no" ? "" : "opacity-50"}
-                `}
-                placeholder="0.00"
-                aria-describedby="price-currency"
-                onSelect={() => setResolution("no")}
-                value={noOutput}
-                readOnly
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-rose-500 sm:text-sm" id="price-currency">
-                  NO
-                </span>
-              </div>
-            </div>
+          <Splitty resolution={selling} />
+          <div className="flex gap-2 w-full">
+            {(["yes", "no"] as const).map((resolution) => {
+              return (
+                <div
+                  key={resolution}
+                  className={clsx(
+                    "mt-1 relative rounded-md shadow-sm border transition-all",
+                    resolution === "yes"
+                      ? "border-lime-300 bg-lime-100"
+                      : "border-rose-300 bg-rose-100",
+                    selling === resolution ? "grow" : "grow-0"
+                  )}
+                  onClick={() => setSelling(resolution)}
+                >
+                  <div
+                    className={clsx(
+                      "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none",
+                      selling !== resolution && "hidden"
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        "sm:text-sm",
+                        resolution === "yes" ? "text-lime-500" : "text-rose-500"
+                      )}
+                    >
+                      $
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    //max={totalOffered?.toString()}
+                    className={clsx(
+                      "block w-full pl-7 pr-12 sm:text-sm border-0 rounded-md ",
+                      resolution === "yes"
+                        ? "bg-lime-100 text-lime-500 placeholder:text-lime-400"
+                        : "bg-rose-100 text-rose-500 placeholder:text-rose-400",
+                      selling === resolution ? "" : "opacity-50 hidden"
+                    )}
+                    placeholder="0.00"
+                    aria-describedby="price-currency"
+                    value={positionInput}
+                    readOnly
+                  />
+                  <div
+                    className={clsx(
+                      "flex items-center pointer-events-none",
+                      selling === resolution
+                        ? "absolute inset-y-0 right-0 pr-3"
+                        : "mx-5 h-full"
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        "sm:text-sm whitespace-nowrap",
+                        resolution === "yes" ? "text-lime-500" : "text-rose-500"
+                      )}
+                      id="price-currency"
+                    >
+                      {resolution !== selling && "Buy "}
+                      {resolution.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
         <div className="px-4 py-5 border-b border-gray-200 sm:px-6 w-full">
           <StatelessTransactButton
             status={status}
-            verb={capitalizeFirstLetter(mode)}
+            verb={"Sell " + capitalizeFirstLetter(selling)}
             onClick={onSubmit}
             className="w-full"
             disabled={usdcInput === ""}

@@ -19,3 +19,8 @@ export type Resolution = keyof typeof RESOLUTION_MAPPING
 export const ORDERBOOK_PAGE_MAX_LENGTH = 100
 
 export const ORDERBOOK_PRICE_RATIO_DECIMALS = 9
+
+export const TAKE_ORDER_COST = 65000
+export const MINT_SET_COST = 65000
+
+export const DEFAULT_COMPUTE_MAX = 200000

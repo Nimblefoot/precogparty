@@ -1,6 +1,12 @@
 import { Splitty } from "./Splitty"
 import { PublicKey, Transaction } from "@solana/web3.js"
-import { COLLATERAL_DECIMALS, Resolution } from "config"
+import {
+  COLLATERAL_DECIMALS,
+  DEFAULT_COMPUTE_MAX,
+  MINT_SET_COST,
+  Resolution,
+  TAKE_ORDER_COST,
+} from "config"
 import React, { useMemo, useRef, useState } from "react"
 import Orders from "./Orders"
 import clsx from "clsx"
@@ -16,6 +22,7 @@ import useTakeOrder from "./useTakeOrder"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { queryClient } from "pages/providers"
 import { tokenAccountKeys } from "pages/tokenAccountQuery"
+import { requestAdditionalBudgetIx } from "pages/markets/new/hooks/useCreateMarket"
 
 const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const [taking, setTaking] = useState<Resolution>("yes")
@@ -137,7 +144,18 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
     )
     const mintTxn = await mintSet({ amount: inputAmount })
 
-    const txn = new Transaction().add(...mintTxn.instructions, ...takeIxs)
+    const computeCost = MINT_SET_COST + takeIxs.length * TAKE_ORDER_COST
+    const requestMoreCompute =
+      computeCost > DEFAULT_COMPUTE_MAX * 0.9
+        ? [requestAdditionalBudgetIx(computeCost * 1.2)]
+        : []
+
+    const txn = new Transaction().add(
+      ...requestMoreCompute,
+      ...mintTxn.instructions,
+      ...takeIxs
+    )
+
     await callback(txn)
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
     // TODO invalidate the correct keys

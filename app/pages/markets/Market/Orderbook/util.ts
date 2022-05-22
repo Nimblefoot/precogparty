@@ -1,23 +1,19 @@
 import { OrderFields } from "@/generated/syrup/types"
 import { BN } from "bn.js"
-import { COLLATERAL_DECIMALS, ORDERBOOK_PRICE_RATIO_DECIMALS } from "config"
+import { COLLATERAL_DECIMALS } from "config"
 
 export type BN_ = InstanceType<typeof BN>
 
-export const ODDS_MULTIPLIER = new BN(10 ** ORDERBOOK_PRICE_RATIO_DECIMALS)
-
-export const displayBN = (bn: BN_) =>
-  (bn.toNumber() / 10 ** COLLATERAL_DECIMALS)
-    .toFixed(2)
-    .replace(/0+$/, "")
-    .replace(/[.]$/, "")
-export const timesOdds = (bn: BN_, odds: number) =>
-  bn.mul(new BN(odds * 100000)).div(new BN(100000))
-export const divOdds = (bn: BN_, odds: number) =>
-  bn.div(new BN(odds * 100000)).mul(new BN(100000))
-
-export const displayOddsBN = (bn: BN_) =>
-  (bn.toNumber() / 10 ** ORDERBOOK_PRICE_RATIO_DECIMALS)
-    .toFixed(2)
-    .replace(/0+$/, "")
-    .replace(/[.]$/, "")
+export const displayBN = (bn: BN_, toPlace = 4) => {
+  const integer_component = bn.div(new BN(10 ** COLLATERAL_DECIMALS))
+  const decimal_component = bn.sub(integer_component)
+  const left_string = integer_component.toString()
+  const right_string = decimal_component
+    .add(new BN(10 ** (COLLATERAL_DECIMALS + 1))) // if decimals = 2, and the number is 3, we want to add 1000 to turn it into 1003
+    .toString()
+    .substring(1) // and then we truncate the 1 we added
+    .substring(0, toPlace) // and then we truncate decimal places beyond what we want to show
+  const decimal_string = left_string + "." + right_string
+  const formatted = decimal_string.replace(/0+$/, "").replace(/[.]$/, "")
+  return formatted
+}

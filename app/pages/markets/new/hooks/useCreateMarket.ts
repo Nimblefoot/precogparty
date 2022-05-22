@@ -21,7 +21,7 @@ import { COLLATERAL_MINT } from "config"
 import BN from "bn.js"
 import { initializeOrderbook } from "@/generated/syrup/instructions"
 
-const requestAdditionalBudgetIx = (budget: number) => {
+export const requestAdditionalBudgetIx = (budget: number) => {
   const data = Buffer.from(Uint8Array.of(0, ...new BN(budget).toArray("le", 4)))
   return new TransactionInstruction({
     keys: [],
