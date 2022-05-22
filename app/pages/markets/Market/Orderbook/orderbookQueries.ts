@@ -1,7 +1,11 @@
-import { OrderbookInfo, OrderbookPage } from "@/generated/syrup/accounts"
+import {
+  OrderbookInfo,
+  OrderbookPage,
+  UserAccount,
+} from "@/generated/syrup/accounts"
 import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
-import { useConnection } from "@solana/wallet-adapter-react"
+import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey } from "@solana/web3.js"
 import BN from "bn.js"
 import { useCallback, useMemo } from "react"
@@ -10,7 +14,7 @@ import { useQuery } from "react-query"
 export const orderbookKeys = {
   all: ["orderbooks"],
   book: (address: PublicKey) => [...orderbookKeys.all, address.toString()],
-  forCoin: (mint: PublicKey) => [...orderbookKeys.all, mint.toString()],
+  userAccount: (address?: PublicKey) => ["user", address?.toString()],
 } as const
 
 export type Orderbook = {
@@ -51,5 +55,26 @@ export const useOrderbook = (marketAddress: PublicKey) => {
 
   const query = useQuery(orderbookKeys.book(marketAddress), fetchData)
 
+  return query
+}
+
+export const useOrderbookUserAccount = () => {
+  const { connection } = useConnection()
+  const { publicKey } = useWallet()
+  const fetchData = useCallback(async () => {
+    const [userAccountAddress] = await PublicKey.findProgramAddress(
+      [utf8.encode("user-account"), publicKey!.toBuffer()],
+      SYRUP_ID
+    )
+    return UserAccount.fetch(connection, userAccountAddress)
+  }, [connection, publicKey])
+
+  const query = useQuery(
+    orderbookKeys.userAccount(publicKey ?? undefined),
+    fetchData,
+    {
+      enabled: !!publicKey,
+    }
+  )
   return query
 }
