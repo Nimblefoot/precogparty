@@ -174,7 +174,6 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
           </h3>
         </div>
         <div className="px-4 py-5 sm:px-6 flex flex-col gap-4 border-b border-gray-200 w-full">
-          <Orders marketAddress={marketAddress} />
           <div
             className={`
               flex gap-2 content-center flex-col

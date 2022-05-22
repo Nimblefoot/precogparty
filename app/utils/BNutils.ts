@@ -13,7 +13,7 @@ export const displayBN = (bn: BN_, toPlace = 4) => {
     .add(new BN(10 ** COLLATERAL_DECIMALS)) // if decimals = 2, and the number is 3, we want to add 1000 to turn it into 1003
     .toString()
     .substring(1) // and then we truncate the 1 we added
-  //.substring(0, toPlace) // and then we truncate decimal places beyond what we want to show
+    .substring(0, toPlace) // and then we truncate decimal places beyond what we want to show
   const decimal_string = left_string + "." + right_string
   const formatted = decimal_string.replace(/0+$/, "").replace(/[.]$/, "")
   return formatted
