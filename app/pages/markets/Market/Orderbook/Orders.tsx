@@ -79,7 +79,7 @@ const YesOrderColumn = ({
                   className="border-b border-gray-200"
                 >
                   <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
-                    peepo offers {displayBN(order.numOranges)} NO for{" "}
+                    anon offers {displayBN(order.numOranges)} NO for{" "}
                     {displayBN(order.numApples)} YES
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-sm font-medium text-gray-900">
@@ -126,7 +126,7 @@ const NoOrderColumn = ({ orders }: { orders?: OrderFields[] }) => {
                     {(100 * odds).toFixed(0)}%
                   </td>
                   <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
-                    peepo offers {displayBN(order.numApples)} YES for{" "}
+                    anon offers {displayBN(order.numApples)} YES for{" "}
                     {displayBN(order.numOranges)} NO
                   </td>
                 </tr>
