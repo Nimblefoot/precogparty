@@ -21,6 +21,7 @@ import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "./orderbookQueries"
 import { PlaceExitOrder } from "./PlaceExitOrder"
 import { Splitty } from "./Splitty"
+import { useSellable } from "./TakeExitOrder"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
 
 function capitalizeFirstLetter(string: string) {
@@ -219,6 +220,8 @@ export function PlaceOrderPanel({
 const PlaceOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const [mode, setMode] = useState<Mode>("buy")
 
+  const sellable = useSellable(marketAddress)
+
   return (
     <div className="shadow bg-white rounded-lg">
       <div className="px-4 pt-5 border-b border-gray-200 sm:px-6">
@@ -237,7 +240,8 @@ const PlaceOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                 tab === mode
                   ? "border-indigo-500 text-indigo-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                "whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm"
+                "whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm",
+                !(sellable.yes || sellable.no) && tab === "sell" && "hidden"
               )}
             >
               {capitalizeFirstLetter(tab)}
