@@ -37,7 +37,8 @@ export function PlaceOrderPanel({
   marketAddress: PublicKey
 }) {
   const [odds, setOdds] = useState<number>(0.8)
-  const [inputSize, setInputSize] = useState<number>(0)
+  const [usdcInput, setUsdcInput] = useState<string>("")
+
   const [mode, setMode] = useState<Mode>("buy")
   const [resolution, setResolution] = useState<Resolution>("yes")
 
@@ -55,14 +56,14 @@ export function PlaceOrderPanel({
   const { callback, status } = useTransact()
 
   const onSubmit = useCallback(async () => {
-    if (inputSize === 0) return
-
-    const inputAmount = new BN(inputSize * 10 ** COLLATERAL_DECIMALS)
+    const inputAmount = new BN(
+      parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS
+    )
     const mintTxn = await mintSet({ amount: inputAmount })
 
     const buyTxn = await buy({
       odds,
-      collateralSize: inputSize,
+      collateralSize: inputAmount.toNumber(),
       forResolution: resolution,
     })
 
@@ -76,11 +77,11 @@ export function PlaceOrderPanel({
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
     // TODO invalidate the correct keys
     queryClient.invalidateQueries(tokenAccountKeys.all)
-    setInputSize(0)
-  }, [buy, callback, inputSize, marketAddress, mintSet, odds, resolution])
+    setUsdcInput("")
+  }, [buy, callback, marketAddress, mintSet, odds, resolution, usdcInput])
 
-  const yesOutput = inputSize / odds
-  const noOutput = inputSize / (1 - odds)
+  const yesOutput = (parseFloat(usdcInput) / odds).toFixed(2)
+  const noOutput = (parseFloat(usdcInput) / (1 - odds)).toFixed(2)
 
   return (
     <>
@@ -142,11 +143,9 @@ export function PlaceOrderPanel({
                 className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
                 placeholder="0.00"
                 aria-describedby="price-currency"
-                value={inputSize.toString()}
+                value={usdcInput}
                 onChange={(e) => {
-                  const input = parseFloat(e.target.value)
-
-                  setInputSize(input)
+                  setUsdcInput(e.target.value)
                 }}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -175,6 +174,7 @@ export function PlaceOrderPanel({
                 aria-describedby="price-currency"
                 onSelect={() => setResolution("yes")}
                 value={yesOutput}
+                readOnly
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-lime-500 sm:text-sm" id="price-currency">
@@ -198,11 +198,7 @@ export function PlaceOrderPanel({
                 aria-describedby="price-currency"
                 onSelect={() => setResolution("no")}
                 value={noOutput}
-                onChange={(e) => {
-                  const output = parseFloat(e.target.value)
-                  const input = output * (1 - odds)
-                  setInputSize(input)
-                }}
+                readOnly
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-rose-500 sm:text-sm" id="price-currency">
@@ -218,7 +214,7 @@ export function PlaceOrderPanel({
             verb={capitalizeFirstLetter(mode)}
             onClick={onSubmit}
             className="w-full"
-            disabled={inputSize === 0}
+            disabled={usdcInput === ""}
           />
         </div>
       </div>
