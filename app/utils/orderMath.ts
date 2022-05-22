@@ -60,6 +60,8 @@ export const ui2placeOrderFields = ({
     numNo = collateralUnits * ratioFromOdds(odds)
   }
 
+  console.log(numNo, numYes, "fart")
+
   return {
     offeringApples: offeringYes,
     numApples: new BN(numYes),

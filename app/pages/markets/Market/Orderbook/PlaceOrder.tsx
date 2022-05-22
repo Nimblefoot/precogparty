@@ -63,7 +63,7 @@ export function PlaceOrderPanel({
 
     const buyTxn = await buy({
       odds,
-      collateralSize: inputAmount.toNumber(),
+      collateralSize: parseFloat(usdcInput),
       forResolution: resolution,
     })
 

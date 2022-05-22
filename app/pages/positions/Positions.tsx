@@ -231,9 +231,25 @@ const Order = ({
             {/* TODO check if offering apples */}
             <div>
               You&apos;re offering{" "}
-              <span className="text-lime-700">${displayBN(numApples)} YES</span>{" "}
+              {offeringApples ? (
+                <span className="text-lime-700">
+                  ${displayBN(numApples)} YES
+                </span>
+              ) : (
+                <span className="text-rose-700">
+                  ${displayBN(numOranges)} NO
+                </span>
+              )}{" "}
               for{" "}
-              <span className="text-rose-700">${displayBN(numOranges)} NO</span>
+              {!offeringApples ? (
+                <span className="text-lime-700">
+                  ${displayBN(numApples)} YES
+                </span>
+              ) : (
+                <span className="text-rose-700">
+                  ${displayBN(numOranges)} NO
+                </span>
+              )}
             </div>
           </div>
         </td>
