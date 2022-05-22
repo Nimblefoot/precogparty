@@ -10,7 +10,7 @@ import React, { useMemo } from "react"
 import { useOrderbook } from "./orderbookQueries"
 import clsx from "clsx"
 import { order2ui } from "@/utils/orderMath"
-import { displayBN } from "./util"
+import { displayBN } from "@/utils/BNutils"
 
 const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const orderbook = useOrderbook(marketAddress)

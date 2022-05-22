@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "target": "es5",
+    "types": ["mocha", "chai"],
+
     "lib": ["dom", "dom.iterable", "esnext"],
     "baseUrl": ".",
     "paths": {

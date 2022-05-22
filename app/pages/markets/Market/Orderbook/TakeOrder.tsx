@@ -13,7 +13,7 @@ import clsx from "clsx"
 import { BN_, order2ui } from "@/utils/orderMath"
 import { orderbookKeys, useOrderbook } from "./orderbookQueries"
 import { BN } from "bn.js"
-import { displayBN } from "./util"
+import { displayBN } from "@/utils/BNutils"
 import {
   StatelessTransactButton,
   useTransact,
@@ -259,7 +259,7 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                       )}
                       placeholder="0.00"
                       aria-describedby="price-currency"
-                      value={positionInput}
+                      value={positionInput ?? ""}
                       readOnly
                     />
                     <div

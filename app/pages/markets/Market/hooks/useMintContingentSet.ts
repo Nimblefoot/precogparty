@@ -7,7 +7,7 @@ import { useMarket } from "./marketQueries"
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { COLLATERAL_MINT } from "config"
 import getATAandCreateIxIfNeeded from "@/utils/getATAandCreateIxIfNeeded"
-import { BN_ } from "../Orderbook/util"
+import { BN_ } from "../../../../utils/BNutils"
 
 const useMintContingentSet = (address: PublicKey) => {
   const { publicKey } = useWallet()
