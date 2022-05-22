@@ -14,10 +14,6 @@ import { Splitty } from "./Splitty"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
 import { displayBN } from "../../../../utils/BNutils"
 
-function capitalizeFirstLetter(string: string) {
-  return string.charAt(0).toUpperCase() + string.slice(1)
-}
-
 // TODO display balances
 export function PlaceExitOrder({
   marketAddress,
