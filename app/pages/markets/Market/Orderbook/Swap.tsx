@@ -8,7 +8,7 @@ import { COLLATERAL_DECIMALS } from "config"
 import { useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useState } from "react"
 import { useMarket } from "../hooks/marketQueries"
-import { timesOdds, divOdds, displayBN } from "./util"
+import { timesOdds, divOdds, displayBN } from "../../../../utils/BNutils"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
 
 function classNames(...classes: string[]) {
