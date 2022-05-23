@@ -101,11 +101,7 @@ const Layout = ({ Component, pageProps }: AppProps) => {
                   </Transition.Child>
                   <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
                     <div className="flex-shrink-0 flex items-center px-4">
-                      <img
-                        className="h-8 w-auto"
-                        src="https://tailwindui.com/img/logos/workflow-logo-indigo-600-mark-gray-800-text.svg"
-                        alt="Workflow"
-                      />
+                      futa.markets
                     </div>
                     <nav className="mt-5 px-2 space-y-1">
                       {navigation.map((item) => (
@@ -148,11 +144,7 @@ const Layout = ({ Component, pageProps }: AppProps) => {
             <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
               <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto gap-5">
                 <div className="flex items-center flex-shrink-0 px-4">
-                  <img
-                    className="h-8 w-auto"
-                    src="https://tailwindui.com/img/logos/workflow-logo-indigo-600-mark-gray-800-text.svg"
-                    alt="Workflow"
-                  />
+                  futa.markets
                 </div>
                 <UserInfoDesktop />
 
@@ -250,9 +242,9 @@ function UserInfoDesktop({}) {
                       .toString()
                       .substring(publicKey.toString().length - 4)}
                 </p>
-                <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
+                {/*  <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
                   View profile
-                </p>
+                </p> */}
               </div>
             </div>
           </a>
@@ -278,9 +270,9 @@ function UserInfoMobile({}) {
             <p className="text-base font-medium text-gray-700 group-hover:text-gray-900">
               Tom Cook
             </p>
-            <p className="text-sm font-medium text-gray-500 group-hover:text-gray-700">
+            {/* <p className="text-sm font-medium text-gray-500 group-hover:text-gray-700">
               View profile
-            </p>
+            </p> */}
           </div>
         </div>
       </a>
