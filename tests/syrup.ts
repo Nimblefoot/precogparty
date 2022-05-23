@@ -7,7 +7,7 @@ import {
   SYSVAR_RENT_PUBKEY,
   Transaction,
 } from "@solana/web3.js"
-import { assert } from "chai"
+import { assert, Assertion } from "chai"
 import { Syrup } from "../target/types/syrup"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
 import * as spl from "@solana/spl-token"
@@ -382,16 +382,6 @@ describe("orderbook", async () => {
       ],
       program.programId
     )
-    // let firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-    // console.log(
-    //   JSON.stringify(
-    //     // @ts-ignore
-    //     firstPage.list.map((d) => {
-    //       d.size = d.size.toString()
-    //       return d
-    //     })
-    //   )
-    // )
 
     // the max size is 5e6. Going to take for 2e6. the order is in position 0,1 cause of how deletion works (swap and pop)!
     await program.methods
@@ -505,17 +495,25 @@ describe("orderbook", async () => {
       "User spent 15 apples to offering_apples 5 oranges for 3 apples each"
     )
 
-    // console.log("order taken for max amount")
-    // firstPage = await program.account.orderbookPage.fetch(lastPageKey)
-    // console.log(
-    //   JSON.stringify(
-    //     // @ts-ignore
-    //     firstPage.list.map((d) => {
-    //       d.size = d.size.toString()
-    //       return d
-    //     })
-    //   )
-    // )
+    const orderbookInfo = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
+    // @ts-ignore
+    const lastTrades = orderbookInfo.tradeLog.reverse().map((trade) => ({
+      buyOrderForApples: trade.buyOrderForApples,
+      numOranges: trade.numOranges.toString(),
+      numApples: trade.numApples.toString(),
+    }))
+    assert.deepEqual(lastTrades, [
+      {
+        buyOrderForApples: false,
+        numOranges: "15000000",
+        numApples: "5000000",
+      },
+      { buyOrderForApples: true, numOranges: "2000000", numApples: "2000000" },
+    ])
+
+    assert
   })
 
   it("checks security assumption hold", async () => {

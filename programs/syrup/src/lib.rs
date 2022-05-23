@@ -69,6 +69,8 @@ declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 pub mod syrup {
     use anchor_lang::solana_program::clock::DEFAULT_DEV_SLOTS_PER_EPOCH;
 
+    use crate::data::TradeRecord;
+
     use super::*;
 
     #[allow(unused_variables)]
@@ -222,17 +224,15 @@ pub mod syrup {
         }
 
         // add to trade record
-        let trade_record: Order = if order.offering_apples {
-            Order {
-                user: ctx.accounts.taker.key(),
-                offering_apples: true,
+        let trade_record: TradeRecord = if order.offering_apples {
+            TradeRecord {
+                buy_order_for_apples: true,
                 num_apples: amount_to_exchange,
                 num_oranges: vault_outgoing_amount
             }
         } else {
-            Order {
-                user: ctx.accounts.taker.key(),
-                offering_apples: true,
+            TradeRecord {
+                buy_order_for_apples: false,
                 num_apples: vault_outgoing_amount,
                 num_oranges: amount_to_exchange
             }

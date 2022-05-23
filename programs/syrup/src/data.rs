@@ -15,22 +15,29 @@ pub struct Order {
     pub num_oranges: u64,      // 8 - 49 total
 }
 
+#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
+pub struct TradeRecord {
+    pub num_apples: u64,            // 8
+    pub buy_order_for_apples: bool, // 1
+    pub num_oranges: u64,           // 8 - 17 total
+}
+
 #[account]
 #[derive(Default)]
 pub struct OrderbookInfo {
-    pub admin: Pubkey,         // 32
-    pub length: u32,           // 4
-    pub apples_mint: Pubkey,   // 32
-    pub oranges_mint: Pubkey,  // 32
-    pub bump: u8,              // 1
-    pub id: Pubkey,            // 32
-    pub trade_log: Vec<Order>, // 49 x 5 = 160
+    pub admin: Pubkey,               // 32
+    pub length: u32,                 // 4
+    pub apples_mint: Pubkey,         // 32
+    pub oranges_mint: Pubkey,        // 32
+    pub bump: u8,                    // 1
+    pub id: Pubkey,                  // 32
+    pub trade_log: Vec<TradeRecord>, // 17 x MAX_SIZE = 160
 }
 
 const TRADE_LOG_LENGTH: usize = 5;
 
 impl OrderbookInfo {
-    pub const LEN: usize = (32 * 4) + 49 * TRADE_LOG_LENGTH + 4 + 1;
+    pub const LEN: usize = (32 * 4) + 17 * TRADE_LOG_LENGTH + 32 + 4 + 1;
 
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
@@ -44,23 +51,11 @@ impl OrderbookInfo {
         (self.length) / (MAX_SIZE as u32)
     }
 
-    pub fn add_trade_to_log(&mut self, order: Order) {
+    pub fn add_trade_to_log(&mut self, record: TradeRecord) {
         if self.trade_log.len() == TRADE_LOG_LENGTH {
             self.trade_log.remove(0);
         }
-        self.trade_log.push(order);
-    }
-
-    pub fn last_trade(&self) -> Option<&Order> {
-        self.trade_log.last()
-    }
-
-    pub fn last_trades(&self) -> Vec<Order> {
-        let mut trades = self.trade_log.clone();
-
-        trades.reverse();
-
-        trades
+        self.trade_log.push(record);
     }
 }
 
