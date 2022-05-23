@@ -1,6 +1,7 @@
-export {
-  PredictionMarket,
+export { PredictionMarket } from "./PredictionMarket"
+export type {
   PredictionMarketFields,
   PredictionMarketJSON,
 } from "./PredictionMarket"
-export { MarketList, MarketListFields, MarketListJSON } from "./MarketList"
+export { MarketList } from "./MarketList"
+export type { MarketListFields, MarketListJSON } from "./MarketList"

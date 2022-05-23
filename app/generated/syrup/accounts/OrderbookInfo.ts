@@ -107,7 +107,9 @@ export class OrderbookInfo {
       orangesMint: dec.orangesMint,
       bump: dec.bump,
       id: dec.id,
-      tradeLog: dec.tradeLog.map((item) => types.TradeRecord.fromDecoded(item)),
+      tradeLog: dec.tradeLog.map((item: any) =>
+        types.TradeRecord.fromDecoded(item)
+      ),
     })
   }
 

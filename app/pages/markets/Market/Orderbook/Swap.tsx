@@ -8,7 +8,7 @@ import { COLLATERAL_DECIMALS } from "config"
 import { useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useState } from "react"
 import { useMarket } from "../hooks/marketQueries"
-import { timesOdds, divOdds, displayBN } from "../../../../utils/BNutils"
+import { displayBN } from "../../../../utils/BNutils"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
 
 function classNames(...classes: string[]) {
@@ -54,16 +54,16 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
   }, [])
 
   const handleOddsChange = (newOdds: number) => {
-    const initialInputBN = timesOdds(
+    /* const initialInputBN = timesOdds(
       new BN(parseFloat(yesInput) * 10 ** COLLATERAL_DECIMALS),
       odds
     )
 
     const yesInputBN = divOdds(initialInputBN, newOdds)
-    const noInputBN = divOdds(initialInputBN, 1 - newOdds)
+    const noInputBN = divOdds(initialInputBN, 1 - newOdds) 
 
     setYesInput(yesInput !== "" ? displayBN(yesInputBN) : "")
-    setNoInput(noInput !== "" ? displayBN(noInputBN) : "")
+    setNoInput(noInput !== "" ? displayBN(noInputBN) : "") */
   }
 
   return (
@@ -147,7 +147,7 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
                 className={`
                   block w-full pl-7 pr-12 sm:text-sm border-lime-300 rounded-md bg-lime-100 text-lime-500 placeholder:text-lime-400
                 `}
-                onChange={(e) => {
+                /* onChange={(e) => {
                   const value = new BN(
                     parseFloat(e.target.value) * 10 ** COLLATERAL_DECIMALS
                   )
@@ -156,7 +156,7 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
                   )
                   setYesInput(e.target.value)
                   setNoInput(e.target.value !== "" ? noInput : "")
-                }}
+                }} */
                 placeholder="0.00"
                 aria-describedby="price-currency"
                 value={yesInput}
@@ -182,14 +182,14 @@ export function Swap({ marketAddress }: { marketAddress: PublicKey }) {
                 aria-describedby="price-currency"
                 value={noInput}
                 onChange={(e) => {
-                  const value = new BN(
+                  /* const value = new BN(
                     parseFloat(e.target.value) * 10 ** COLLATERAL_DECIMALS
                   )
                   const yesInput = displayBN(
                     divOdds(timesOdds(value, 1 - odds), odds)
                   )
                   setYesInput(e.target.value !== "" ? yesInput : "")
-                  setNoInput(e.target.value)
+                  setNoInput(e.target.value) */
                 }}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

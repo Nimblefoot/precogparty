@@ -1,32 +1,28 @@
-export {
-  createMarket,
-  CreateMarketArgs,
-  CreateMarketAccounts,
-} from "./createMarket"
-export {
-  mintContingentSet,
+export { createMarket } from "./createMarket"
+export type { CreateMarketArgs, CreateMarketAccounts } from "./createMarket"
+export { mintContingentSet } from "./mintContingentSet"
+export type {
   MintContingentSetArgs,
   MintContingentSetAccounts,
 } from "./mintContingentSet"
-export {
-  mergeContingentSet,
+export { mergeContingentSet } from "./mergeContingentSet"
+export type {
   MergeContingentSetArgs,
   MergeContingentSetAccounts,
 } from "./mergeContingentSet"
-export {
-  redeemContingentCoin,
+export { redeemContingentCoin } from "./redeemContingentCoin"
+export type {
   RedeemContingentCoinArgs,
   RedeemContingentCoinAccounts,
 } from "./redeemContingentCoin"
-export {
-  resolveMarket,
-  ResolveMarketArgs,
-  ResolveMarketAccounts,
-} from "./resolveMarket"
-export {
-  updateMarketDescription,
+export { resolveMarket } from "./resolveMarket"
+export type { ResolveMarketArgs, ResolveMarketAccounts } from "./resolveMarket"
+export { updateMarketDescription } from "./updateMarketDescription"
+export type {
   UpdateMarketDescriptionArgs,
   UpdateMarketDescriptionAccounts,
 } from "./updateMarketDescription"
-export { initMarketList, InitMarketListAccounts } from "./initMarketList"
-export { listMarket, ListMarketAccounts } from "./listMarket"
+export { initMarketList } from "./initMarketList"
+export type { InitMarketListAccounts } from "./initMarketList"
+export { listMarket } from "./listMarket"
+export type { ListMarketAccounts } from "./listMarket"
