@@ -154,7 +154,7 @@ describe("orderbook", async () => {
     await program.methods
       .initializeOrderbook(orderbookId)
       .accounts({
-        admin: provider.wallet.publicKey,
+        admin: admin.publicKey,
         applesMint,
         applesVault,
         orangesMint,
@@ -162,6 +162,7 @@ describe("orderbook", async () => {
         // orderbookInfo, //derivable from seeds
         firstPage: firstPageAddress,
       })
+      .signers([admin])
       .rpc()
   })
 
@@ -512,8 +513,81 @@ describe("orderbook", async () => {
       },
       { buyOrderForApples: true, numOranges: "2000000", numApples: "2000000" },
     ])
+  })
 
-    assert
+  it("closes an orderbook. Taking is blocked but you can still cancel.", async () => {
+    await program.methods
+      .closeOrderbook()
+      .accounts({
+        admin: admin.publicKey,
+        orderbookInfo: orderbookInfoAddress,
+      })
+      .signers([admin])
+      .rpc()
+
+    const [firstPageKey] = await PublicKey.findProgramAddress(
+      [
+        orderbookId.toBytes(),
+        utf8.encode("page"),
+        new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
+
+    await program.methods
+      .takeOrder(
+        {
+          user: user.publicKey,
+          numApples: new anchor.BN(3e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(3e6),
+        },
+        new anchor.BN(2e6),
+        0,
+        0
+      )
+      .accounts({
+        taker: admin.publicKey,
+        takerSendingAta: adminOrangesATA,
+        takerReceivingAta: adminApplesATA,
+        offererUserAccount: userAccountAddress,
+        offererReceivingAta: userOrangesATA,
+        vault: applesVault,
+        orderbookInfo: orderbookInfoAddress,
+        orderPage: firstPageKey,
+        lastPage: firstPageKey,
+      })
+      .signers([admin])
+      .rpc({
+        skipPreflight: true,
+      })
+      .catch(
+        (e) =>
+          "should not be able to take orders after the orderbook is closed!"
+      )
+
+    await program.methods
+      .cancelOrder(
+        {
+          user: user.publicKey,
+          numApples: new anchor.BN(3e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(3e6),
+        },
+        0,
+        0
+      )
+      .accounts({
+        user: user.publicKey,
+        userAccount: userAccountAddress,
+        userAta: userApplesATA,
+        vault: applesVault,
+        orderbookInfo: orderbookInfoAddress,
+        orderPage: firstPageKey,
+        lastPage: firstPageKey,
+      })
+      .signers([user])
+      .rpc()
   })
 
   it("checks security assumption hold", async () => {

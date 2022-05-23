@@ -253,9 +253,7 @@ pub mod syrup {
     pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
 
         let order_data: Order = ctx.accounts.order_page.get(index);
-        if ctx.accounts.orderbook_info.is_closed() {
-            return err!(ErrorCode::OrderbookClosed);
-        } else if order_data != order {
+        if order_data != order {
             return err!(ErrorCode::WrongOrder);
         } else if ctx.accounts.user.key() != order_data.user {
             return err!(ErrorCode::IncorrectUser);
