@@ -7,16 +7,13 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import { useWallet } from "@solana/wallet-adapter-react"
 
 /* This example requires Tailwind CSS v2.0+ */
-import { Fragment, useReducer, useState } from "react"
+import { Fragment, useState } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import {
-  CalendarIcon,
-  ChartBarIcon,
-  FolderIcon,
-  HomeIcon,
-  InboxIcon,
+  CollectionIcon,
   MenuIcon,
-  UsersIcon,
+  PlusCircleIcon,
+  TrendingUpIcon,
   XIcon,
 } from "@heroicons/react/outline"
 import Providers from "./providers"
@@ -24,16 +21,16 @@ import { useRouter } from "next/router"
 import Link from "next/link"
 
 const navigation = [
-  { name: "Home", href: "#", icon: HomeIcon },
+  //{ name: "Home", href: "#", icon: HomeIcon },
   {
     name: "Markets",
     href: "/markets/browse",
-    icon: ChartBarIcon,
+    icon: CollectionIcon,
   },
-  { name: "New", href: "/markets/new", icon: ChartBarIcon },
+  { name: "New", href: "/markets/new", icon: PlusCircleIcon },
 
-  { name: "Positions", href: "/positions", icon: FolderIcon },
-  { name: "About", href: "#", icon: CalendarIcon },
+  { name: "Positions", href: "/positions", icon: TrendingUpIcon },
+  // { name: "About", href: "#", icon: CalendarIcon },
 ]
 
 function classNames(...classes: string[]) {
