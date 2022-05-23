@@ -1,4 +1,4 @@
-import { ChevronRightIcon, StarIcon } from "@heroicons/react/solid";
+import { ChevronRightIcon, StarIcon } from "@heroicons/react/solid"
 
 export default function Example() {
   return (
@@ -17,7 +17,7 @@ export default function Example() {
               <div>
                 <a href="#" className="inline-flex space-x-4">
                   <span className="rounded bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 tracking-wide uppercase">
-                    What's new
+                    What is new
                   </span>
                   <span className="inline-flex items-center text-sm font-medium text-indigo-600 space-x-1">
                     <span>Just shipped version 0.1.0</span>
@@ -142,5 +142,5 @@ export default function Example() {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -14,6 +14,8 @@ import TakeOrder from "./Orderbook/TakeOrder"
 import { PlaceExitOrder } from "./Orderbook/PlaceExitOrder"
 import TakeExitOrder from "./Orderbook/TakeExitOrder"
 import { MiniPosition } from "pages/positions/Positions"
+import { useOrderbook } from "./Orderbook/orderbookQueries"
+import { getPercentOdds, order2ui } from "@/utils/orderMath"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -35,6 +37,7 @@ const MarketRouter = () => {
 
 const Market = ({ address, name }: { address: PublicKey; name: string }) => {
   const market = useMarket(address)
+  const book = useOrderbook(address)
 
   return market.data ? (
     <>
@@ -70,6 +73,18 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                           market.data.resolution
                         ]
                       }
+                    </h1>
+                  </div>
+                </div>
+                <div className="w-full flex justify-center">
+                  <div>
+                    <h1 className="text-3xl">
+                      {book.data?.info.tradeLog[0] &&
+                        "Last traded at " +
+                          getPercentOdds(book.data?.info.tradeLog[0]).toFixed(
+                            0
+                          )}
+                      %
                     </h1>
                   </div>
                 </div>

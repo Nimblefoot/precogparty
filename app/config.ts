@@ -24,3 +24,5 @@ export const TAKE_ORDER_COST = 65000
 export const MINT_SET_COST = 65000
 
 export const DEFAULT_COMPUTE_MAX = 200000
+
+export const MARKET_DESCRIPTION_CHARLIMIT = 512
