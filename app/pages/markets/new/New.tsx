@@ -4,13 +4,12 @@ import TransactButton, {
 } from "@/components/TransactButton"
 import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
+import { MARKET_DESCRIPTION_CHARLIMIT } from "config"
 import { useRouter } from "next/router"
 import React, { useEffect, useState } from "react"
 import useCreateMarket from "./hooks/useCreateMarket"
 
-const descriptionMaxLength = parseInt(
-  process.env.NEXT_PUBLIC_MARKET_DESCRIPTION_CHARLIMIT as string
-)
+const descriptionMaxLength = MARKET_DESCRIPTION_CHARLIMIT
 const nameMaxLength = 32
 
 const New = ({}) => {
