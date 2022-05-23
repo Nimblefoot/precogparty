@@ -165,8 +165,6 @@ const TakeOrderPanel = ({ marketAddress }: { marketAddress: PublicKey }) => {
     setUsdcInput("")
   }
 
-  console.log("total offered", totalOffered?.toString())
-
   return (
     <>
       <div className="px-4 py-5 sm:px-6 flex flex-col gap-4 border-b border-gray-200 w-full">
