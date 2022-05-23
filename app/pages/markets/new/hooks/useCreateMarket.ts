@@ -127,7 +127,8 @@ const useCreateMarket = () => {
       )
 
       const txn = new Transaction().add(
-        requestAdditionalBudgetIx(341007),
+        // on devnet the default seems to be the max budget, and using this instruction breaks things ?
+        //requestAdditionalBudgetIx(341007),
         x,
         createBook
       )

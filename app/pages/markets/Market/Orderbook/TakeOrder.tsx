@@ -151,7 +151,8 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
         : []
 
     const txn = new Transaction().add(
-      ...requestMoreCompute,
+      // on devnet the default seems to be the max budget, and using this instruction breaks things ?
+      //...requestMoreCompute,
       ...mintTxn.instructions,
       ...takeIxs
     )

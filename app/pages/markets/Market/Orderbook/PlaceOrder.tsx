@@ -93,8 +93,11 @@ export function PlaceOrderPanel({
     usdcInput,
   ])
 
-  const yesOutput = (parseFloat(usdcInput) / percentOdds).toFixed(2)
-  const noOutput = (parseFloat(usdcInput) / (1 - percentOdds)).toFixed(2)
+  const yesOutput = ((100 * parseFloat(usdcInput)) / percentOdds).toFixed(2)
+  const noOutput = (
+    (100 * parseFloat(usdcInput)) /
+    (100 - percentOdds)
+  ).toFixed(2)
 
   return (
     <>

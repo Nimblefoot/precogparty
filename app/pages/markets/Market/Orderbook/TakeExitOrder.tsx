@@ -177,7 +177,11 @@ const TakeExitOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
         ? [requestAdditionalBudgetIx(computeCost * 1.2)]
         : []
 
-    const txn = new Transaction().add(...requestMoreCompute, ...takeIxs)
+    const txn = new Transaction().add(
+      // on devnet the default seems to be the max budget, and using this instruction breaks things ?
+      //...requestMoreCompute,
+      ...takeIxs
+    )
 
     await callback(txn)
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
