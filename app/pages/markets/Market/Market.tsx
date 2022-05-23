@@ -83,18 +83,17 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
           <div className="mt-4 grid grid-cols-2 gap-4">
             <TakeOrder marketAddress={address} />
             <PlaceOrder marketAddress={address} />
-            <TakeExitOrder marketAddress={address} />
+            <TokenControls address={address} />
           </div>
         </div>
         {/* 2nd column */}
         <div className="grow max-w-xs flex flex-col gap-4">
           {market.data.resolution === 0 && <Resolve market={address} />}
-          <TokenControls address={address} />
         </div>
       </div>
     </>
   ) : (
-    <div>market does not exist</div>
+    <div></div>
   )
 }
 

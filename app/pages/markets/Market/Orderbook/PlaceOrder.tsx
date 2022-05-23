@@ -2,21 +2,14 @@ import {
   StatelessTransactButton,
   useTransact,
 } from "@/components/TransactButton"
-import { PROGRAM_ID } from "@/generated/client/programId"
 import { ui2placeOrderFields } from "@/utils/orderMath"
-import { getAssociatedTokenAddress } from "@solana/spl-token"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
 import clsx from "clsx"
-import {
-  COLLATERAL_DECIMALS,
-  ORDERBOOK_PRICE_RATIO_DECIMALS,
-  Resolution,
-} from "config"
+import { COLLATERAL_DECIMALS, Resolution } from "config"
 import { queryClient } from "pages/providers"
 import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
-import React, { useCallback, useMemo, useRef, useState } from "react"
-import { useMarket } from "../hooks/marketQueries"
+import React, { useCallback, useRef, useState } from "react"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "./orderbookQueries"
 import { PlaceExitOrder } from "./PlaceExitOrder"
