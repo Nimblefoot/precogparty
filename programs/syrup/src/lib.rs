@@ -386,7 +386,11 @@ pub struct PlaceOrder<'info> {
         associated_token::mint = if order.offering_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
     )]
     pub user_ata: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::authority = orderbook_info,
+        associated_token::mint = if order.offering_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
+    )]
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(mut, seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
@@ -409,15 +413,35 @@ pub struct PlaceOrder<'info> {
 pub struct TakeOrder<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::authority = taker,
+        associated_token::mint = if order.offering_apples { orderbook_info.oranges_mint } else { orderbook_info.apples_mint }
+    )]
     pub taker_sending_ata: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::authority = taker,
+        associated_token::mint = if order.offering_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
+    )]
     pub taker_receiving_ata: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
+    #[account(
+        mut, 
+        seeds = ["user-account".as_ref(), order.user.key().as_ref()], 
+        bump
+    )]
     pub offerer_user_account: Box<Account<'info, UserAccount>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::authority = order.user,
+        associated_token::mint = if order.offering_apples { orderbook_info.oranges_mint } else { orderbook_info.apples_mint }
+    )]
     pub offerer_receiving_ata: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::authority = orderbook_info,
+        associated_token::mint = if order.offering_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
+    )]
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
