@@ -7,11 +7,12 @@ import User from "../User"
 import { Resolve } from "./Resolution"
 import { useMarket } from "./hooks/marketQueries"
 import { TokenControls } from "./TokenControls"
-import { PlaceOrderPanel } from "./Orderbook/PlaceOrder"
+import PlaceOrder, { PlaceOrderPanel } from "./Orderbook/PlaceOrder"
 import { Swap } from "./Orderbook/Swap"
 import Orders from "./Orderbook/Orders"
 import TakeOrder from "./Orderbook/TakeOrder"
 import { PlaceExitOrder } from "./Orderbook/PlaceExitOrder"
+import TakeExitOrder from "./Orderbook/TakeExitOrder"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -74,16 +75,19 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
 
                 <p className="mt-4">{market.data.description}</p>
               </div>
+              <div className="px-4 py-5 sm:px-6 ">
+                <Orders marketAddress={address} />
+              </div>
             </div>
           </div>
-          <div className="mt-4">
+          <div className="mt-4 grid grid-cols-2 gap-4">
             <TakeOrder marketAddress={address} />
+            <PlaceOrder marketAddress={address} />
+            <TakeExitOrder marketAddress={address} />
           </div>
         </div>
         {/* 2nd column */}
         <div className="grow max-w-xs flex flex-col gap-4">
-          <PlaceExitOrder marketAddress={address} />
-          <PlaceOrderPanel marketAddress={address} />
           {market.data.resolution === 0 && <Resolve market={address} />}
           <TokenControls address={address} />
         </div>

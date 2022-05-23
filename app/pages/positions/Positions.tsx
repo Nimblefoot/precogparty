@@ -14,7 +14,7 @@ import {
   useOrderbook,
   useOrderbookUserAccount,
 } from "pages/markets/Market/Orderbook/orderbookQueries"
-import { displayBN } from "pages/markets/Market/Orderbook/util"
+import { displayBN } from "@/utils/BNutils"
 import { RedeemButton } from "pages/markets/Market/Redeem"
 import { queryClient } from "pages/providers"
 import { useAllTokenAccounts, useTokenAccount } from "pages/tokenAccountQuery"

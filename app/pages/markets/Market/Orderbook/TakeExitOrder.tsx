@@ -7,7 +7,7 @@ import {
   Resolution,
   TAKE_ORDER_COST,
 } from "config"
-import React, { useMemo, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import Orders from "./Orders"
 import clsx from "clsx"
 import { BN_, order2ui } from "@/utils/orderMath"
@@ -21,12 +21,35 @@ import {
 import useTakeOrder from "./useTakeOrder"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { queryClient } from "pages/providers"
-import { tokenAccountKeys } from "pages/tokenAccountQuery"
+import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
 import { requestAdditionalBudgetIx } from "pages/markets/new/hooks/useCreateMarket"
+import { useResolutionMint } from "./usePlaceOrder"
 
-const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
+export const useSellable = (marketAddress: PublicKey) => {
+  const yesMint = useResolutionMint(marketAddress, "yes")
+  const noMint = useResolutionMint(marketAddress, "no")
+
+  const yesAccount = useTokenAccount(yesMint)
+  const noAccount = useTokenAccount(noMint)
+
+  const sellable = useMemo(
+    () => ({
+      yes: (yesAccount.data?.value.uiAmount ?? 0) > 0,
+      no: (noAccount.data?.value.uiAmount ?? 0) > 0,
+    }),
+    [noAccount.data?.value.uiAmount, yesAccount.data?.value.uiAmount]
+  )
+
+  return sellable
+}
+
+const TakeExitOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const [taking, setTaking] = useState<Resolution>("yes")
-  const [usdcInput, setUsdcInput] = useState<string>("")
+  const selling = taking === "yes" ? "no" : "yes"
+
+  const [positionInput, setPositionInput] = useState<string>("")
+
+  const sellable = useSellable(marketAddress)
 
   const orderbook = useOrderbook(marketAddress)
 
@@ -63,10 +86,10 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
     [relevantOrders, taking]
   )
 
-  const [positionInput, orderInteractions] = useMemo(() => {
-    const value = new BN(parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS)
+  const [usdcOutput, orderInteractions] = useMemo(() => {
+    const value = new BN(parseFloat(positionInput) * 10 ** COLLATERAL_DECIMALS)
 
-    // TODO allow input
+    // TODO allow input while awaiting
     if (!relevantOrders) return [undefined, undefined]
 
     const { total, spent, fundsRemaining, orderInteractions } =
@@ -75,8 +98,15 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
           const { total, fundsRemaining, spent, orderInteractions } = acc
           if (fundsRemaining.lten(0)) return acc
 
+          // How much we can get of Y
           const offering = x.offeringApples ? x.numApples : x.numOranges
-          const cost = x.offeringApples ? x.numOranges : x.numApples
+
+          // What we pay in X to get it
+          const costOfOther = x.offeringApples ? x.numOranges : x.numApples
+
+          // What we pay in X to get USDC
+          const cost = offering.add(costOfOther)
+
           if (cost.lte(fundsRemaining)) {
             return {
               total: total.add(offering),
@@ -84,10 +114,11 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
               spent: spent.add(cost),
               orderInteractions: [
                 ...orderInteractions,
-                { order: x, amountToExchange: cost },
+                { order: x, amountToExchange: costOfOther },
               ],
             }
           } else {
+            // I think this math still works in the position -> usdc case
             const buying = fundsRemaining.mul(offering).div(cost)
             return {
               total: total.add(buying),
@@ -117,14 +148,15 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
       setUsdcInput(e.target.value)
     } */
     return [displayBN(total), orderInteractions] as const
-  }, [relevantOrders, usdcInput])
+  }, [positionInput, relevantOrders])
 
   const takeOrder = useTakeOrder(marketAddress)
-  const mintSet = useMintContingentSet(marketAddress)
   const { callback, status } = useTransact()
 
   const onSubmit = async () => {
     if (!orderInteractions) return
+
+    console.log(orderInteractions)
 
     const txns = await Promise.all(
       orderInteractions.map((x) =>
@@ -139,28 +171,19 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
 
     const takeIxs = txns.flatMap((tx) => tx.instructions)
 
-    const inputAmount = new BN(
-      parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS
-    )
-    const mintTxn = await mintSet({ amount: inputAmount })
-
-    const computeCost = MINT_SET_COST + takeIxs.length * TAKE_ORDER_COST
+    const computeCost = takeIxs.length * TAKE_ORDER_COST
     const requestMoreCompute =
       computeCost > DEFAULT_COMPUTE_MAX * 0.9
         ? [requestAdditionalBudgetIx(computeCost * 1.2)]
         : []
 
-    const txn = new Transaction().add(
-      ...requestMoreCompute,
-      ...mintTxn.instructions,
-      ...takeIxs
-    )
+    const txn = new Transaction().add(...requestMoreCompute, ...takeIxs)
 
     await callback(txn)
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
     // TODO invalidate the correct keys
     queryClient.invalidateQueries(tokenAccountKeys.all)
-    setUsdcInput("")
+    setPositionInput("")
   }
 
   console.log("total offered", totalOffered?.toString())
@@ -170,13 +193,13 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
       <div className="shadow bg-white rounded-lg">
         <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Take odds
+            Exit odds
           </h3>
         </div>
         <div className="px-4 py-5 sm:px-6 flex flex-col gap-4 border-b border-gray-200 w-full">
           <div
             className={`
-              flex gap-2 content-center flex-col
+              flex gap-2 content-center flex-col-reverse
             `}
           >
             <div className="flex gap-2">
@@ -195,10 +218,8 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                   className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
                   placeholder="0.00"
                   aria-describedby="price-currency"
-                  value={usdcInput}
-                  onChange={(e) => {
-                    setUsdcInput(e.target.value)
-                  }}
+                  value={usdcOutput}
+                  readOnly
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <span
@@ -212,7 +233,7 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
             </div>
 
             {/* little splitter art :-) */}
-            <Splitty resolution={taking} />
+            <Splitty resolution={taking} flip />
             <div className="flex gap-2 w-full">
               {(["yes", "no"] as const).map((resolution) => {
                 return (
@@ -223,14 +244,17 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                       resolution === "yes"
                         ? "border-lime-300 bg-lime-100"
                         : "border-rose-300 bg-rose-100",
-                      taking === resolution ? "grow" : "grow-0"
+                      selling == resolution ? "grow" : "grow-0",
+                      !sellable[resolution] && "hidden"
                     )}
-                    onClick={() => setTaking(resolution)}
+                    onClick={() =>
+                      setTaking(resolution === "yes" ? "no" : "yes")
+                    }
                   >
                     <div
                       className={clsx(
                         "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none",
-                        taking !== resolution && "hidden"
+                        selling !== resolution && "hidden"
                       )}
                     >
                       <span
@@ -250,23 +274,23 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                       min="0"
                       //max={totalOffered?.toString()}
                       className={clsx(
-                        "block w-full pl-7 pr-12 sm:text-sm border-0 rounded-md ",
+                        "block w-full pl-7 pr-12 sm:text-sm border-0 rounded-md",
                         resolution === "yes"
                           ? "bg-lime-100 text-lime-500 placeholder:text-lime-400"
                           : "bg-rose-100 text-rose-500 placeholder:text-rose-400",
-                        taking === resolution ? "" : "opacity-50 hidden"
+                        selling === resolution ? "" : "opacity-50 hidden"
                       )}
                       placeholder="0.00"
                       aria-describedby="price-currency"
-                      value={positionInput ?? ""}
-                      readOnly
+                      value={positionInput}
+                      onChange={(e) => setPositionInput(e.target.value)}
                     />
                     <div
                       className={clsx(
                         "flex items-center pointer-events-none",
-                        taking === resolution
+                        selling === resolution
                           ? "absolute inset-y-0 right-0 pr-3"
-                          : "mx-5 h-full"
+                          : "mx-5 h-full w-full"
                       )}
                     >
                       <span
@@ -278,7 +302,7 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
                         )}
                         id="price-currency"
                       >
-                        {resolution !== taking && "Buy "}
+                        {resolution !== selling && "Buy "}
                         {resolution.toUpperCase()}
                       </span>
                     </div>
@@ -294,7 +318,7 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
             verb={"Take Order"}
             onClick={onSubmit}
             className="w-full"
-            disabled={usdcInput === ""}
+            disabled={positionInput === ""}
           />
         </div>
       </div>
@@ -302,4 +326,4 @@ const TakeOrder = ({ marketAddress }: { marketAddress: PublicKey }) => {
   )
 }
 
-export default TakeOrder
+export default TakeExitOrder

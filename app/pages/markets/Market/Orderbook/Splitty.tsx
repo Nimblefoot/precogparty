@@ -1,8 +1,19 @@
 import { Resolution } from "config"
 import React from "react"
-export function Splitty({ resolution }: { resolution: Resolution }) {
+export function Splitty({
+  resolution,
+  flip,
+}: {
+  resolution: Resolution
+  flip?: true
+}) {
   return (
-    <div className="grid grid-cols-2 w-[50%] self-center">
+    <div
+      className="grid grid-cols-2 w-[50%] self-center"
+      style={{
+        transform: flip ? "rotateX(-180deg)" : "",
+      }}
+    >
       <div
         className={`border-r border-b rounded-br-md ml-2 mb-[-1px] mr-[-0.5px] h-2
                 ${
