@@ -1,7 +1,7 @@
 import { PublicKey, Connection } from "@solana/web3.js"
-import BN from "bn.js"
-import * as borsh from "@project-serum/borsh"
-import * as types from "../types"
+import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import { PROGRAM_ID } from "../programId"
 
 export interface UserAccountFields {
@@ -48,6 +48,24 @@ export class UserAccount {
     }
 
     return this.decode(info.data)
+  }
+
+  static async fetchMultiple(
+    c: Connection,
+    addresses: PublicKey[]
+  ): Promise<Array<UserAccount | null>> {
+    const infos = await c.getMultipleAccountsInfo(addresses)
+
+    return infos.map((info) => {
+      if (info === null) {
+        return null
+      }
+      if (!info.owner.equals(PROGRAM_ID)) {
+        throw new Error("account doesn't belong to this program")
+      }
+
+      return this.decode(info.data)
+    })
   }
 
   static decode(data: Buffer): UserAccount {

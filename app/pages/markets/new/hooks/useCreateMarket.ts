@@ -132,7 +132,7 @@ const useCreateMarket = () => {
       )
 
       const txn = new Transaction().add(
-        requestAdditionalBudgetIx(341007),
+        // requestAdditionalBudgetIx(341007),
         x,
         createBook
       )

@@ -3,39 +3,34 @@ import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as borsh from "@project-serum/borsh"
 
-export interface OrderRecordFields {
-  market: PublicKey
+export interface TradeRecordFields {
   numApples: BN
-  offeringApples: boolean
+  buyOrderForApples: boolean
   numOranges: BN
 }
 
-export interface OrderRecordJSON {
-  market: string
+export interface TradeRecordJSON {
   numApples: string
-  offeringApples: boolean
+  buyOrderForApples: boolean
   numOranges: string
 }
 
-export class OrderRecord {
-  readonly market: PublicKey
+export class TradeRecord {
   readonly numApples: BN
-  readonly offeringApples: boolean
+  readonly buyOrderForApples: boolean
   readonly numOranges: BN
 
-  constructor(fields: OrderRecordFields) {
-    this.market = fields.market
+  constructor(fields: TradeRecordFields) {
     this.numApples = fields.numApples
-    this.offeringApples = fields.offeringApples
+    this.buyOrderForApples = fields.buyOrderForApples
     this.numOranges = fields.numOranges
   }
 
   static layout(property?: string) {
     return borsh.struct(
       [
-        borsh.publicKey("market"),
         borsh.u64("numApples"),
-        borsh.bool("offeringApples"),
+        borsh.bool("buyOrderForApples"),
         borsh.u64("numOranges"),
       ],
       property
@@ -44,42 +39,38 @@ export class OrderRecord {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static fromDecoded(obj: any) {
-    return new OrderRecord({
-      market: obj.market,
+    return new TradeRecord({
       numApples: obj.numApples,
-      offeringApples: obj.offeringApples,
+      buyOrderForApples: obj.buyOrderForApples,
       numOranges: obj.numOranges,
     })
   }
 
-  static toEncodable(fields: OrderRecordFields) {
+  static toEncodable(fields: TradeRecordFields) {
     return {
-      market: fields.market,
       numApples: fields.numApples,
-      offeringApples: fields.offeringApples,
+      buyOrderForApples: fields.buyOrderForApples,
       numOranges: fields.numOranges,
     }
   }
 
-  toJSON(): OrderRecordJSON {
+  toJSON(): TradeRecordJSON {
     return {
-      market: this.market.toString(),
       numApples: this.numApples.toString(),
-      offeringApples: this.offeringApples,
+      buyOrderForApples: this.buyOrderForApples,
       numOranges: this.numOranges.toString(),
     }
   }
 
-  static fromJSON(obj: OrderRecordJSON): OrderRecord {
-    return new OrderRecord({
-      market: new PublicKey(obj.market),
+  static fromJSON(obj: TradeRecordJSON): TradeRecord {
+    return new TradeRecord({
       numApples: new BN(obj.numApples),
-      offeringApples: obj.offeringApples,
+      buyOrderForApples: obj.buyOrderForApples,
       numOranges: new BN(obj.numOranges),
     })
   }
 
   toEncodable() {
-    return OrderRecord.toEncodable(this)
+    return TradeRecord.toEncodable(this)
   }
 }

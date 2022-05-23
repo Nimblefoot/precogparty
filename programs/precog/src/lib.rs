@@ -10,7 +10,7 @@ use anchor_spl::{
     token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer},
 };
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("A5CJyMtyLKbXBphXphCAiRCY1TEFfXzsLJ65oNpYSrn2");
 
 // Actually this should just depend on the collateral's decimals
 const TOKEN_DECIMALS: u8 = 6;

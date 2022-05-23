@@ -3,8 +3,8 @@ seeds = true
 init_if_needed = true
 
 [programs.localnet]
-precog = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-syrup = "7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK"
+precog = "A5CJyMtyLKbXBphXphCAiRCY1TEFfXzsLJ65oNpYSrn2"
+syrup = "GXDLaLKoGyCPqWJrSEmt4eTZRjWDBCFSXyWCRtBM3uGy"
 
 [registry]
 url = "https://anchor.projectserum.com"

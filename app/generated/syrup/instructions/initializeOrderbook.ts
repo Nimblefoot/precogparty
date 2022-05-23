@@ -1,11 +1,11 @@
-import { PublicKey, TransactionInstruction } from "@solana/web3.js"
-import BN from "bn.js"
-import * as borsh from "@project-serum/borsh"
-import * as types from "../types"
+import { TransactionInstruction, PublicKey } from "@solana/web3.js" // eslint-disable-line @typescript-eslint/no-unused-vars
+import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import { PROGRAM_ID } from "../programId"
 
 export interface InitializeOrderbookArgs {
-  name: PublicKey
+  id: PublicKey
 }
 
 export interface InitializeOrderbookAccounts {
@@ -22,7 +22,7 @@ export interface InitializeOrderbookAccounts {
   systemProgram: PublicKey
 }
 
-export const layout = borsh.struct([borsh.publicKey("name")])
+export const layout = borsh.struct([borsh.publicKey("id")])
 
 export function initializeOrderbook(
   args: InitializeOrderbookArgs,
@@ -49,7 +49,7 @@ export function initializeOrderbook(
   const buffer = Buffer.alloc(1000)
   const len = layout.encode(
     {
-      name: args.name,
+      id: args.id,
     },
     buffer
   )
