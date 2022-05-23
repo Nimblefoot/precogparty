@@ -1,7 +1,5 @@
-// use std::mem::size_of;
-
 use crate::error::ErrorCode;
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::clock::NUM_CONSECUTIVE_LEADER_SLOTS};
 
 #[cfg(feature = "orderbook-page-small-size")]
 const MAX_SIZE: usize = 3;
@@ -20,16 +18,19 @@ pub struct Order {
 #[account]
 #[derive(Default)]
 pub struct OrderbookInfo {
-    pub admin: Pubkey,        // 32
-    pub length: u32,          // 4
-    pub apples_mint: Pubkey,  // 32
-    pub oranges_mint: Pubkey, // 32
-    pub bump: u8,             // 1
-    pub id: Pubkey,           // 32
+    pub admin: Pubkey,         // 32
+    pub length: u32,           // 4
+    pub apples_mint: Pubkey,   // 32
+    pub oranges_mint: Pubkey,  // 32
+    pub bump: u8,              // 1
+    pub id: Pubkey,            // 32
+    pub trade_log: Vec<Order>, // 49 x 5 = 160
 }
 
+const TRADE_LOG_LENGTH: usize = 5;
+
 impl OrderbookInfo {
-    pub const LEN: usize = (32 * 4) + 4 + 1;
+    pub const LEN: usize = (32 * 4) + 49 * TRADE_LOG_LENGTH + 4 + 1;
 
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
@@ -41,6 +42,25 @@ impl OrderbookInfo {
 
     pub fn next_open_page(&self) -> u32 {
         (self.length) / (MAX_SIZE as u32)
+    }
+
+    pub fn add_trade_to_log(&mut self, order: Order) {
+        if self.trade_log.len() == TRADE_LOG_LENGTH {
+            self.trade_log.remove(0);
+        }
+        self.trade_log.push(order);
+    }
+
+    pub fn last_trade(&self) -> Option<&Order> {
+        self.trade_log.last()
+    }
+
+    pub fn last_trades(&self) -> Vec<Order> {
+        let mut trades = self.trade_log.clone();
+
+        trades.reverse();
+
+        trades
     }
 }
 

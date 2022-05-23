@@ -173,6 +173,8 @@ pub mod syrup {
             return err!(ErrorCode::SizeTooLarge);
         } else if vault_mint != ctx.accounts.vault.mint {
             return err!(ErrorCode::WrongVault);
+        } else if amount_to_exchange < 1 {
+            return err!(ErrorCode::OrderTooSmall);
         }
 
         let last_page = &mut ctx.accounts.last_page; 
@@ -213,11 +215,29 @@ pub mod syrup {
 
         if amount_to_exchange == maximum_taker_payment {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
-        } else if (last_page.key() == order_page.key()) {
+        } else if last_page.key() == order_page.key() {
             edit_order(index, new_num_apples, new_num_oranges, last_page, offerer_user_account)?;
         } else {
             edit_order(index, new_num_apples, new_num_oranges, order_page, offerer_user_account)?;
         }
+
+        // add to trade record
+        let trade_record: Order = if order.offering_apples {
+            Order {
+                user: ctx.accounts.taker.key(),
+                offering_apples: true,
+                num_apples: amount_to_exchange,
+                num_oranges: vault_outgoing_amount
+            }
+        } else {
+            Order {
+                user: ctx.accounts.taker.key(),
+                offering_apples: true,
+                num_apples: vault_outgoing_amount,
+                num_oranges: amount_to_exchange
+            }
+        };
+        ctx.accounts.orderbook_info.add_trade_to_log(trade_record);
 
         Ok(())
     }
