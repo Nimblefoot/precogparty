@@ -96,7 +96,9 @@ pub mod syrup {
     }
 
     pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
-        if order.user != ctx.accounts.user.key() {
+        if ctx.accounts.orderbook_info.is_closed() {
+            return err!(ErrorCode::OrderbookClosed);
+        } else if order.user != ctx.accounts.user.key() {
             return err!(ErrorCode::IncorrectUser);
         };
 
@@ -140,6 +142,10 @@ pub mod syrup {
 
     #[allow(unused_variables)] 
     pub fn take_order(ctx: Context<TakeOrder>, order: Order, amount_to_exchange: u64, page_number: u32, index: u32) -> Result<()> {
+        if ctx.accounts.orderbook_info.is_closed() {
+            return err!(ErrorCode::OrderbookClosed);
+        }
+
         let order_data: Order = ctx.accounts.order_page.get(index);
 
         // set new num_apples and new_num_oranges and determine vault outgoing
@@ -246,7 +252,9 @@ pub mod syrup {
     pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
 
         let order_data: Order = ctx.accounts.order_page.get(index);
-        if order_data != order {
+        if ctx.accounts.orderbook_info.is_closed() {
+            return err!(ErrorCode::OrderbookClosed);
+        } else if order_data != order {
             return err!(ErrorCode::WrongOrder);
         } else if ctx.accounts.user.key() != order_data.user {
             return err!(ErrorCode::IncorrectUser);
@@ -286,6 +294,16 @@ pub mod syrup {
         )?;
 
         delete_order(index, last_page, order_page, user_account, orderbook_length)?;
+
+        Ok(())
+    }
+
+    pub fn close_orderbook(ctx: Context<CloseOrderbook>) -> Result<()> {
+        if ctx.accounts.orderbook_info.is_closed() {
+            return err!(ErrorCode::OrderbookClosed);
+        }
+
+        ctx.accounts.orderbook_info.close_orderbook();
 
         Ok(())
     }
@@ -459,4 +477,19 @@ pub struct CancelOrder<'info> {
     )]
     pub last_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct CloseOrderbook<'info> {
+    #[account(
+        mut,
+        address = orderbook_info.admin
+    )]
+    pub admin: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], 
+        bump
+    )]
+    pub orderbook_info: Account<'info, OrderbookInfo>,
 }

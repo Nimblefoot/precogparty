@@ -30,6 +30,7 @@ pub struct OrderbookInfo {
     pub apples_mint: Pubkey,         // 32
     pub oranges_mint: Pubkey,        // 32
     pub bump: u8,                    // 1
+    closed: bool,                    // 1
     pub id: Pubkey,                  // 32
     pub trade_log: Vec<TradeRecord>, // 17 x MAX_SIZE = 160
 }
@@ -37,7 +38,7 @@ pub struct OrderbookInfo {
 const TRADE_LOG_LENGTH: usize = 5;
 
 impl OrderbookInfo {
-    pub const LEN: usize = (32 * 4) + 17 * TRADE_LOG_LENGTH + 32 + 4 + 1;
+    pub const LEN: usize = (32 * 4) + 17 * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
 
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
@@ -56,6 +57,14 @@ impl OrderbookInfo {
             self.trade_log.remove(0);
         }
         self.trade_log.push(record);
+    }
+
+    pub fn is_closed(&self) -> bool {
+        self.closed
+    }
+
+    pub fn close_orderbook(&mut self) {
+        self.closed = true;
     }
 }
 

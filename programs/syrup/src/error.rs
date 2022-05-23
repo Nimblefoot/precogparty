@@ -23,6 +23,9 @@ pub enum ErrorCode {
     #[msg("Vaults dont match")]
     WrongVault,
 
+    #[msg("Orderbook Closed")]
+    OrderbookClosed,
+
     #[msg("Orderbook page orderbook name already set")]
     OrderbookNameAlreadySet,
 
