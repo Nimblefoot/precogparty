@@ -30,7 +30,7 @@ export const useTransact = () => {
     console.log(txn)
     try {
       const sig = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: true,
+        //skipPreflight: true,
       })
 
       console.log("sent tx", sig)

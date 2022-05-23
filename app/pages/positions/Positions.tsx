@@ -151,6 +151,41 @@ const Positions = ({}) => {
 
 export default Positions
 
+export const MiniPosition = ({
+  marketAddress,
+}: {
+  marketAddress: PublicKey
+}) => {
+  const yesMint = useResolutionMint(marketAddress, "yes")
+  const noMint = useResolutionMint(marketAddress, "no")
+  const yesAccount = useTokenAccount(yesMint)
+  const noAccount = useTokenAccount(noMint)
+  const yesAmount =
+    yesAccount.data?.value &&
+    yesAccount.data.value.uiAmount !== null &&
+    yesAccount.data.value.uiAmount > 0 &&
+    yesAccount.data.value.uiAmount
+  const noAmount =
+    noAccount.data?.value &&
+    noAccount.data.value.uiAmount !== null &&
+    noAccount.data.value.uiAmount > 0 &&
+    noAccount.data.value.uiAmount
+
+  return (
+    <div className="shadow bg-white rounded-lg">
+      <div
+        className={`
+        whitespace-nowrap px-3 py-4 font-med
+      `}
+      >
+        {yesAmount && <span className="text-lime-700">${yesAmount} YES</span>}
+        {yesAmount && noAmount && <>{",  "}</>}
+        {noAmount && <span className="text-rose-700">${noAmount} NO</span>}
+      </div>
+    </div>
+  )
+}
+
 function Position({
   marketAddress,
   yesMint,

@@ -1,2 +1,6 @@
-export { Order, OrderFields, OrderJSON } from "./Order"
-export { OrderRecord, OrderRecordFields, OrderRecordJSON } from "./OrderRecord"
+export { Order } from "./Order"
+export type { OrderFields, OrderJSON } from "./Order"
+export { TradeRecord } from "./TradeRecord"
+export type { TradeRecordFields, TradeRecordJSON } from "./TradeRecord"
+export { OrderRecord } from "./OrderRecord"
+export type { OrderRecordFields, OrderRecordJSON } from "./OrderRecord"

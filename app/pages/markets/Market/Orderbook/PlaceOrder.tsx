@@ -2,21 +2,14 @@ import {
   StatelessTransactButton,
   useTransact,
 } from "@/components/TransactButton"
-import { PROGRAM_ID } from "@/generated/client/programId"
 import { ui2placeOrderFields } from "@/utils/orderMath"
-import { getAssociatedTokenAddress } from "@solana/spl-token"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
 import clsx from "clsx"
-import {
-  COLLATERAL_DECIMALS,
-  ORDERBOOK_PRICE_RATIO_DECIMALS,
-  Resolution,
-} from "config"
+import { COLLATERAL_DECIMALS, Resolution } from "config"
 import { queryClient } from "pages/providers"
 import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
-import React, { useCallback, useMemo, useRef, useState } from "react"
-import { useMarket } from "../hooks/marketQueries"
+import React, { useCallback, useRef, useState } from "react"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "./orderbookQueries"
 import { PlaceExitOrder } from "./PlaceExitOrder"
@@ -93,8 +86,11 @@ export function PlaceOrderPanel({
     usdcInput,
   ])
 
-  const yesOutput = (parseFloat(usdcInput) / percentOdds).toFixed(2)
-  const noOutput = (parseFloat(usdcInput) / (1 - percentOdds)).toFixed(2)
+  const yesOutput = ((100 * parseFloat(usdcInput)) / percentOdds).toFixed(2)
+  const noOutput = (
+    (100 * parseFloat(usdcInput)) /
+    (100 - percentOdds)
+  ).toFixed(2)
 
   return (
     <>

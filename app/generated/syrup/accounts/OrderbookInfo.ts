@@ -1,7 +1,7 @@
 import { PublicKey, Connection } from "@solana/web3.js"
-import BN from "bn.js"
-import * as borsh from "@project-serum/borsh"
-import * as types from "../types"
+import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import { PROGRAM_ID } from "../programId"
 
 export interface OrderbookInfoFields {
@@ -10,7 +10,8 @@ export interface OrderbookInfoFields {
   applesMint: PublicKey
   orangesMint: PublicKey
   bump: number
-  name: PublicKey
+  id: PublicKey
+  tradeLog: Array<types.TradeRecordFields>
 }
 
 export interface OrderbookInfoJSON {
@@ -19,7 +20,8 @@ export interface OrderbookInfoJSON {
   applesMint: string
   orangesMint: string
   bump: number
-  name: string
+  id: string
+  tradeLog: Array<types.TradeRecordJSON>
 }
 
 export class OrderbookInfo {
@@ -28,7 +30,8 @@ export class OrderbookInfo {
   readonly applesMint: PublicKey
   readonly orangesMint: PublicKey
   readonly bump: number
-  readonly name: PublicKey
+  readonly id: PublicKey
+  readonly tradeLog: Array<types.TradeRecord>
 
   static readonly discriminator = Buffer.from([
     126, 118, 193, 78, 125, 233, 132, 90,
@@ -40,7 +43,8 @@ export class OrderbookInfo {
     borsh.publicKey("applesMint"),
     borsh.publicKey("orangesMint"),
     borsh.u8("bump"),
-    borsh.publicKey("name"),
+    borsh.publicKey("id"),
+    borsh.vec(types.TradeRecord.layout(), "tradeLog"),
   ])
 
   constructor(fields: OrderbookInfoFields) {
@@ -49,7 +53,10 @@ export class OrderbookInfo {
     this.applesMint = fields.applesMint
     this.orangesMint = fields.orangesMint
     this.bump = fields.bump
-    this.name = fields.name
+    this.id = fields.id
+    this.tradeLog = fields.tradeLog.map(
+      (item) => new types.TradeRecord({ ...item })
+    )
   }
 
   static async fetch(
@@ -68,6 +75,24 @@ export class OrderbookInfo {
     return this.decode(info.data)
   }
 
+  static async fetchMultiple(
+    c: Connection,
+    addresses: PublicKey[]
+  ): Promise<Array<OrderbookInfo | null>> {
+    const infos = await c.getMultipleAccountsInfo(addresses)
+
+    return infos.map((info) => {
+      if (info === null) {
+        return null
+      }
+      if (!info.owner.equals(PROGRAM_ID)) {
+        throw new Error("account doesn't belong to this program")
+      }
+
+      return this.decode(info.data)
+    })
+  }
+
   static decode(data: Buffer): OrderbookInfo {
     if (!data.slice(0, 8).equals(OrderbookInfo.discriminator)) {
       throw new Error("invalid account discriminator")
@@ -81,7 +106,10 @@ export class OrderbookInfo {
       applesMint: dec.applesMint,
       orangesMint: dec.orangesMint,
       bump: dec.bump,
-      name: dec.name,
+      id: dec.id,
+      tradeLog: dec.tradeLog.map((item: any) =>
+        types.TradeRecord.fromDecoded(item)
+      ),
     })
   }
 
@@ -92,7 +120,8 @@ export class OrderbookInfo {
       applesMint: this.applesMint.toString(),
       orangesMint: this.orangesMint.toString(),
       bump: this.bump,
-      name: this.name.toString(),
+      id: this.id.toString(),
+      tradeLog: this.tradeLog.map((item) => item.toJSON()),
     }
   }
 
@@ -103,7 +132,8 @@ export class OrderbookInfo {
       applesMint: new PublicKey(obj.applesMint),
       orangesMint: new PublicKey(obj.orangesMint),
       bump: obj.bump,
-      name: new PublicKey(obj.name),
+      id: new PublicKey(obj.id),
+      tradeLog: obj.tradeLog.map((item) => types.TradeRecord.fromJSON(item)),
     })
   }
 }

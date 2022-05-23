@@ -15,6 +15,8 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount}
 };
 
+declare_id!("GXDLaLKoGyCPqWJrSEmt4eTZRjWDBCFSXyWCRtBM3uGy");
+
 pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
     let order_data = order_page.get(index);
     let orderbook_id = order_page.orderbook_id.clone();
@@ -63,7 +65,6 @@ pub fn edit_order(index: u32, new_num_apples: u64, new_num_oranges: u64, order_p
     Ok(())
 }
 
-declare_id!("7v8HDDmpuZ3oLMHEN2PmKrMAGTLLUnfRdZtFt5R2F3gK");
 
 #[program]
 pub mod syrup {

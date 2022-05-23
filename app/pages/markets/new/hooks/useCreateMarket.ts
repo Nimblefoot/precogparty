@@ -2,7 +2,6 @@ import { useCallback } from "react"
 import { createMarket } from "@/generated/client/instructions"
 import { PROGRAM_ID } from "@/generated/client/programId"
 import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
-import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import {
   PublicKey,
   SystemProgram,
@@ -12,7 +11,6 @@ import {
 } from "@solana/web3.js"
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  AuthorityType,
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token"
@@ -31,9 +29,6 @@ export const requestAdditionalBudgetIx = (budget: number) => {
 }
 
 const useCreateMarket = () => {
-  const { wallet, publicKey } = useWallet()
-  const x = useConnection()
-
   const callback = useCallback(
     async ({
       name,
@@ -114,7 +109,7 @@ const useCreateMarket = () => {
 
       const createBook = initializeOrderbook(
         {
-          name: marketAccount,
+          id: marketAccount,
         },
         {
           admin: authority,
@@ -132,7 +127,8 @@ const useCreateMarket = () => {
       )
 
       const txn = new Transaction().add(
-        requestAdditionalBudgetIx(341007),
+        // on devnet the default seems to be the max budget, and using this instruction breaks things ?
+        //requestAdditionalBudgetIx(341007),
         x,
         createBook
       )
