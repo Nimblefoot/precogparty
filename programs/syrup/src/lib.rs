@@ -481,9 +481,17 @@ pub struct CancelOrder<'info> {
         bump
     )]
     pub user_account: Box<Account<'info, UserAccount>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::authority = user,
+        associated_token::mint = if order.offering_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
+    )]
     pub user_ata: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::authority = orderbook_info,
+        associated_token::mint = if order.offering_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
+    )]
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut, 
