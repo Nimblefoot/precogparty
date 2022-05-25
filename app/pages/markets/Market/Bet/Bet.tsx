@@ -94,7 +94,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
           px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col
         `}
       >
-        <div>
+        <div data-name="PROBABILITY SLIDER">
           <div className="flex justify-between">
             <div className="flex flex-col justify-end">
               <label className="block text-sm font-medium text-gray-700">
@@ -122,45 +122,40 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
             />
           </div>
         </div>
-        <div className="flex gap-2">
-          {/* USDC input */}
-
-          <div className="w-full">
-            <div className="flex justify-between">
-              <label className="block text-sm font-medium text-gray-700">
-                Your wager
-              </label>
+        <div data-name={"WAGER AMOUNT INPUT"} className="w-full">
+          <div className="flex justify-between">
+            <label className="block text-sm font-medium text-gray-700">
+              Your wager
+            </label>
+          </div>
+          <div className="mt-1 relative rounded-md shadow-sm w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500 sm:text-sm">$</span>
             </div>
-            <div className="mt-1 relative rounded-md shadow-sm w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">$</span>
-              </div>
-              <input
-                ref={inputRef}
-                type="number"
-                step="0.001"
-                min="0"
-                name="price"
-                id="price"
-                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
-                placeholder="0.00"
-                aria-describedby="price-currency"
-                value={usdcInput}
-                onChange={(e) => {
-                  setUsdcInput(e.target.value)
-                }}
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm" id="price-currency">
-                  USDC
-                </span>
-              </div>
+            <input
+              ref={inputRef}
+              type="number"
+              step="0.001"
+              min="0"
+              name="price"
+              id="price"
+              className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
+              placeholder="0.00"
+              aria-describedby="price-currency"
+              value={usdcInput}
+              onChange={(e) => {
+                setUsdcInput(e.target.value)
+              }}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500 sm:text-sm" id="price-currency">
+                USDC
+              </span>
             </div>
           </div>
         </div>
-
         <Splitty resolution={resolution} />
-        <div>
+        <div data-name={"YES/NO SELECTION"}>
           <RadioGroup value={resolution} onChange={setResolution}>
             <div className="bg-white rounded-md -space-x-px flex">
               {RESOLUTIONS.map((r, index) => {
@@ -178,7 +173,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
                             ? "bg-lime-50 border-lime-200 z-10"
                             : "bg-rose-50 border-rose-200 z-10"
                           : "border-gray-200",
-                        "relative border p-4 flex flex-col cursor-pointer md:pl-4 md:pr-6 flex-1 focus:outline-none"
+                        "relative border p-2 flex flex-col cursor-pointer md:pl-4 md:pr-6 flex-1 focus:outline-none"
                       )
                     }
                   >
