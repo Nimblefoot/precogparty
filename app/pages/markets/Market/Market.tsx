@@ -16,6 +16,7 @@ import TakeExitOrder from "./Orderbook/TakeExitOrder"
 import { MiniPosition } from "pages/positions/Positions"
 import { useOrderbook } from "./Orderbook/orderbookQueries"
 import { getPercentOdds, order2ui } from "@/utils/orderMath"
+import BetPanel from "./Bet/Bet"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -97,6 +98,7 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-4">
+            <BetPanel marketAddress={address} />
             <TakeOrder marketAddress={address} />
             <PlaceOrder marketAddress={address} />
             <TokenControls address={address} />
