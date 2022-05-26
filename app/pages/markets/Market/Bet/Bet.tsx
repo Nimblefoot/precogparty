@@ -2,8 +2,14 @@ import {
   StatelessTransactButton,
   useTransact,
 } from "@/components/TransactButton"
+import { displayBN } from "@/utils/BNutils"
 import interpolateOddsColors from "@/utils/interpolateOddsColors"
-import { ui2placeOrderFields } from "@/utils/orderMath"
+import {
+  amountBoughtAtPercentOdds,
+  BN_,
+  order2ui,
+  ui2placeOrderFields,
+} from "@/utils/orderMath"
 import { RadioGroup } from "@headlessui/react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
@@ -11,24 +17,136 @@ import clsx from "clsx"
 import { COLLATERAL_DECIMALS, Resolution } from "config"
 import { queryClient } from "pages/providers"
 import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
-import React, { useCallback, useRef, useState } from "react"
+import React, { useCallback, useMemo, useRef, useState } from "react"
 import useMintContingentSet from "../hooks/useMintContingentSet"
-import { orderbookKeys } from "../Orderbook/orderbookQueries"
+import { orderbookKeys, useOrderbook } from "../Orderbook/orderbookQueries"
 import { PlaceExitOrder } from "../Orderbook/PlaceExitOrder"
 import { Splitty } from "../Orderbook/Splitty"
 import { useSellable } from "../Orderbook/TakeExitOrder"
 import usePlaceOrderTxn, { useResolutionMint } from "../Orderbook/usePlaceOrder"
 
-const RESOLUTIONS = ["yes", "no"] as const
+const useTakeBuyAccounting = (
+  marketAddress: PublicKey,
+  usdcInput: string,
+  taking: Resolution,
+  percentOdds: number
+) => {
+  const orderbook = useOrderbook(marketAddress)
 
-// TODO cool css transitions when switching modes
-// TODO display balances
-export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
-  const [percentOdds, setPercentOdds] = useState<number>(80)
-  const [usdcInput, setUsdcInput] = useState<string>("")
+  // TODO refactor to query
+  const orders = useMemo(
+    () =>
+      orderbook.data?.pages
+        .flatMap((page, i) =>
+          page.list.map((x, k) => ({ ...x, page: i, index: k }))
+        )
+        .map((x) => ({ ...x, odds: order2ui(x).odds }))
+        .sort((a, b) => b.odds - a.odds),
+    [orderbook.data?.pages]
+  )
 
-  const [resolution, setResolution] = useState<Resolution>("yes")
+  const relevantOrders = useMemo(
+    () =>
+      orders
+        ?.filter((x) =>
+          taking === "yes" ? x.offeringApples : !x.offeringApples
+        )
+        .sort((a, b) => (taking === "yes" ? a.odds - b.odds : b.odds - a.odds)),
+    [orders, taking]
+  )
 
+  const [totalSharesRecieved, totalSpend, orderInteractions] = useMemo(() => {
+    const value = new BN(parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS)
+
+    // Odds ratio of YES:NO, times 1000
+    const oddsRatioMilli = new BN(percentOdds * 1000).div(
+      new BN(100 - percentOdds)
+    )
+
+    // TODO allow input
+    if (!relevantOrders) return [undefined, undefined]
+
+    const { total, spent, orderInteractions } = relevantOrders.reduce(
+      (acc, x) => {
+        const { total, fundsRemaining, spent, orderInteractions } = acc
+
+        // if we have no funds left to spend, continue
+        if (fundsRemaining.lten(0)) return acc
+
+        // if the price is not right, continue
+        const orderOddsRatioMilli = x.numOranges
+          .mul(new BN(1000))
+          .div(x.numApples)
+        if (
+          taking === "yes"
+            ? // if we are buying yes then we want the order's odds ratio to be below ours (we only buy if the event is more likely to us than them)
+              orderOddsRatioMilli.gt(oddsRatioMilli)
+            : // if we are buying no then we want the order's odds ratio to be above ours
+              orderOddsRatioMilli.lt(oddsRatioMilli)
+        )
+          return acc
+
+        const offering = x.offeringApples ? x.numApples : x.numOranges
+        const cost = x.offeringApples ? x.numOranges : x.numApples
+
+        if (cost.lte(fundsRemaining)) {
+          return {
+            total: total.add(offering).add(cost),
+            fundsRemaining: fundsRemaining.sub(cost),
+            spent: spent.add(cost),
+            orderInteractions: [
+              ...orderInteractions,
+              { order: x, amountToExchange: cost },
+            ],
+          }
+        } else {
+          const buying = fundsRemaining.mul(offering).div(cost)
+          return {
+            total: total.add(buying).add(fundsRemaining),
+            fundsRemaining: new BN(0),
+            spent: spent.add(fundsRemaining),
+            orderInteractions: [
+              ...orderInteractions,
+              { order: x, amountToExchange: fundsRemaining },
+            ],
+          }
+        }
+      },
+      {
+        total: new BN(0),
+        fundsRemaining: value,
+        spent: new BN(0),
+        orderInteractions: [] as {
+          order: typeof relevantOrders[number]
+          amountToExchange: BN_
+        }[],
+      }
+    )
+    return [total, spent, orderInteractions] as const
+  }, [percentOdds, relevantOrders, taking, usdcInput])
+
+  const priceCents =
+    totalSharesRecieved !== undefined &&
+    totalSpend !== undefined &&
+    totalSharesRecieved.gt(new BN(0)) &&
+    totalSpend.gt(new BN(0))
+      ? totalSpend.mul(new BN(100)).divRound(totalSharesRecieved)
+      : undefined
+
+  return { priceCents, totalSharesRecieved, totalSpend, orderInteractions }
+}
+
+const useSubmitBet = ({
+  marketAddress,
+  usdcInput,
+  percentOdds,
+  resolution,
+}: {
+  marketAddress: PublicKey
+  usdcInput: string
+  percentOdds: number
+  resolution: Resolution
+}) => {
   const yesMint = useResolutionMint(marketAddress, "yes")
   const noMint = useResolutionMint(marketAddress, "no")
 
@@ -38,11 +156,9 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
   const mintSet = useMintContingentSet(marketAddress)
   const buy = usePlaceOrderTxn(marketAddress)
 
-  const inputRef = useRef(null)
-
   const { callback, status } = useTransact()
 
-  const onSubmit = useCallback(async () => {
+  const submit = useCallback(async () => {
     const inputAmount = new BN(
       parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS
     )
@@ -70,7 +186,6 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
     // TODO invalidate the correct keys
     queryClient.invalidateQueries(tokenAccountKeys.all)
-    setUsdcInput("")
   }, [
     buy,
     callback,
@@ -81,15 +196,79 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
     usdcInput,
   ])
 
-  const yesOutput = ((100 * parseFloat(usdcInput)) / percentOdds).toFixed(2)
-  const noOutput = (
-    (100 * parseFloat(usdcInput)) /
-    (100 - percentOdds)
-  ).toFixed(2)
+  return { submit, status }
+}
+
+const useBetAccounting = ({
+  usdcInput,
+  percentOdds,
+  resolution,
+}: {
+  usdcInput: string
+  percentOdds: number
+  resolution: Resolution
+}) => {
+  const inputAmount = new BN(parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS)
+  const positionOutput = amountBoughtAtPercentOdds({
+    percentOdds: resolution === "yes" ? percentOdds : 100 - percentOdds,
+    inputAmount,
+  })
+  return { positionOutput }
+}
+
+const RESOLUTIONS = ["yes", "no"] as const
+
+// TODO cool css transitions when switching modes
+// TODO display balances
+export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
+  const [percentOdds, setPercentOdds] = useState<number>(80)
+  const [usdcInput, setUsdcInput] = useState<string>("")
+  const [resolution, setResolution] = useState<Resolution>("yes")
+
+  const inputRef = useRef(null)
+
+  const { submit, status } = useSubmitBet({
+    percentOdds,
+    usdcInput,
+    resolution,
+    marketAddress,
+  })
+
+  const { totalSharesRecieved, totalSpend, priceCents } = useTakeBuyAccounting(
+    marketAddress,
+    usdcInput,
+    resolution,
+    percentOdds
+  )
+
+  const { positionOutput } = useBetAccounting({
+    usdcInput,
+    percentOdds,
+    resolution,
+  })
+
+  console.log("aa", positionOutput.toString())
+
+  const step1 =
+    totalSharesRecieved && priceCents
+      ? `Instantly buy ${displayBN(
+          totalSharesRecieved
+        )} ${resolution.toUpperCase()} shares at ${priceCents.toString()}c`
+      : undefined
+
+  const placeToBuyAmount = positionOutput.sub(totalSharesRecieved ?? new BN(0))
+  const step2 = placeToBuyAmount.gt(new BN(0))
+    ? `Place a limit order to buy ${displayBN(
+        placeToBuyAmount
+      )} ${resolution.toUpperCase()} shares at ${
+        resolution === "yes" ? percentOdds : 100 - percentOdds
+      }c`
+    : "a"
 
   return (
     <>
       <div
+        data-name="INPUTS"
         className={`
           px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col
         `}
@@ -221,11 +400,31 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
           </RadioGroup>
         </div>
       </div>
+      <div
+        data-name="EXPLAIN TRANSACTION"
+        className={`
+          px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col text-sm
+        `}
+      >
+        <p>This transaction will:</p>
+        <ol>
+          <li>{step1}</li>
+          <li>{step2}</li>
+
+          <li>1. Instantly buy 7 YES shares at 76c</li>
+          <li>2. Place a limit order to buy 10 YES shares at 80c</li>
+        </ol>
+      </div>
       <div className="px-4 py-5  sm:px-6 w-full">
         <StatelessTransactButton
           status={status}
           verb={"Buy " + resolution.toUpperCase()}
-          onClick={onSubmit}
+          onClick={async () => {
+            try {
+              await submit()
+              setUsdcInput("")
+            } catch {}
+          }}
           className="w-full"
           disabled={usdcInput === ""}
         />

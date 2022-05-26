@@ -50,6 +50,7 @@ export const useOrderbook = (marketAddress: PublicKey) => {
     ] as const)
 
     if (info === null || page1 === null) throw new Error("orderbook info null")
+
     return { info, pages: [page1] }
   }, [connection, marketAddress, orderbookInfo])
 

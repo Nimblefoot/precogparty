@@ -81,3 +81,13 @@ export const ui2placeOrderFields = ({
     numOranges: new BN(numNo),
   }
 }
+
+export const amountBoughtAtPercentOdds = ({
+  percentOdds,
+  inputAmount,
+}: {
+  percentOdds: number
+  inputAmount: BN
+}) => {
+  return inputAmount.mul(new BN(100)).div(new BN(percentOdds))
+}
