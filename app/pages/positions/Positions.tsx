@@ -377,7 +377,7 @@ const Order = ({
           <CancelOrderButton
             order={{ numApples, numOranges, offeringApples, market }}
           />
-        </td>{" "}
+        </td>
       </tr>
     </>
   )

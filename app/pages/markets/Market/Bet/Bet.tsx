@@ -147,11 +147,12 @@ const useSubmitBet = ({
   percentOdds: number
   resolution: Resolution
 }) => {
-  const yesMint = useResolutionMint(marketAddress, "yes")
-  const noMint = useResolutionMint(marketAddress, "no")
-
-  const yesAccount = useTokenAccount(yesMint)
-  const noAccount = useTokenAccount(noMint)
+  const { orderBuyAmount, orderSpendAmount, taking } = useAccounting({
+    usdcInput,
+    percentOdds,
+    resolution,
+    marketAddress,
+  })
 
   const mintSet = useMintContingentSet(marketAddress)
   const buy = usePlaceOrderTxn(marketAddress)
@@ -159,21 +160,14 @@ const useSubmitBet = ({
   const { callback, status } = useTransact()
 
   const submit = useCallback(async () => {
-    const inputAmount = new BN(
-      parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS
-    )
-    const mintTxn = await mintSet({ amount: inputAmount })
-
-    const { offeringApples, numApples, numOranges } = ui2placeOrderFields({
-      odds: percentOdds / 100,
-      collateralSize: parseFloat(usdcInput),
-      forResolution: resolution,
+    const mintTxn = await mintSet({
+      amount: orderSpendAmount.add(taking.totalSpend ?? new BN(0)),
     })
 
     const buyTxn = await buy({
-      offeringYes: offeringApples,
-      numNo: numOranges,
-      numYes: numApples,
+      offeringYes: resolution === "no",
+      numNo: resolution === "yes" ? orderSpendAmount : orderBuyAmount,
+      numYes: resolution === "yes" ? orderBuyAmount : orderSpendAmount,
     })
 
     const txn = new Transaction().add(
@@ -191,8 +185,10 @@ const useSubmitBet = ({
     callback,
     marketAddress,
     mintSet,
+    orderSpendAmount,
     percentOdds,
     resolution,
+    taking.totalSpend,
     usdcInput,
   ])
 
@@ -213,7 +209,49 @@ const useBetAccounting = ({
     percentOdds: resolution === "yes" ? percentOdds : 100 - percentOdds,
     inputAmount,
   })
-  return { positionOutput }
+  return { positionOutput, inputAmount }
+}
+
+const useAccounting = ({
+  usdcInput,
+  percentOdds,
+  resolution,
+  marketAddress,
+}: {
+  usdcInput: string
+  percentOdds: number
+  resolution: Resolution
+  marketAddress: PublicKey
+}) => {
+  const takeAccounting = useTakeBuyAccounting(
+    marketAddress,
+    usdcInput,
+    resolution,
+    percentOdds
+  )
+
+  const { positionOutput, inputAmount } = useBetAccounting({
+    usdcInput,
+    percentOdds,
+    resolution,
+  })
+
+  // this is wrong i think
+  // should be orderSpendAmount / price
+  const orderBuyAmount = positionOutput.sub(
+    takeAccounting.totalSharesRecieved ?? new BN(0)
+  )
+  const orderSpendAmount = inputAmount.sub(
+    takeAccounting.totalSpend ?? new BN(0)
+  )
+
+  return {
+    taking: takeAccounting,
+    positionOutput,
+    orderBuyAmount,
+    orderSpendAmount,
+    inputAmount,
+  }
 }
 
 const RESOLUTIONS = ["yes", "no"] as const
@@ -234,27 +272,15 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
     marketAddress,
   })
 
-  const { totalSharesRecieved, totalSpend, priceCents } = useTakeBuyAccounting(
-    marketAddress,
-    usdcInput,
-    resolution,
-    percentOdds
-  )
-
-  const { positionOutput } = useBetAccounting({
+  const {
+    orderBuyAmount,
+    taking: { totalSharesRecieved, priceCents },
+  } = useAccounting({
     usdcInput,
     percentOdds,
     resolution,
+    marketAddress,
   })
-
-  const placeToBuyAmount = positionOutput.sub(totalSharesRecieved ?? new BN(0))
-  const step2 = placeToBuyAmount.gt(new BN(0))
-    ? `Place a limit order to buy ${displayBN(
-        placeToBuyAmount
-      )} ${resolution.toUpperCase()} shares at ${
-        resolution === "yes" ? percentOdds : 100 - percentOdds
-      }c`
-    : undefined
 
   const ready = usdcInput !== ""
 
@@ -416,7 +442,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
               at {priceCents.toString()}¢
             </li>
           ) : undefined}
-          {placeToBuyAmount.gt(new BN(0)) ? (
+          {orderBuyAmount.gt(new BN(0)) ? (
             <li>
               - Place a limit order to buy{" "}
               <span
@@ -425,7 +451,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
                   resolution === "yes" ? "text-lime-700" : "text-rose-700"
                 )}
               >
-                ${displayBN(placeToBuyAmount)} {resolution.toUpperCase()}
+                ${displayBN(orderBuyAmount)} {resolution.toUpperCase()}
               </span>{" "}
               at {resolution === "yes" ? percentOdds : 100 - percentOdds}¢{" "}
             </li>
