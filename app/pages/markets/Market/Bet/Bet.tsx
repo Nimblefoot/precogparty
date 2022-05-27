@@ -172,11 +172,18 @@ const useSubmitBet = ({
       amount: orderSpendAmount.add(taking.totalSpend ?? new BN(0)),
     })
 
+    // this is wrong. orderBuyAmount is the total recieved
     const placeTxn = orderSpendAmount.gt(new BN(0))
       ? await buy({
           offeringYes: resolution === "no",
-          numNo: resolution === "yes" ? orderSpendAmount : orderBuyAmount,
-          numYes: resolution === "yes" ? orderBuyAmount : orderSpendAmount,
+          numNo:
+            resolution === "yes"
+              ? orderSpendAmount
+              : orderBuyAmount.sub(orderSpendAmount),
+          numYes:
+            resolution === "yes"
+              ? orderBuyAmount.sub(orderSpendAmount)
+              : orderSpendAmount,
         })
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []
