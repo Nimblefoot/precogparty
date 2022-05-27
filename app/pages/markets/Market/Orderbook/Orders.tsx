@@ -60,7 +60,7 @@ const OrderColumn = ({
           resolution === "yes" ? "pl-6 text-left" : "pr-6 text-right"
         )}
       >
-        User
+        Offerer
       </th>,
       <th
         key="offer"
@@ -108,7 +108,7 @@ const OrderColumn = ({
           </thead>
           <tbody className="bg-white">
             {orders?.map((order) => {
-              const { odds, collateralSize } = order2ui(order)
+              const { odds } = order2ui(order)
 
               const price =
                 (resolution === "yes"
