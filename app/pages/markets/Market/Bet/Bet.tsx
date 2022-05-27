@@ -247,13 +247,6 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
     resolution,
   })
 
-  const step1 =
-    totalSharesRecieved && priceCents
-      ? `Instantly buy ${displayBN(
-          totalSharesRecieved
-        )} ${resolution.toUpperCase()} shares at ${priceCents.toString()}c`
-      : undefined
-
   const placeToBuyAmount = positionOutput.sub(totalSharesRecieved ?? new BN(0))
   const step2 = placeToBuyAmount.gt(new BN(0))
     ? `Place a limit order to buy ${displayBN(
@@ -262,6 +255,8 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
         resolution === "yes" ? percentOdds : 100 - percentOdds
       }c`
     : undefined
+
+  const ready = usdcInput !== ""
 
   return (
     <>
@@ -401,13 +396,40 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
       <div
         data-name="EXPLAIN TRANSACTION"
         className={`
-          px-4 py-5 sm:px-6 flex gap-2 border-b border-gray-200 content-center flex-col text-sm
+          px-4 py-5 sm:px-6 flex border-b border-gray-200 content-center flex-col text-sm text-gray-700
+          ${ready ? "" : "hidden"}
         `}
       >
         <p>This transaction will:</p>
         <ol>
-          <li>{step1}</li>
-          <li>{step2}</li>
+          {totalSharesRecieved && priceCents ? (
+            <li>
+              - Instantly buy{" "}
+              <span
+                className={clsx(
+                  "font-medium",
+                  resolution === "yes" ? "text-lime-700" : "text-rose-700"
+                )}
+              >
+                ${displayBN(totalSharesRecieved)} {resolution.toUpperCase()}
+              </span>{" "}
+              at {priceCents.toString()}¢
+            </li>
+          ) : undefined}
+          {placeToBuyAmount.gt(new BN(0)) ? (
+            <li>
+              - Place a limit order to buy{" "}
+              <span
+                className={clsx(
+                  "font-medium",
+                  resolution === "yes" ? "text-lime-700" : "text-rose-700"
+                )}
+              >
+                ${displayBN(placeToBuyAmount)} {resolution.toUpperCase()}
+              </span>{" "}
+              at {resolution === "yes" ? percentOdds : 100 - percentOdds}¢{" "}
+            </li>
+          ) : undefined}
         </ol>
       </div>
       <div className="px-4 py-5  sm:px-6 w-full">
@@ -421,7 +443,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
             } catch {}
           }}
           className="w-full"
-          disabled={usdcInput === ""}
+          disabled={!ready}
         />
       </div>
     </>
