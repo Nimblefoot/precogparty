@@ -247,8 +247,6 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
     resolution,
   })
 
-  console.log("aa", positionOutput.toString())
-
   const step1 =
     totalSharesRecieved && priceCents
       ? `Instantly buy ${displayBN(
@@ -263,7 +261,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
       )} ${resolution.toUpperCase()} shares at ${
         resolution === "yes" ? percentOdds : 100 - percentOdds
       }c`
-    : "a"
+    : undefined
 
   return (
     <>
@@ -410,9 +408,6 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
         <ol>
           <li>{step1}</li>
           <li>{step2}</li>
-
-          <li>1. Instantly buy 7 YES shares at 76c</li>
-          <li>2. Place a limit order to buy 10 YES shares at 80c</li>
         </ol>
       </div>
       <div className="px-4 py-5  sm:px-6 w-full">
