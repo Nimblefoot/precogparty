@@ -93,8 +93,8 @@ const OrderColumn = ({
             className={clsx(
               "border-b ",
               resolution === "yes"
-                ? "bg-lime-50 border-lime-300"
-                : "bg-rose-50 border-rose-300"
+                ? "bg-gray-50 border-lime-300"
+                : "bg-gray-50 border-rose-300"
             )}
           >
             <tr

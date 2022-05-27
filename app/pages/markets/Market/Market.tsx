@@ -17,6 +17,8 @@ import { MiniPosition } from "pages/positions/Positions"
 import { useOrderbook } from "./Orderbook/orderbookQueries"
 import { getPercentOdds, order2ui } from "@/utils/orderMath"
 import BetPanel from "./Bet/Bet"
+import interpolateOddsColors from "@/utils/interpolateOddsColors"
+import clsx from "clsx"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -40,57 +42,83 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
   const market = useMarket(address)
   const book = useOrderbook(address)
 
+  const percentOdds =
+    book.data &&
+    book.data.info.tradeLog[book.data.info.tradeLog.length - 1] &&
+    getPercentOdds(book.data.info.tradeLog[book.data.info.tradeLog.length - 1])
+
   return market.data ? (
     <>
       <div className="flex px-4 sm:px-6 md:px-8 max-w-7xl mx-auto gap-5">
-        {/* Card */}
-        <div className="flex-grow">
-          <div className="py-4 shadow bg-white rounded-lg">
+        <div data-name="MAIN CARD" className="flex-grow">
+          <div className="shadow bg-white rounded-lg">
             <div className="">
               {/* Main body */}
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-2xl font-semibold text-gray-900">{name}</h1>
-                {/* Metadata display */}
-                <div className="flex content-center flex-row gap-4 mt-2">
-                  <div>
-                    <User
-                      publicKey={new PublicKey(market.data.marketAuthority)}
-                    />
-                  </div>
-                  {/* <div className="text-sm flex justify-center flex-col">
-                    <div className="flex">
-                      <div className="h-5 w-5 self-center mr-1">
-                        <ClockIcon />
-                      </div>
-                      <div className="">Jan 25 2020</div>
+              <div
+                data-name="CARD HEADER"
+                className={clsx(
+                  "max-w-7xl mx-auto px-4 py-4 rounded-t-lg sm:px-6 lg:px-8",
+                  "border-b",
+                  market.data.resolution === 1 &&
+                    "bg-lime-50 border-lime-500 border",
+                  market.data.resolution === 2 &&
+                    "bg-rose-50 border-rose-500 border"
+                )}
+                /* style={{
+                  backgroundColor:
+                    percentOdds && market.data.resolution === 0
+                      ? interpolateOddsColors(percentOdds, 0.15)
+                      : undefined,
+                  borderColor:
+                    percentOdds && market.data.resolution === 0
+                      ? interpolateOddsColors(percentOdds)
+                      : undefined,
+                }} */
+              >
+                <div className="flex justify-between">
+                  <div data-name="TITLE">
+                    <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+                      {name}
+                    </h1>
+                    <div>
+                      <User
+                        publicKey={new PublicKey(market.data.marketAuthority)}
+                      />
                     </div>
-                  </div> */}
-                </div>
-                <div className="w-full flex justify-center">
-                  <div>
-                    <h1 className="text-5xl">
-                      {
-                        { 0: "Unresolved", 1: "YES", 2: "NO" }[
-                          market.data.resolution
-                        ]
-                      }
-                    </h1>
                   </div>
+                  {market.data.resolution === 0 ? (
+                    percentOdds && (
+                      <div>
+                        <h1
+                          className="text-3xl font-semibold"
+                          style={{
+                            color: interpolateOddsColors(percentOdds),
+                          }}
+                        >
+                          {percentOdds.toFixed(0)}%
+                        </h1>
+                      </div>
+                    )
+                  ) : market.data.resolution === 1 ? (
+                    <div className="text-right">
+                      <h1 className="text-3xl text-lime-700 font-semibold">YES</h1>
+                      {percentOdds && (
+                        <div className="text-gray-500">
+                          Last traded {percentOdds.toFixed(0)}%
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-right">
+                      <h1 className="text-3xl text-rose-700 font-semibold">NO</h1>
+                      {percentOdds && (
+                        <div className="text-gray-500">
+                          Last traded {percentOdds.toFixed(0)}%
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="w-full flex justify-center">
-                  <div>
-                    <h1 className="text-3xl">
-                      {book.data?.info.tradeLog[0] &&
-                        "Last traded at " +
-                          getPercentOdds(book.data?.info.tradeLog[0]).toFixed(
-                            0
-                          )}
-                      %
-                    </h1>
-                  </div>
-                </div>
-
-                <p className="mt-4">{market.data.description}</p>
               </div>
               <div className="px-4 py-5 sm:px-6 ">
                 <Orders marketAddress={address} />
