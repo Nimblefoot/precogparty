@@ -26,6 +26,7 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { useResolutionMint } from "pages/markets/Market/Orderbook/usePlaceOrder"
 import BN from "bn.js"
 import { ORDERBOOK_PAGE_MAX_LENGTH } from "config"
+import clsx from "clsx"
 
 const YesBadge = () => (
   <>
@@ -87,6 +88,78 @@ const usePositions = () => {
   }, [accounts.data, markets.data, userOrders.data?.orders])
 
   return positions
+}
+
+export const usePosition = (market: PublicKey) => {
+  const yesMint = useResolutionMint(market, "yes")
+  const noMint = useResolutionMint(market, "no")
+  const yesAccount = useTokenAccount(yesMint)
+  const noAccount = useTokenAccount(noMint)
+  const userOrders = useOrderbookUserAccount()
+
+  // doesn't include orders, i suppose it could
+  const position = useMemo(() => {
+    if (!userOrders.data) return undefined
+    if (!yesAccount.data) return undefined
+    if (!noAccount.data) return undefined
+
+    const yesHeld = new BN(yesAccount.data.value.amount)
+    const noHeld = new BN(noAccount.data.value.amount)
+
+    const relevantOrders = userOrders.data.orders.filter((order) =>
+      order.market.equals(market)
+    )
+    const escrowedYes = relevantOrders
+      .filter((order) => order.offeringApples)
+      .map((x) => x.numApples)
+      .reduce((sum, x) => sum.add(x), new BN(0))
+
+    const escrowedNo = relevantOrders
+      .filter((order) => !order.offeringApples)
+      .map((x) => x.numOranges)
+      .reduce((sum, x) => sum.add(x), new BN(0))
+
+    const totalYes = yesHeld.add(escrowedYes)
+    const totalNo = noHeld.add(escrowedNo)
+
+    const withdrawable = BN.min(yesHeld, noHeld)
+    console.log("yesHeld", yesHeld.toString())
+    console.log("noHeld", noHeld.toString())
+    console.log("with", withdrawable.toString())
+
+    if (totalYes.eq(totalNo)) {
+      return {
+        position: "neutral",
+        deposited: totalYes,
+        size: undefined,
+        orders: relevantOrders,
+        escrowed: escrowedNo.add(escrowedYes),
+        withdrawable,
+      } as const
+    } else if (totalYes.lt(totalNo)) {
+      return {
+        position: "no",
+        deposited: totalYes,
+        size: totalNo.sub(totalYes),
+        orders: relevantOrders,
+        escrowed: escrowedNo.add(escrowedYes),
+        withdrawable,
+      } as const
+    } else if (totalYes.gt(totalNo)) {
+      return {
+        position: "yes",
+        deposited: totalNo,
+        size: totalYes.sub(totalNo),
+        orders: relevantOrders,
+        escrowed: escrowedNo.add(escrowedYes),
+        withdrawable,
+      } as const
+    } else {
+      throw new Error("this error should not mathematically be possible")
+    }
+  }, [market, noAccount.data, userOrders.data, yesAccount.data])
+
+  return position
 }
 
 const Positions = ({}) => {
@@ -156,31 +229,43 @@ export const MiniPosition = ({
 }: {
   marketAddress: PublicKey
 }) => {
-  const yesMint = useResolutionMint(marketAddress, "yes")
-  const noMint = useResolutionMint(marketAddress, "no")
-  const yesAccount = useTokenAccount(yesMint)
-  const noAccount = useTokenAccount(noMint)
-  const yesAmount =
-    yesAccount.data?.value &&
-    yesAccount.data.value.uiAmount !== null &&
-    yesAccount.data.value.uiAmount > 0 &&
-    yesAccount.data.value.uiAmount
-  const noAmount =
-    noAccount.data?.value &&
-    noAccount.data.value.uiAmount !== null &&
-    noAccount.data.value.uiAmount > 0 &&
-    noAccount.data.value.uiAmount
+  const position = usePosition(marketAddress)
 
-  return (
-    <div className="shadow bg-white rounded-lg">
-      <div
-        className={`
-        whitespace-nowrap px-3 py-4 font-med
-      `}
-      >
-        {yesAmount && <span className="text-lime-700">${yesAmount} YES</span>}
-        {yesAmount && noAmount && <>{",  "}</>}
-        {noAmount && <span className="text-rose-700">${noAmount} NO</span>}
+  return position === undefined ? null : (
+    <div
+      className={clsx(
+        "shadow rounded-lg",
+        position.position === "neutral" && "bg-gray-50",
+        position.position === "yes" && "bg-lime-50",
+        position.position === "no" && "bg-rose-50"
+      )}
+    >
+      <div className={clsx("whitespace-nowrap px-3 py-4 font-med sm:px-6")}>
+        {position.position === "yes" ? (
+          <>
+            You have{" "}
+            <span className="font-medium text-lime-700">
+              ${displayBN(position.size)} YES
+            </span>
+          </>
+        ) : position.position === "no" ? (
+          <>
+            <span className="font-medium text-rose-700">
+              ${displayBN(position.size)} NO
+            </span>
+          </>
+        ) : null}
+        <div className="text-sm text-gray-500">
+          {position.withdrawable.gt(new BN(0)) && (
+            <p>${displayBN(position.withdrawable)} USDC withdrawable</p>
+          )}
+          {position.orders.length > 0 && (
+            <p>
+              ${displayBN(position.escrowed)} escrowed across{" "}
+              {position.orders.length} orders
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )

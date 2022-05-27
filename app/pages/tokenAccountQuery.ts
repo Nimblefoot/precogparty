@@ -13,6 +13,8 @@ export const tokenAccountKeys = {
   ],
 } as const
 
+export const useMarketAccounts = (market: PublicKey) => {}
+
 export const useTokenAccount = (mint: PublicKey | undefined) => {
   const { connection } = useConnection()
   const { publicKey } = useWallet()

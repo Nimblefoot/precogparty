@@ -53,7 +53,7 @@ const OrderColumn = ({
   const headers = useMemo(
     () => [
       <th
-        key="offer"
+        key="user"
         scope="col"
         className={clsx(
           "whitespace-nowrap px-2 py-3.5 text-sm",
