@@ -22,6 +22,8 @@ export const ORDERBOOK_PRICE_RATIO_DECIMALS = 9
 
 export const TAKE_ORDER_COST = 65000
 export const MINT_SET_COST = 65000
+// not tested but whatever
+export const PLACE_ORDER_COST = 65000
 
 export const DEFAULT_COMPUTE_MAX = 200000
 

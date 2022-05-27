@@ -14,7 +14,13 @@ import { RadioGroup } from "@headlessui/react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
 import clsx from "clsx"
-import { COLLATERAL_DECIMALS, Resolution } from "config"
+import {
+  COLLATERAL_DECIMALS,
+  MINT_SET_COST,
+  PLACE_ORDER_COST,
+  Resolution,
+  TAKE_ORDER_COST,
+} from "config"
 import { queryClient } from "pages/providers"
 import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useMemo, useRef, useState } from "react"
@@ -24,6 +30,7 @@ import { PlaceExitOrder } from "../Orderbook/PlaceExitOrder"
 import { Splitty } from "../Orderbook/Splitty"
 import { useSellable } from "../Orderbook/TakeExitOrder"
 import usePlaceOrderTxn, { useResolutionMint } from "../Orderbook/usePlaceOrder"
+import useTakeOrder from "../Orderbook/useTakeOrder"
 
 const useTakeBuyAccounting = (
   marketAddress: PublicKey,
@@ -156,6 +163,7 @@ const useSubmitBet = ({
 
   const mintSet = useMintContingentSet(marketAddress)
   const buy = usePlaceOrderTxn(marketAddress)
+  const takeOrder = useTakeOrder(marketAddress)
 
   const { callback, status } = useTransact()
 
@@ -164,15 +172,39 @@ const useSubmitBet = ({
       amount: orderSpendAmount.add(taking.totalSpend ?? new BN(0)),
     })
 
-    const buyTxn = await buy({
-      offeringYes: resolution === "no",
-      numNo: resolution === "yes" ? orderSpendAmount : orderBuyAmount,
-      numYes: resolution === "yes" ? orderBuyAmount : orderSpendAmount,
-    })
+    const placeTxn = orderSpendAmount.gt(new BN(0))
+      ? await buy({
+          offeringYes: resolution === "no",
+          numNo: resolution === "yes" ? orderSpendAmount : orderBuyAmount,
+          numYes: resolution === "yes" ? orderBuyAmount : orderSpendAmount,
+        })
+      : undefined
+    const placeIxs = placeTxn ? placeTxn.instructions : []
+
+    const takeTxns =
+      taking.orderInteractions &&
+      (await Promise.all(
+        taking.orderInteractions.map((x) =>
+          takeOrder({
+            order: x.order,
+            pageNumber: x.order.page,
+            index: x.order.index,
+            amountToExchange: x.amountToExchange,
+          })
+        )
+      ))
+
+    const takeIxs = takeTxns ? takeTxns.flatMap((tx) => tx.instructions) : []
+
+    const computeCost =
+      MINT_SET_COST +
+      takeIxs.length * TAKE_ORDER_COST +
+      (placeTxn ? PLACE_ORDER_COST : 0)
 
     const txn = new Transaction().add(
       ...mintTxn.instructions,
-      ...buyTxn.instructions
+      ...placeIxs,
+      ...takeIxs
     )
 
     console.log(txn)
@@ -185,11 +217,12 @@ const useSubmitBet = ({
     callback,
     marketAddress,
     mintSet,
+    orderBuyAmount,
     orderSpendAmount,
-    percentOdds,
     resolution,
+    takeOrder,
+    taking.orderInteractions,
     taking.totalSpend,
-    usdcInput,
   ])
 
   return { submit, status }
@@ -238,12 +271,15 @@ const useAccounting = ({
 
   // this is wrong i think
   // should be orderSpendAmount / price
-  const orderBuyAmount = positionOutput.sub(
-    takeAccounting.totalSharesRecieved ?? new BN(0)
-  )
+
   const orderSpendAmount = inputAmount.sub(
     takeAccounting.totalSpend ?? new BN(0)
   )
+
+  const orderBuyAmount = amountBoughtAtPercentOdds({
+    percentOdds,
+    inputAmount: orderSpendAmount,
+  })
 
   return {
     taking: takeAccounting,
