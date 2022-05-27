@@ -28,4 +28,16 @@ const User: FC<{ publicKey: PublicKey }> = ({ publicKey }) => {
   )
 }
 
+export const UserSmall: FC<{ publicKey: PublicKey }> = ({ publicKey }) => (
+  <div
+    className="inline-block h-[20px] w-[20px] rounded-full overflow-hidden" /* optional class name for the canvas element; "identicon" by default */
+  >
+    <Blockies
+      seed={publicKey.toString()} /* the only required prop; determines how the image is generated */
+      size={10}
+      scale={2} /* width/height of each square in pixels; default = 4 */
+    />
+  </div>
+)
+
 export default User

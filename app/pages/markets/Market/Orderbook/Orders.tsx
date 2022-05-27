@@ -4,6 +4,9 @@ import React, { useMemo } from "react"
 import { useOrderbook } from "./orderbookQueries"
 import { order2ui } from "@/utils/orderMath"
 import { displayBN } from "@/utils/BNutils"
+import { Resolution } from "config"
+import clsx from "clsx"
+import { UserSmall } from "pages/markets/User"
 
 const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const orderbook = useOrderbook(marketAddress)
@@ -30,104 +33,126 @@ const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
   return (
     <>
       <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg w-full">
-        <div className="grid grid-cols-2">
-          <YesOfferColumn orders={yesOffers} />
+        <div className="grid grid-cols-2 divide-x divide-gray-300">
+          <OrderColumn orders={yesOffers} resolution="yes" />
 
-          <NoOfferColumn orders={noOffers} />
+          <OrderColumn orders={noOffers} resolution="no" />
         </div>
       </div>
     </>
   )
 }
 
-const NoOfferColumn = ({
+const OrderColumn = ({
   orders,
+  resolution,
 }: {
-  orders?: (OrderFields & { page: number; index: number })[]
+  orders?: OrderFields[]
+  resolution: Resolution
 }) => {
+  const headers = useMemo(
+    () => [
+      <th
+        key="offer"
+        scope="col"
+        className={clsx(
+          "whitespace-nowrap px-2 py-3.5 text-sm",
+          resolution === "yes" ? "pl-6 text-left" : "pr-6 text-right"
+        )}
+      >
+        User
+      </th>,
+      <th
+        key="offer"
+        scope="col"
+        className="whitespace-nowrap px-2 py-3.5 text-sm"
+      >
+        Size ({resolution.toUpperCase()})
+      </th>,
+      <th
+        key="price"
+        scope="col"
+        className="whitespace-nowrap px-2 py-3.5 text-sm"
+      >
+        Price
+      </th>,
+    ],
+    [resolution]
+  )
+
   return (
-    <div className="flex flex-col text-left border-l border-gray-300">
+    <div
+      className={clsx(
+        "flex flex-col -mb-[1px]",
+        resolution === "yes" ? "text-right" : "text-left"
+      )}
+    >
       <div className="inline-block min-w-full align-middle">
         <table className="min-w-full">
-          <thead className="bg-gray-50 border-b border-gray-300">
-            <tr>
-              <th
-                scope="col"
-                className="whitespace-nowrap px-2 py-3.5 text-sm font-semibold text-rose-900"
-              ></th>
-              <th
-                scope="col"
-                className="whitespace-nowrap py-3.5 px-2 text-sm font-semibold text-rose-900 "
-              >
-                Offer
-              </th>
+          <thead
+            className={clsx(
+              "border-b ",
+              resolution === "yes"
+                ? "bg-lime-50 border-lime-300"
+                : "bg-rose-50 border-rose-300"
+            )}
+          >
+            <tr
+              className={clsx(
+                "font-semibold",
+                resolution === "yes" ? "text-lime-900" : "text-rose-900"
+              )}
+            >
+              {resolution === "yes" ? headers : [...headers].reverse()}
             </tr>
           </thead>
           <tbody className="bg-white">
             {orders?.map((order) => {
               const { odds, collateralSize } = order2ui(order)
 
-              return (
-                <tr
-                  key={JSON.stringify(order)}
-                  className="border-b border-gray-200"
-                >
-                  <td className="whitespace-nowrap px-2 py-2 text-sm font-medium text-gray-900">
-                    {(100 * odds).toFixed(0)}%
-                  </td>
-                  <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
-                    anon offers{" "}
-                    <span className="text-rose-700 font-medium">
-                      ${displayBN(order.numOranges)} NO
-                    </span>{" "}
-                    for ${displayBN(order.numApples)} YES
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-const YesOfferColumn = ({ orders }: { orders?: OrderFields[] }) => {
-  return (
-    <div className="flex flex-col text-right">
-      <div className="inline-block min-w-full align-middle">
-        <table className="min-w-full">
-          <thead className="bg-gray-50 border-b border-gray-300">
-            <tr>
-              <th
-                scope="col"
-                className="whitespace-nowrap py-3.5 px-2 text-right text-sm font-semibold text-lime-900"
-              >
-                Offer
-              </th>
-              <th
-                scope="col"
-                className="whitespace-nowrap px-2 py-3.5 text-right text-sm font-semibold text-lime-900"
-              ></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {orders?.map((order) => {
-              const { odds, collateralSize } = order2ui(order)
+              const price =
+                (resolution === "yes"
+                  ? (100 * odds).toFixed(0)
+                  : (100 - 100 * odds).toFixed(0)) + "¢"
+
+              const size = 1
 
               return (
                 <tr
                   key={JSON.stringify(order)}
-                  className="border-b border-gray-200"
+                  className="border-b border-gray-200 text-sm"
                 >
-                  <td className="whitespace-nowrap py-2 px-2 text-sm text-gray-500">
-                    anon offers{" "}
-                    <span className="text-lime-700 font-medium">
-                      ${displayBN(order.numApples)} YES
-                    </span>{" "}
-                    for ${displayBN(order.numOranges)} NO
+                  <td
+                    className={clsx(
+                      "p-2 font-medium text-gray-900",
+                      resolution === "yes" && "pl-6 flex"
+                    )}
+                  >
+                    {resolution === "yes" ? (
+                      <UserSmall publicKey={order.user} />
+                    ) : (
+                      price
+                    )}
                   </td>
-                  <td className="whitespace-nowrap px-2 py-2 text-sm font-medium text-gray-900">
-                    {(100 * odds).toFixed(0)}%
+                  <td
+                    className={clsx(
+                      "whitespace-nowrap px-2 py-2",
+                      "text-gray-500"
+                    )}
+                  >
+                    {size}
+                  </td>
+                  <td
+                    className={clsx(
+                      "p-2 font-medium text-gray-900",
+                      resolution === "no" && "justify-end pr-6 flex"
+                    )}
+                  >
+                    {resolution === "no" ? (
+                      <UserSmall publicKey={order.user} />
+                    ) : (
+                      price
+                    )}
                   </td>
                 </tr>
               )
@@ -138,4 +163,5 @@ const YesOfferColumn = ({ orders }: { orders?: OrderFields[] }) => {
     </div>
   )
 }
+
 export default Orders
