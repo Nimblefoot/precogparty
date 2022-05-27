@@ -277,7 +277,7 @@ const useAccounting = ({
   )
 
   const orderBuyAmount = amountBoughtAtPercentOdds({
-    percentOdds,
+    percentOdds: resolution === "yes" ? percentOdds : 100 - percentOdds,
     inputAmount: orderSpendAmount,
   })
 
