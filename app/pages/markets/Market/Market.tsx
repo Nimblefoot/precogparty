@@ -101,7 +101,9 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                     )
                   ) : market.data.resolution === 1 ? (
                     <div className="text-right">
-                      <h1 className="text-3xl text-lime-700 font-semibold">YES</h1>
+                      <h1 className="text-3xl text-lime-700 font-semibold">
+                        YES
+                      </h1>
                       {percentOdds && (
                         <div className="text-gray-500">
                           Last traded {percentOdds.toFixed(0)}%
@@ -110,7 +112,9 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                     </div>
                   ) : (
                     <div className="text-right">
-                      <h1 className="text-3xl text-rose-700 font-semibold">NO</h1>
+                      <h1 className="text-3xl text-rose-700 font-semibold">
+                        NO
+                      </h1>
                       {percentOdds && (
                         <div className="text-gray-500">
                           Last traded {percentOdds.toFixed(0)}%
@@ -124,12 +128,6 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                 <Orders marketAddress={address} />
               </div>
             </div>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <BetPanel marketAddress={address} />
-            <TakeOrder marketAddress={address} />
-            <PlaceOrder marketAddress={address} />
-            <TokenControls address={address} />
           </div>
         </div>
         {/* 2nd column */}
