@@ -97,52 +97,52 @@ pub mod syrup {
         Ok(())
     }
 
-    // pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
-    //     if ctx.accounts.orderbook_info.is_closed() {
-    //         return err!(ErrorCode::OrderbookClosed);
-    //     } else if order.user != ctx.accounts.user.key() {
-    //         return err!(ErrorCode::IncorrectUser);
-    //     };
+    pub fn place_order(ctx: Context<PlaceOrder>, order: Order) -> Result<()> {
+        if ctx.accounts.orderbook_info.is_closed() {
+            return err!(ErrorCode::OrderbookClosed);
+        } else if order.user != ctx.accounts.user.key() {
+            return err!(ErrorCode::IncorrectUser);
+        };
 
-    //     let current_page = &mut ctx.accounts.current_page.load_mut()?;
+        let current_page = &mut ctx.accounts.current_page.load_mut()?;
 
-    //     // set the id of the new page if you initialized it
-    //     if current_page.is_orderbook_id_blank() {
-    //         current_page.set_orderbook_id(ctx.accounts.orderbook_info.id);
-    //     }
+        // set the id of the new page if you initialized it
+        if current_page.is_orderbook_id_blank() {
+            current_page.set_orderbook_id(ctx.accounts.orderbook_info.id);
+        }
 
-    //     let amount_transferred = if order.offering_apples {
-    //         order.num_apples
-    //     } else {
-    //         order.num_oranges
-    //     };
+        let amount_transferred = if order.offering_apples {
+            order.num_apples
+        } else {
+            order.num_oranges
+        };
         
-    //     transfer_tokens(
-    //         amount_transferred, 
-    //         ctx.accounts.user_ata.to_account_info(),
-    //         ctx.accounts.vault.to_account_info(),
-    //         ctx.accounts.user.to_account_info(),
-    //         ctx.accounts.token_program.to_account_info(),
-    //         None
-    //     )?;
+        transfer_tokens(
+            amount_transferred, 
+            ctx.accounts.user_ata.to_account_info(),
+            ctx.accounts.vault.to_account_info(),
+            ctx.accounts.user.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            None
+        )?;
 
-    //     // create and append order record
-    //     let order_record = OrderRecord {
-    //         market: ctx.accounts.orderbook_info.id,
-    //         offering_apples: order.offering_apples,
-    //         num_apples: order.num_apples,
-    //         num_oranges: order.num_oranges,
-    //     };
+        // create and append order record
+        let order_record = OrderRecord {
+            market: ctx.accounts.orderbook_info.id,
+            offering_apples: order.offering_apples,
+            num_apples: order.num_apples,
+            num_oranges: order.num_oranges,
+        };
 
-    //     // add to the lists of offers
-    //     current_page.push(order);
+        // add to the lists of offers
+        current_page.push(order);
 
-    //     ctx.accounts.orderbook_info.length += 1;
+        ctx.accounts.orderbook_info.length += 1;
 
-    //     ctx.accounts.user_account.push(order_record)?;
+        ctx.accounts.user_account.push(order_record)?;
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     // #[allow(unused_variables)] 
     // pub fn take_order(ctx: Context<TakeOrder>, order: Order, amount_to_exchange: u64, page_number: u32, index: u32) -> Result<()> {

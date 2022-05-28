@@ -110,8 +110,10 @@ impl OrderbookPage {
             return err!(ErrorCode::PageFull);
         }
 
-        let idx: usize = (self.length - 1) as usize;
+        let idx: usize = self.length as usize;
         self.list[idx] = value;
+
+        self.length += 1;
 
         Ok(())
     }
