@@ -4,47 +4,45 @@ import * as borsh from "@project-serum/borsh"
 import * as types from "../types"
 import { PROGRAM_ID } from "../programId"
 
-export interface PlaceOrderArgs {
+export interface CancelOrderOnLastPageArgs {
   order: types.OrderFields
+  index: number
 }
 
-export interface PlaceOrderAccounts {
+export interface CancelOrderOnLastPageAccounts {
   user: PublicKey
   userAccount: PublicKey
   userAta: PublicKey
   vault: PublicKey
   orderbookInfo: PublicKey
-  currentPage: PublicKey
+  lastPage: PublicKey
   tokenProgram: PublicKey
-  associatedTokenProgram: PublicKey
-  rent: PublicKey
-  systemProgram: PublicKey
 }
 
-export const layout = borsh.struct([types.Order.layout("order")])
+export const layout = borsh.struct([
+  types.Order.layout("order"),
+  borsh.u32("index"),
+])
 
-export function placeOrder(args: PlaceOrderArgs, accounts: PlaceOrderAccounts) {
+export function cancelOrderOnLastPage(
+  args: CancelOrderOnLastPageArgs,
+  accounts: CancelOrderOnLastPageAccounts
+) {
   const keys = [
     { pubkey: accounts.user, isSigner: true, isWritable: true },
     { pubkey: accounts.userAccount, isSigner: false, isWritable: true },
     { pubkey: accounts.userAta, isSigner: false, isWritable: true },
     { pubkey: accounts.vault, isSigner: false, isWritable: true },
     { pubkey: accounts.orderbookInfo, isSigner: false, isWritable: true },
-    { pubkey: accounts.currentPage, isSigner: false, isWritable: true },
+    { pubkey: accounts.lastPage, isSigner: false, isWritable: true },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
-    {
-      pubkey: accounts.associatedTokenProgram,
-      isSigner: false,
-      isWritable: false,
-    },
-    { pubkey: accounts.rent, isSigner: false, isWritable: false },
-    { pubkey: accounts.systemProgram, isSigner: false, isWritable: false },
   ]
-  const identifier = Buffer.from([51, 194, 155, 175, 109, 130, 96, 106])
+  const identifier = Buffer.from([144, 37, 120, 213, 166, 97, 110, 205])
   const buffer = Buffer.alloc(1000)
   const len = layout.encode(
     {
       order: types.Order.toEncodable(args.order),
+      index: args.index,
     },
     buffer
   )

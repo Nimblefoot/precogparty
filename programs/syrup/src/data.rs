@@ -1,13 +1,11 @@
 use crate::error::ErrorCode;
-use anchor_lang::{prelude::*, solana_program::clock::NUM_CONSECUTIVE_LEADER_SLOTS};
-
-#[cfg(feature = "orderbook-page-small-size")]
-const MAX_SIZE: usize = 3;
+use anchor_lang::prelude::*;
 
 #[cfg(not(feature = "orderbook-page-small-size"))]
-const MAX_SIZE: usize = 100;
+const MAX_ORDERPAGE_SIZE: usize = 100;
 
-#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
+#[zero_copy]
+#[derive(Default, AnchorSerialize, AnchorDeserialize, PartialEq)]
 pub struct Order {
     pub num_apples: u64,       // 8
     pub offering_apples: bool, // 1
@@ -44,12 +42,12 @@ impl OrderbookInfo {
         if self.length == 0u32 {
             0
         } else {
-            (self.length - 1) / (MAX_SIZE as u32)
+            (self.length - 1) / (MAX_ORDERPAGE_SIZE as u32)
         }
     }
 
     pub fn next_open_page(&self) -> u32 {
-        (self.length) / (MAX_SIZE as u32)
+        (self.length) / (MAX_ORDERPAGE_SIZE as u32)
     }
 
     pub fn add_trade_to_log(&mut self, record: TradeRecord) {
@@ -68,40 +66,43 @@ impl OrderbookInfo {
     }
 }
 
-#[account]
+#[account(zero_copy)]
 pub struct OrderbookPage {
-    pub list: Vec<Order>,
-    pub orderbook_id: Pubkey,
-    pub id_set: bool,
+    list: [Order; MAX_ORDERPAGE_SIZE], // 4900
+    pub orderbook_id: Pubkey,          // 32
+    pub id_set: bool,                  // 1
+    pub length: u32,                   // 4
 }
 
-impl Default for OrderbookPage {
-    fn default() -> Self {
-        Self {
-            orderbook_id: Pubkey::new_unique(),
-            id_set: false,
-            list: Vec::with_capacity(MAX_SIZE),
-        }
-    }
-}
+// impl Default for OrderbookPage {
+//     fn default() -> Self {
+//         Self {
+//             orderbook_id: Pubkey::new_unique(),
+//             id_set: false,
+//             list: [],
+//             length: 0,
+//         }
+//     }
+// }
 
 impl OrderbookPage {
-    pub const LEN: usize = 49 * MAX_SIZE + 64; // TODO: this is bigger than I feel like it needs to be
+    pub const LEN: usize = 5640;
+    // should be but IS NOT 49 * MAX_ORDERPAGE_SIZE + 64; // TODO: this is bigger than I feel like it needs to be
 
     pub fn max_size() -> usize {
-        MAX_SIZE
+        MAX_ORDERPAGE_SIZE
     }
 
     pub fn len(&self) -> usize {
-        self.list.len()
+        self.length as usize
     }
 
     pub fn is_full(&self) -> bool {
-        self.list.len() == Self::max_size()
+        self.len() == Self::max_size()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.list.len() == 0
+        self.len() == 0
     }
 
     pub fn push(&mut self, value: Order) -> std::result::Result<(), anchor_lang::error::Error> {
@@ -109,7 +110,8 @@ impl OrderbookPage {
             return err!(ErrorCode::PageFull);
         }
 
-        self.list.push(value);
+        let idx: usize = (self.length - 1) as usize;
+        self.list[idx] = value;
 
         Ok(())
     }
@@ -128,7 +130,11 @@ impl OrderbookPage {
         if self.is_empty() {
             return None;
         }
-        let result = self.list.pop().unwrap();
+        let idx: usize = (self.length - 1) as usize;
+        let result = self.list[idx];
+
+        self.length -= 1;
+        self.list[idx] = Order::default();
 
         Some(result)
     }

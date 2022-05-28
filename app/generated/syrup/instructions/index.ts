@@ -1,13 +1,21 @@
-export { initializeOrderbook } from "./initializeOrderbook"
-export type {
+export {
+  initializeOrderbook,
   InitializeOrderbookArgs,
   InitializeOrderbookAccounts,
 } from "./initializeOrderbook"
-export { createUserAccount } from "./createUserAccount"
-export type { CreateUserAccountAccounts } from "./createUserAccount"
-export { placeOrder } from "./placeOrder"
-export type { PlaceOrderArgs, PlaceOrderAccounts } from "./placeOrder"
-export { takeOrder } from "./takeOrder"
-export type { TakeOrderArgs, TakeOrderAccounts } from "./takeOrder"
-export { cancelOrder } from "./cancelOrder"
-export type { CancelOrderArgs, CancelOrderAccounts } from "./cancelOrder"
+export {
+  createUserAccount,
+  CreateUserAccountAccounts,
+} from "./createUserAccount"
+export { placeOrder, PlaceOrderArgs, PlaceOrderAccounts } from "./placeOrder"
+export {
+  takeOrderOnLastPage,
+  TakeOrderOnLastPageArgs,
+  TakeOrderOnLastPageAccounts,
+} from "./takeOrderOnLastPage"
+export {
+  cancelOrderOnLastPage,
+  CancelOrderOnLastPageArgs,
+  CancelOrderOnLastPageAccounts,
+} from "./cancelOrderOnLastPage"
+export { closeOrderbook, CloseOrderbookAccounts } from "./closeOrderbook"
