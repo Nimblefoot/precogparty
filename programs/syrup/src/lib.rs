@@ -6,6 +6,7 @@ pub mod user_account;
 use user_account::OrderRecord;
 pub mod instructions;
 use instructions::transfer_tokens;
+use std::cell::RefMut;
 
 pub mod error;
 use error::ErrorCode;
@@ -17,35 +18,39 @@ use anchor_spl::{
 
 declare_id!("GXDLaLKoGyCPqWJrSEmt4eTZRjWDBCFSXyWCRtBM3uGy");
 
-// pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
-//     let order_data = order_page.get(index);
-//     let orderbook_id = order_page.orderbook_id.clone();
+pub fn delete_order(index: u32, optional_last_page: Option<RefMut<OrderbookPage>>, mut order_page: RefMut<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
+    let order_data = order_page.get(index);
+    let orderbook_id = order_page.orderbook_id;
 
-//     if order_page.key() == last_page.key() && (index as usize) == last_page.len() - 1 {
-//         msg!("just need to pop!!!");
-//         last_page.pop();
-//     } else if let Some(last_order) = last_page.pop() {
-//         // there is probably a better way to handle this problem. Rust does not allow you to have two mutable references to the same data!
-//         if order_page.key() == last_page.key() {
-//             last_page.set(index, last_order);
-//         } else {
-//             order_page.set(index, last_order); // this is wrong and has to get fixed???? should be order_page. stuff broken when the pages are the same???
-//         }
-//     } else {
-//         return err!(ErrorCode::LastPageEmpty);
-//     };
+    // check if last_page differs from order page
+    if let Some(mut last_page) = optional_last_page {
+        if let Some(last_order) = last_page.pop() {
+            order_page.set(index, last_order);
+        } else {
+            return err!(ErrorCode::LastPageEmpty);
+        }
+    } else {
+        // if the order_page is the last page and the order is the final entry we just pop
+        if index + 1 == order_page.length  {
+            order_page.pop();
+        } else if let Some(last_order) = order_page.pop() {
+            order_page.set(index, last_order)
+        } else {
+            return err!(ErrorCode::LastPageEmpty);
+        }
+    }
 
-//     *orderbook_length -= 1;
+    *orderbook_length -= 1;
 
-//     // Delete from user account
-//     if let Some(deletion_index) = user_account.find_order(order_data, orderbook_id) {
-//         user_account.delete(deletion_index);
-//     } else {
-//         return err!(ErrorCode::UserMissingOrder);
-//     };
+    // Delete from user account
+    if let Some(deletion_index) = user_account.find_order(order_data, orderbook_id) {
+        user_account.delete(deletion_index);
+    } else {
+        return err!(ErrorCode::UserMissingOrder);
+    };
 
-//     Ok(())
-// }
+    Ok(())
+}
 
 // pub fn edit_order(index: u32, new_num_apples: u64, new_num_oranges: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
 //     let mut order_data = order_page.get(index);
@@ -68,8 +73,6 @@ declare_id!("GXDLaLKoGyCPqWJrSEmt4eTZRjWDBCFSXyWCRtBM3uGy");
 
 #[program]
 pub mod syrup {
-    use anchor_lang::solana_program::clock::DEFAULT_DEV_SLOTS_PER_EPOCH;
-
     use crate::data::TradeRecord;
 
     use super::*;
@@ -252,53 +255,69 @@ pub mod syrup {
     //     Ok(())
     // }
 
-    // #[allow(unused_variables)]
-    // pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
+    #[allow(unused_variables)]
+    pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
 
-    //     let order_data: Order = ctx.accounts.order_page.get(index);
-    //     if order_data != order {
-    //         return err!(ErrorCode::WrongOrder);
-    //     } else if ctx.accounts.user.key() != order_data.user {
-    //         return err!(ErrorCode::IncorrectUser);
-    //     };
+        let optional_last_page: Option<RefMut<OrderbookPage>>;
+        let mut order_page = ctx.accounts.order_page.load_mut()?;
+        let load_attempt = ctx.accounts.order_page.load_mut();
 
-    //     let order_page = &mut ctx.accounts.order_page;
-    //     let last_page = &mut ctx.accounts.last_page;
-    //     let user_account = &mut ctx.accounts.user_account;
+        match load_attempt {
+            Ok(page) => optional_last_page = Some(page),
+            Err(e) => optional_last_page = None
+        }
 
-    //     // need to split up variables to avoid borrower check errors
-    //     let orderbook_id = ctx.accounts.orderbook_info.id.clone();
-    //     let orderbook_bump = ctx.accounts.orderbook_info.bump;
-    //     let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
-    //     let orderbook_length = &mut ctx.accounts.orderbook_info.length;
+        let order_data: Order = order_page.get(index);
 
-    //     // Refund order
-    //     let seeds = &[
-    //         &orderbook_id.to_bytes(),
-    //         "orderbook-info".as_bytes(),
-    //         &[orderbook_bump],
-    //     ];
-    //     let signer_seeds = &[&seeds[..]];
+        if order_data != order {
+            return err!(ErrorCode::WrongOrder);
+        } else if ctx.accounts.user.key() != order_data.user {
+            return err!(ErrorCode::IncorrectUser);
+        };
 
-    //     let amount = if order_data.offering_apples { 
-    //         order.num_apples
-    //     } else { 
-    //         order.num_oranges
-    //     };
+        // let last_page = &mut ctx.accounts.last_page;
+        let user_account = &mut ctx.accounts.user_account;
 
-    //     transfer_tokens(
-    //         amount,
-    //         ctx.accounts.vault.to_account_info(),
-    //         ctx.accounts.user_ata.to_account_info(),
-    //         orderbook_account_info,
-    //         ctx.accounts.token_program.to_account_info(),
-    //         Some(signer_seeds)
-    //     )?;
+        // need to split up variables to avoid borrower check errors
+        let orderbook_id = ctx.accounts.orderbook_info.id;
+        let orderbook_bump = ctx.accounts.orderbook_info.bump;
+        let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
+        let orderbook_length = &mut ctx.accounts.orderbook_info.length;
 
-    //     delete_order(index, last_page, order_page, user_account, orderbook_length)?;
+        // Refund order
+        let seeds = &[
+            &orderbook_id.to_bytes(),
+            "orderbook-info".as_bytes(),
+            &[orderbook_bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
 
-    //     Ok(())
-    // }
+        let amount = if order_data.offering_apples { 
+            order.num_apples
+        } else { 
+            order.num_oranges
+        };
+
+        transfer_tokens(
+            amount,
+            ctx.accounts.vault.to_account_info(),
+            ctx.accounts.user_ata.to_account_info(),
+            orderbook_account_info,
+            ctx.accounts.token_program.to_account_info(),
+            Some(signer_seeds)
+        )?;
+
+        delete_order(index, optional_last_page, order_page, user_account, orderbook_length)?;
+
+        // if order_is_on_last_page {
+        //     delete_order(index, None, order_page, user_account, orderbook_length)?;
+        // } else {
+        //     let last_page = ctx.accounts.last_page.load_mut()?;
+        //     delete_order(index, Some(last_page), order_page, user_account, orderbook_length)?;
+        // }
+
+        Ok(())
+    }
 
     pub fn close_orderbook(ctx: Context<CloseOrderbook>) -> Result<()> {
         if ctx.accounts.orderbook_info.is_closed() {
