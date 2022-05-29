@@ -3,7 +3,7 @@ import { displayBN } from "@/utils/BNutils"
 import React from "react"
 import BN from "bn.js"
 import clsx from "clsx"
-import { usePosition } from "./usePosition"
+import { usePosition } from "../../positions/usePosition"
 
 export const MiniPosition = ({
   marketAddress,
