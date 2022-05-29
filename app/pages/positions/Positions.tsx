@@ -8,7 +8,7 @@ import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/outline"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import Link from "next/link"
-import { useMarket, useMarkets } from "pages/markets/Market/hooks/marketQueries"
+import { useMarket } from "pages/markets/Market/hooks/marketQueries"
 import {
   orderbookKeys,
   useOrderbook,
@@ -17,16 +17,16 @@ import {
 import { displayBN } from "@/utils/BNutils"
 import { RedeemButton } from "pages/markets/Market/Redeem"
 import { queryClient } from "pages/providers"
-import { useAllTokenAccounts, useTokenAccount } from "pages/tokenAccountQuery"
+import { useTokenAccount } from "pages/tokenAccountQuery"
 import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
 
-import React, { useMemo } from "react"
+import React from "react"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { useResolutionMint } from "pages/markets/Market/Orderbook/usePlaceOrder"
 import BN from "bn.js"
 import { ORDERBOOK_PAGE_MAX_LENGTH } from "config"
-import clsx from "clsx"
+import { usePositions } from "./usePositions"
 
 const YesBadge = () => (
   <>
@@ -45,122 +45,6 @@ const NoBadge = () => (
     </span>
   </>
 )
-
-const usePositions = () => {
-  const accounts = useAllTokenAccounts()
-  const markets = useMarkets()
-  const userOrders = useOrderbookUserAccount()
-
-  // TODO maybe wrap this in useQuery?
-  // TODO in future we should have pointers from tokens to markets on chain
-  const positions = useMemo(() => {
-    if (!markets.data) return undefined
-    if (!accounts.data) return undefined
-
-    const accountsSimplified = accounts.data.value.map((account) => ({
-      mint: new PublicKey(account.account.data.parsed.info.mint),
-      uiAmount: account.account.data.parsed.info.tokenAmount.uiAmount,
-    }))
-
-    const nonzero = accountsSimplified.filter(({ uiAmount }) => uiAmount > 0)
-
-    return markets.data
-      .map((market) => {
-        const [yesAccount] = nonzero.filter(({ mint }) =>
-          mint.equals(market.account.yesMint)
-        )
-        const [noAccount] = nonzero.filter(({ mint }) =>
-          mint.equals(market.account.noMint)
-        )
-        const orders = userOrders.data?.orders.filter((x) =>
-          market.publicKey.equals(x.market)
-        )
-
-        if (yesAccount || noAccount)
-          return {
-            marketAddress: market.publicKey,
-            yesMint: yesAccount?.mint,
-            noMint: noAccount?.mint,
-            orders,
-          } as const
-      })
-      .filter((x): x is typeof x & {} => x !== undefined)
-  }, [accounts.data, markets.data, userOrders.data?.orders])
-
-  return positions
-}
-
-export const usePosition = (market: PublicKey) => {
-  const yesMint = useResolutionMint(market, "yes")
-  const noMint = useResolutionMint(market, "no")
-  const yesAccount = useTokenAccount(yesMint)
-  const noAccount = useTokenAccount(noMint)
-  const userOrders = useOrderbookUserAccount()
-
-  // doesn't include orders, i suppose it could
-  const position = useMemo(() => {
-    if (!userOrders.data) return undefined
-    if (!yesAccount.data) return undefined
-    if (!noAccount.data) return undefined
-
-    const yesHeld = new BN(yesAccount.data.value.amount)
-    const noHeld = new BN(noAccount.data.value.amount)
-
-    const relevantOrders = userOrders.data.orders.filter((order) =>
-      order.market.equals(market)
-    )
-    const escrowedYes = relevantOrders
-      .filter((order) => order.offeringApples)
-      .map((x) => x.numApples)
-      .reduce((sum, x) => sum.add(x), new BN(0))
-
-    const escrowedNo = relevantOrders
-      .filter((order) => !order.offeringApples)
-      .map((x) => x.numOranges)
-      .reduce((sum, x) => sum.add(x), new BN(0))
-
-    const totalYes = yesHeld.add(escrowedYes)
-    const totalNo = noHeld.add(escrowedNo)
-
-    const withdrawable = BN.min(yesHeld, noHeld)
-    console.log("yesHeld", yesHeld.toString())
-    console.log("noHeld", noHeld.toString())
-    console.log("with", withdrawable.toString())
-
-    if (totalYes.eq(totalNo)) {
-      return {
-        position: "neutral",
-        deposited: totalYes,
-        size: undefined,
-        orders: relevantOrders,
-        escrowed: escrowedNo.add(escrowedYes),
-        withdrawable,
-      } as const
-    } else if (totalYes.lt(totalNo)) {
-      return {
-        position: "no",
-        deposited: totalYes,
-        size: totalNo.sub(totalYes),
-        orders: relevantOrders,
-        escrowed: escrowedNo.add(escrowedYes),
-        withdrawable,
-      } as const
-    } else if (totalYes.gt(totalNo)) {
-      return {
-        position: "yes",
-        deposited: totalNo,
-        size: totalYes.sub(totalNo),
-        orders: relevantOrders,
-        escrowed: escrowedNo.add(escrowedYes),
-        withdrawable,
-      } as const
-    } else {
-      throw new Error("this error should not mathematically be possible")
-    }
-  }, [market, noAccount.data, userOrders.data, yesAccount.data])
-
-  return position
-}
 
 const Positions = ({}) => {
   const positions = usePositions()
@@ -223,53 +107,6 @@ const Positions = ({}) => {
 }
 
 export default Positions
-
-export const MiniPosition = ({
-  marketAddress,
-}: {
-  marketAddress: PublicKey
-}) => {
-  const position = usePosition(marketAddress)
-
-  return position === undefined ? null : (
-    <div
-      className={clsx(
-        "shadow rounded-lg",
-        position.position === "neutral" && "bg-gray-50",
-        position.position === "yes" && "bg-lime-50",
-        position.position === "no" && "bg-rose-50"
-      )}
-    >
-      <div className={clsx("whitespace-nowrap px-3 py-4 font-med sm:px-6")}>
-        {position.position === "yes" ? (
-          <>
-            You have{" "}
-            <span className="font-medium text-lime-700">
-              ${displayBN(position.size)} YES
-            </span>
-          </>
-        ) : position.position === "no" ? (
-          <>
-            <span className="font-medium text-rose-700">
-              ${displayBN(position.size)} NO
-            </span>
-          </>
-        ) : null}
-        <div className="text-sm text-gray-500">
-          {position.withdrawable.gt(new BN(0)) && (
-            <p>${displayBN(position.withdrawable)} USDC withdrawable</p>
-          )}
-          {position.orders.length > 0 && (
-            <p>
-              ${displayBN(position.escrowed)} escrowed across{" "}
-              {position.orders.length} orders
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function Position({
   marketAddress,
