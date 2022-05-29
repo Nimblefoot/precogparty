@@ -3,7 +3,7 @@ import {
   useTransact,
 } from "@/components/TransactButton"
 import { displayBN } from "@/utils/BNutils"
-import { amountBoughtAtPercentOdds, BN_, order2ui } from "@/utils/orderMath"
+import { amountBoughtAtPercentOdds } from "@/utils/orderMath"
 import { RadioGroup } from "@headlessui/react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
@@ -17,113 +17,41 @@ import {
 } from "config"
 import { queryClient } from "pages/providers"
 import { tokenAccountKeys } from "pages/tokenAccountQuery"
-import React, { useCallback, useMemo, useRef, useState } from "react"
+import React, { useCallback, useRef, useState } from "react"
 import useMintContingentSet from "../hooks/useMintContingentSet"
-import { orderbookKeys, useOrderbook } from "../Orderbook/orderbookQueries"
+import { orderbookKeys } from "../Orderbook/orderbookQueries"
 import { Splitty } from "../Orderbook/Splitty"
 import { useSellable } from "./useSellable"
 import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
 import useTakeOrder from "../Orderbook/useTakeOrder"
+import { useTakeOrders } from "./useTakeOrders"
 
-const useTakeBuyAccounting = (
-  marketAddress: PublicKey,
-  usdcInput: string,
-  taking: Resolution,
+const useAccounting = ({
+  usdcInput,
+  percentOdds,
+  resolution,
+  marketAddress,
+}: {
+  usdcInput: string
   percentOdds: number
-) => {
-  const orderbook = useOrderbook(marketAddress)
+  resolution: Resolution
+  marketAddress: PublicKey
+}) => {
+  const inputAmount = new BN(parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS)
+  const positionOutput = amountBoughtAtPercentOdds({
+    percentOdds: resolution === "yes" ? percentOdds : 100 - percentOdds,
+    inputAmount,
+  })
 
-  // TODO refactor to query
-  const orders = useMemo(
-    () =>
-      orderbook.data?.pages
-        .flatMap((page, i) =>
-          page.list.map((x, k) => ({ ...x, page: i, index: k }))
-        )
-        .map((x) => ({ ...x, odds: order2ui(x).odds }))
-        .sort((a, b) => b.odds - a.odds),
-    [orderbook.data?.pages]
+  const { totalBought, totalSpend, orderInteractions } = useTakeOrders(
+    marketAddress,
+    inputAmount,
+    resolution,
+    percentOdds
   )
 
-  const relevantOrders = useMemo(
-    () =>
-      orders
-        ?.filter((x) =>
-          taking === "yes" ? x.offeringApples : !x.offeringApples
-        )
-        .sort((a, b) => (taking === "yes" ? a.odds - b.odds : b.odds - a.odds)),
-    [orders, taking]
-  )
-
-  const [totalSharesRecieved, totalSpend, orderInteractions] = useMemo(() => {
-    const value = new BN(parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS)
-
-    // Odds ratio of YES:NO, times 1000
-    const oddsRatioMilli = new BN(percentOdds * 1000).div(
-      new BN(100 - percentOdds)
-    )
-
-    // TODO allow input
-    if (!relevantOrders) return [undefined, undefined]
-
-    const { total, spent, orderInteractions } = relevantOrders.reduce(
-      (acc, x) => {
-        const { total, fundsRemaining, spent, orderInteractions } = acc
-
-        // if we have no funds left to spend, continue
-        if (fundsRemaining.lten(0)) return acc
-
-        // if the price is not right, continue
-        const orderOddsRatioMilli = x.numOranges
-          .mul(new BN(1000))
-          .div(x.numApples)
-        if (
-          taking === "yes"
-            ? // if we are buying yes then we want the order's odds ratio to be below ours (we only buy if the event is more likely to us than them)
-              orderOddsRatioMilli.gt(oddsRatioMilli)
-            : // if we are buying no then we want the order's odds ratio to be above ours
-              orderOddsRatioMilli.lt(oddsRatioMilli)
-        )
-          return acc
-
-        const offering = x.offeringApples ? x.numApples : x.numOranges
-        const cost = x.offeringApples ? x.numOranges : x.numApples
-
-        if (cost.lte(fundsRemaining)) {
-          return {
-            total: total.add(offering).add(cost),
-            fundsRemaining: fundsRemaining.sub(cost),
-            spent: spent.add(cost),
-            orderInteractions: [
-              ...orderInteractions,
-              { order: x, amountToExchange: cost },
-            ],
-          }
-        } else {
-          const buying = fundsRemaining.mul(offering).div(cost)
-          return {
-            total: total.add(buying).add(fundsRemaining),
-            fundsRemaining: new BN(0),
-            spent: spent.add(fundsRemaining),
-            orderInteractions: [
-              ...orderInteractions,
-              { order: x, amountToExchange: fundsRemaining },
-            ],
-          }
-        }
-      },
-      {
-        total: new BN(0),
-        fundsRemaining: value,
-        spent: new BN(0),
-        orderInteractions: [] as {
-          order: typeof relevantOrders[number]
-          amountToExchange: BN_
-        }[],
-      }
-    )
-    return [total, spent, orderInteractions] as const
-  }, [percentOdds, relevantOrders, taking, usdcInput])
+  const totalSharesRecieved =
+    totalBought && totalSpend && totalBought.add(totalSpend)
 
   const priceCents =
     totalSharesRecieved !== undefined &&
@@ -133,7 +61,28 @@ const useTakeBuyAccounting = (
       ? totalSpend.mul(new BN(100)).divRound(totalSharesRecieved)
       : undefined
 
-  return { priceCents, totalSharesRecieved, totalSpend, orderInteractions }
+  // TODO this is wrong i think
+  // should be orderSpendAmount / priceImpliedByOdds, cause we want to spend all the money
+
+  const orderSpendAmount = inputAmount.sub(totalSpend ?? new BN(0))
+  const orderBuyAmount = amountBoughtAtPercentOdds({
+    percentOdds: resolution === "yes" ? percentOdds : 100 - percentOdds,
+    inputAmount: orderSpendAmount,
+  })
+
+  return {
+    taking: {
+      orderInteractions,
+      totalBought,
+      totalSpend,
+      priceCents,
+      totalSharesRecieved,
+    },
+    positionOutput,
+    orderBuyAmount,
+    orderSpendAmount,
+    inputAmount,
+  }
 }
 
 const useSubmitBet = ({
@@ -226,68 +175,6 @@ const useSubmitBet = ({
   ])
 
   return { submit, status }
-}
-
-const useBetAccounting = ({
-  usdcInput,
-  percentOdds,
-  resolution,
-}: {
-  usdcInput: string
-  percentOdds: number
-  resolution: Resolution
-}) => {
-  const inputAmount = new BN(parseFloat(usdcInput) * 10 ** COLLATERAL_DECIMALS)
-  const positionOutput = amountBoughtAtPercentOdds({
-    percentOdds: resolution === "yes" ? percentOdds : 100 - percentOdds,
-    inputAmount,
-  })
-  return { positionOutput, inputAmount }
-}
-
-const useAccounting = ({
-  usdcInput,
-  percentOdds,
-  resolution,
-  marketAddress,
-}: {
-  usdcInput: string
-  percentOdds: number
-  resolution: Resolution
-  marketAddress: PublicKey
-}) => {
-  const takeAccounting = useTakeBuyAccounting(
-    marketAddress,
-    usdcInput,
-    resolution,
-    percentOdds
-  )
-
-  const { positionOutput, inputAmount } = useBetAccounting({
-    usdcInput,
-    percentOdds,
-    resolution,
-  })
-
-  // this is wrong i think
-  // should be orderSpendAmount / price
-
-  const orderSpendAmount = inputAmount.sub(
-    takeAccounting.totalSpend ?? new BN(0)
-  )
-
-  const orderBuyAmount = amountBoughtAtPercentOdds({
-    percentOdds: resolution === "yes" ? percentOdds : 100 - percentOdds,
-    inputAmount: orderSpendAmount,
-  })
-
-  return {
-    taking: takeAccounting,
-    positionOutput,
-    orderBuyAmount,
-    orderSpendAmount,
-    inputAmount,
-  }
 }
 
 const RESOLUTIONS = ["yes", "no"] as const
