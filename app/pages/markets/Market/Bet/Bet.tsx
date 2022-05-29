@@ -3,13 +3,7 @@ import {
   useTransact,
 } from "@/components/TransactButton"
 import { displayBN } from "@/utils/BNutils"
-import interpolateOddsColors from "@/utils/interpolateOddsColors"
-import {
-  amountBoughtAtPercentOdds,
-  BN_,
-  order2ui,
-  ui2placeOrderFields,
-} from "@/utils/orderMath"
+import { amountBoughtAtPercentOdds, BN_, order2ui } from "@/utils/orderMath"
 import { RadioGroup } from "@headlessui/react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
@@ -22,14 +16,13 @@ import {
   TAKE_ORDER_COST,
 } from "config"
 import { queryClient } from "pages/providers"
-import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
+import { tokenAccountKeys } from "pages/tokenAccountQuery"
 import React, { useCallback, useMemo, useRef, useState } from "react"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys, useOrderbook } from "../Orderbook/orderbookQueries"
-import { PlaceExitOrder } from "../Orderbook/PlaceExitOrder"
 import { Splitty } from "../Orderbook/Splitty"
-import { useSellable } from "../Orderbook/TakeExitOrder"
-import usePlaceOrderTxn, { useResolutionMint } from "../Orderbook/usePlaceOrder"
+import { useSellable } from "./useSellable"
+import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
 import useTakeOrder from "../Orderbook/useTakeOrder"
 
 const useTakeBuyAccounting = (
