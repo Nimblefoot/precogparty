@@ -124,7 +124,7 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
           </div>
         </div>
         {/* 2nd column */}
-        <div className="min-w-[20rem] flex flex-col gap-4">
+        <div className="w-[25rem] flex flex-col gap-4">
           <MiniPosition marketAddress={address} />
           <BetPanel marketAddress={address} />
 
