@@ -5,6 +5,8 @@ import BN from "bn.js"
 import clsx from "clsx"
 import { usePosition } from "../../positions/usePosition"
 import { Disclosure, Transition } from "@headlessui/react"
+import { Sell } from "./Bet/Sell"
+import { Resolution } from "config"
 
 export const MiniPosition = ({
   marketAddress,
@@ -29,40 +31,42 @@ export const MiniPosition = ({
             <div
               className={clsx("whitespace-nowrap px-3 py-4 font-med sm:px-6")}
             >
-              <div className="flex justify-between items-center">
-                <div>
-                  {position.position === "yes" ? (
-                    <>
-                      You have{" "}
-                      <span className="font-medium text-lime-700">
-                        ${displayBN(position.size)} YES
-                      </span>
-                    </>
-                  ) : position.position === "no" ? (
-                    <>
-                      <span className="font-medium text-rose-700">
-                        ${displayBN(position.size)} NO
-                      </span>
-                    </>
-                  ) : null}
+              {position.position !== "neutral" && (
+                <div className="flex justify-between items-center">
+                  <div>
+                    {position.position === "yes" ? (
+                      <>
+                        You have{" "}
+                        <span className="font-medium text-lime-700">
+                          ${displayBN(position.size)} YES
+                        </span>
+                      </>
+                    ) : position.position === "no" ? (
+                      <>
+                        <span className="font-medium text-rose-700">
+                          ${displayBN(position.size)} NO
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                  <div>
+                    <Disclosure.Button>
+                      <button
+                        data-name="SELL BUTTON"
+                        type="button"
+                        className={clsx(
+                          "inline-flex items-center px-2.5 py-0.5 border border-transparent text-xs font-medium rounded",
+                          position.position === "yes"
+                            ? "text-lime-700 hover:bg-lime-200 border border-lime-700"
+                            : "text-rose-700 hover:bg-rose-200 border border-rose-700"
+                        )}
+                      >
+                        SELL
+                      </button>
+                    </Disclosure.Button>
+                  </div>
                 </div>
-                <div>
-                  <Disclosure.Button>
-                    <button
-                      data-name="SELL BUTTON"
-                      type="button"
-                      className={clsx(
-                        "inline-flex items-center px-2.5 py-0.5 border border-transparent text-xs font-medium rounded",
-                        position.position === "yes"
-                          ? "text-lime-700 hover:bg-lime-200 border border-lime-700"
-                          : "text-rose-700 hover:bg-rose-200 border border-rose-700"
-                      )}
-                    >
-                      SELL
-                    </button>
-                  </Disclosure.Button>
-                </div>
-              </div>
+              )}
               <div className="text-sm text-gray-500">
                 {position.withdrawable.gt(new BN(0)) && (
                   <p>${displayBN(position.withdrawable)} USDC withdrawable</p>
@@ -81,18 +85,13 @@ export const MiniPosition = ({
             // TODO find a good accordion animation
             className={clsx("bg-white border-t", open ? "" : "hidden")}
           >
-            <div
-              className={clsx(
-                "whitespace-nowrap px-3 py-4 font-med sm:px-6 scale-x collapse"
-              )}
-            >
-              fart
-            </div>
+            <Sell
+              marketAddress={marketAddress}
+              selling={position.position as Resolution}
+            />
           </div>
         </div>
       )}
     </Disclosure>
   )
 }
-
-const Sell = () => {}

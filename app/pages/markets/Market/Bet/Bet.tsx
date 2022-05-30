@@ -21,7 +21,6 @@ import React, { useCallback, useRef, useState } from "react"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "../Orderbook/orderbookQueries"
 import { Splitty } from "../Orderbook/Splitty"
-import { useSellable } from "./useSellable"
 import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
 import useTakeOrder from "../Orderbook/useTakeOrder"
 import { useTakeOrders } from "./useTakeOrders"
@@ -114,7 +113,6 @@ const useSubmitBet = ({
       amount: orderSpendAmount.add(taking.totalSpend ?? new BN(0)),
     })
 
-    // this is wrong. orderBuyAmount is the total recieved
     const placeTxn = orderSpendAmount.gt(new BN(0))
       ? await buy({
           offeringYes: resolution === "no",
@@ -400,8 +398,6 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
 }
 
 const BetPanel = ({ marketAddress }: { marketAddress: PublicKey }) => {
-  const sellable = useSellable(marketAddress)
-
   return (
     <div className="shadow bg-white rounded-lg">
       <div className="px-4 py-5 border-b border-gray-200 sm:px-6">

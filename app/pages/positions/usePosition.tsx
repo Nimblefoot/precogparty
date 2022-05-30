@@ -38,9 +38,6 @@ export const usePosition = (market: PublicKey) => {
     const totalNo = noHeld.add(escrowedNo)
 
     const withdrawable = BN.min(yesHeld, noHeld)
-    console.log("yesHeld", yesHeld.toString())
-    console.log("noHeld", noHeld.toString())
-    console.log("with", withdrawable.toString())
 
     if (totalYes.eq(totalNo)) {
       return {
