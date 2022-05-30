@@ -1,13 +1,13 @@
-import { PublicKey } from "@solana/web3.js" // eslint-disable-line @typescript-eslint/no-unused-vars
-import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
-import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as borsh from "@project-serum/borsh"
+import BN from "bn.js"
+import * as types from "."
 
 export interface OrderFields {
   numApples: BN
   offeringApples: boolean
   user: PublicKey
   numOranges: BN
+  memo: number
 }
 
 export interface OrderJSON {
@@ -15,6 +15,7 @@ export interface OrderJSON {
   offeringApples: boolean
   user: string
   numOranges: string
+  memo: number
 }
 
 export class Order {
@@ -22,12 +23,14 @@ export class Order {
   readonly offeringApples: boolean
   readonly user: PublicKey
   readonly numOranges: BN
+  readonly memo: number
 
   constructor(fields: OrderFields) {
     this.numApples = fields.numApples
     this.offeringApples = fields.offeringApples
     this.user = fields.user
     this.numOranges = fields.numOranges
+    this.memo = fields.memo
   }
 
   static layout(property?: string) {
@@ -37,6 +40,7 @@ export class Order {
         borsh.bool("offeringApples"),
         borsh.publicKey("user"),
         borsh.u64("numOranges"),
+        borsh.u8("memo"),
       ],
       property
     )
@@ -49,6 +53,7 @@ export class Order {
       offeringApples: obj.offeringApples,
       user: obj.user,
       numOranges: obj.numOranges,
+      memo: obj.memo,
     })
   }
 
@@ -58,6 +63,7 @@ export class Order {
       offeringApples: fields.offeringApples,
       user: fields.user,
       numOranges: fields.numOranges,
+      memo: fields.memo,
     }
   }
 
@@ -67,6 +73,7 @@ export class Order {
       offeringApples: this.offeringApples,
       user: this.user.toString(),
       numOranges: this.numOranges.toString(),
+      memo: this.memo,
     }
   }
 
@@ -76,6 +83,7 @@ export class Order {
       offeringApples: obj.offeringApples,
       user: new PublicKey(obj.user),
       numOranges: new BN(obj.numOranges),
+      memo: obj.memo,
     })
   }
 

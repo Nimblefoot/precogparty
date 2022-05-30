@@ -123,6 +123,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
             numOranges: numNo,
             numApples: numYes,
             offeringApples: offeringYes,
+            memo: 0, // TODO: change this to actually work as intended. Just trying not to break the app.
           },
         },
         {

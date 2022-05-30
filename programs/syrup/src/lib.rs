@@ -129,6 +129,7 @@ pub mod syrup {
             offering_apples: order.offering_apples,
             num_apples: order.num_apples,
             num_oranges: order.num_oranges,
+            memo: order.memo
         };
 
         // add to the lists of offers
