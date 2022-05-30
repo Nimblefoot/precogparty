@@ -12,8 +12,7 @@ pub struct Order {
     pub num_apples: u64,       // 8
     pub offering_apples: bool, // 1
     pub user: Pubkey,          // 32
-    pub num_oranges: u64,      // 8
-    pub memo: u8,              // 1 - 50 total.
+    pub num_oranges: u64,      // 8 - 49 total
 }
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
@@ -87,7 +86,7 @@ impl Default for OrderbookPage {
 }
 
 impl OrderbookPage {
-    pub const LEN: usize = 50 * MAX_SIZE + 64; // TODO: this is bigger than I feel like it needs to be
+    pub const LEN: usize = 49 * MAX_SIZE + 64; // TODO: this is bigger than I feel like it needs to be
 
     pub fn max_size() -> usize {
         MAX_SIZE

@@ -238,7 +238,6 @@ describe("orderbook", async () => {
         numApples: new anchor.BN(2e6),
         offeringApples: true,
         numOranges: new anchor.BN(1e6),
-        memo: 0,
       })
       .accounts({
         user: user.publicKey,
@@ -260,7 +259,6 @@ describe("orderbook", async () => {
         numApples: new anchor.BN(5e6),
         offeringApples: true,
         numOranges: new anchor.BN(5e6),
-        memo: 0,
       })
       .accounts({
         user: user.publicKey,
@@ -291,7 +289,6 @@ describe("orderbook", async () => {
         numOranges: new anchor.BN(5e6),
         offeringApples: false,
         numApples: new anchor.BN(1.5e7),
-        memo: 0,
       })
       .accounts({
         user: admin.publicKey,
@@ -336,7 +333,6 @@ describe("orderbook", async () => {
           numApples: new anchor.BN(2e6),
           offeringApples: true,
           numOranges: new anchor.BN(1e6),
-          memo: 0,
         },
         0,
         0
@@ -396,7 +392,6 @@ describe("orderbook", async () => {
           numApples: new anchor.BN(5e6),
           offeringApples: true,
           numOranges: new anchor.BN(5e6),
-          memo: 0,
         },
         new anchor.BN(2e6),
         0,
@@ -453,7 +448,6 @@ describe("orderbook", async () => {
           numOranges: new anchor.BN(5e6),
           offeringApples: false,
           numApples: new anchor.BN(1.5e7),
-          memo: 0,
         },
         new anchor.BN(15e6),
         0,
@@ -547,7 +541,6 @@ describe("orderbook", async () => {
           numApples: new anchor.BN(3e6),
           offeringApples: true,
           numOranges: new anchor.BN(3e6),
-          memo: 0,
         },
         new anchor.BN(2e6),
         0,
@@ -580,7 +573,6 @@ describe("orderbook", async () => {
           numApples: new anchor.BN(3e6),
           offeringApples: true,
           numOranges: new anchor.BN(3e6),
-          memo: 0,
         },
         0,
         0
