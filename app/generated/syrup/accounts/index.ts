@@ -1,6 +1,11 @@
-export { OrderbookInfo } from "./OrderbookInfo"
-export type { OrderbookInfoFields, OrderbookInfoJSON } from "./OrderbookInfo"
-export { OrderbookPage } from "./OrderbookPage"
-export type { OrderbookPageFields, OrderbookPageJSON } from "./OrderbookPage"
-export { UserAccount } from "./UserAccount"
-export type { UserAccountFields, UserAccountJSON } from "./UserAccount"
+export {
+  OrderbookInfo,
+  OrderbookInfoFields,
+  OrderbookInfoJSON,
+} from "./OrderbookInfo"
+export {
+  OrderbookPage,
+  OrderbookPageFields,
+  OrderbookPageJSON,
+} from "./OrderbookPage"
+export { UserAccount, UserAccountFields, UserAccountJSON } from "./UserAccount"

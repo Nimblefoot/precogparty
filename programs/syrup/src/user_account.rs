@@ -9,6 +9,7 @@ pub struct OrderRecord {
     pub num_apples: u64,       // 8
     pub offering_apples: bool, // 1
     pub num_oranges: u64,      // 8
+    pub memo: u8,              // 1
 }
 
 #[account]
@@ -18,7 +19,7 @@ pub struct UserAccount {
 }
 
 impl UserAccount {
-    pub const LEN: usize = 32 + (49 * 140) + 32;
+    pub const LEN: usize = 32 + (59 * 140) + 32;
 
     pub fn initialize(&mut self, user: Pubkey) {
         self.user = user;
@@ -39,6 +40,7 @@ impl UserAccount {
             record.offering_apples == order.offering_apples
                 && record.num_apples == order.num_apples
                 && record.num_oranges == order.num_oranges
+                && record.memo == order.memo
                 && record.market == orderbook_id
         })
     }
