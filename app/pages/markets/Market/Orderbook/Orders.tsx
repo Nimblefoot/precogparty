@@ -115,9 +115,7 @@ const OrderColumn = ({
                   ? (100 * odds).toFixed(0)
                   : (100 - 100 * odds).toFixed(0)) + "¢"
 
-              const size = order.offeringApples
-                ? displayBN(order.numApples)
-                : displayBN(order.numOranges)
+              const size = displayBN(order.numApples.add(order.numOranges))
 
               return (
                 <tr
