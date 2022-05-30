@@ -117,6 +117,13 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                   )}
                 </div>
               </div>
+              <div
+                className={clsx(
+                  "max-w-7xl mx-auto px-4 py-4 rounded-t-lg sm:px-6 lg:px-8"
+                )}
+              >
+                {market.data.description}
+              </div>
               <div className="px-4 py-5 sm:px-6 ">
                 <Orders marketAddress={address} />
               </div>
