@@ -69,13 +69,12 @@ export const MiniPosition = ({
               )}
               <div className="text-sm text-gray-500">
                 {position.withdrawable.gt(new BN(0)) && (
-                  <p>${displayBN(position.withdrawable)} USDC withdrawable</p>
+                  <p>
+                    ${displayBN(position.deposited)} USDC deposited in market
+                  </p>
                 )}
                 {position.orders.length > 0 && (
-                  <p>
-                    ${displayBN(position.escrowed)} escrowed across{" "}
-                    {position.orders.length} orders
-                  </p>
+                  <p>{position.orders.length} orders</p>
                 )}
               </div>
             </div>

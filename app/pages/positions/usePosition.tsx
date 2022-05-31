@@ -36,35 +36,35 @@ export const usePosition = (market: PublicKey) => {
 
     const totalYes = yesHeld.add(escrowedYes)
     const totalNo = noHeld.add(escrowedNo)
+    const deposited = BN.min(totalYes, totalNo)
 
+    const escrowed = escrowedNo.add(escrowedYes)
     const withdrawable = BN.min(yesHeld, noHeld)
+
+    const data = {
+      deposited,
+      escrowed,
+      withdrawable,
+      orders: relevantOrders,
+    }
 
     if (totalYes.eq(totalNo)) {
       return {
         position: "neutral",
-        deposited: totalYes,
         size: undefined,
-        orders: relevantOrders,
-        escrowed: escrowedNo.add(escrowedYes),
-        withdrawable,
+        ...data,
       } as const
     } else if (totalYes.lt(totalNo)) {
       return {
         position: "no",
-        deposited: totalYes,
         size: totalNo.sub(totalYes),
-        orders: relevantOrders,
-        escrowed: escrowedNo.add(escrowedYes),
-        withdrawable,
+        ...data,
       } as const
     } else if (totalYes.gt(totalNo)) {
       return {
         position: "yes",
-        deposited: totalNo,
         size: totalYes.sub(totalNo),
-        orders: relevantOrders,
-        escrowed: escrowedNo.add(escrowedYes),
-        withdrawable,
+        ...data,
       } as const
     } else {
       throw new Error("this error should not mathematically be possible")

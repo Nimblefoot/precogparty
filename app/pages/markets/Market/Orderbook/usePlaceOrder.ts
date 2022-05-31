@@ -17,7 +17,6 @@ import { useOrderbook } from "./orderbookQueries"
 import { ASSOCIATED_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/token"
 import { UserAccount } from "@/generated/syrup/accounts"
 import { PROGRAM_ID } from "@/generated/client/programId"
-import { ui2placeOrderFields } from "@/utils/orderMath"
 
 export const getMaybeCreateUserAccountAddress = async (
   connection: Connection,

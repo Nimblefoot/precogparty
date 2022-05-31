@@ -17,7 +17,7 @@ import {
 import { displayBN } from "@/utils/BNutils"
 import { RedeemButton } from "pages/markets/Market/Redeem"
 import { queryClient } from "pages/providers"
-import { useTokenAccount } from "pages/tokenAccountQuery"
+import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
 import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
 
 import React from "react"
@@ -316,6 +316,11 @@ const CancelOrderButton = ({ order }: { order: OrderRecordFields }) => {
 
     queryClient.invalidateQueries(orderbookKeys.book(order.market))
     queryClient.invalidateQueries(orderbookKeys.userAccount(publicKey))
+    if (found.offeringApples) {
+      queryClient.invalidateQueries(tokenAccountKeys.token(yesMint))
+    } else {
+      queryClient.invalidateQueries(tokenAccountKeys.token(noMint))
+    }
   }
   return (
     <>
