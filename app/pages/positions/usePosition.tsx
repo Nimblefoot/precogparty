@@ -24,13 +24,14 @@ export const usePosition = (market: PublicKey) => {
     const relevantOrders = userOrders.data.orders.filter((order) =>
       order.market.equals(market)
     )
-    const escrowedYes = relevantOrders
-      .filter((order) => order.offeringApples)
+    const yesOffers = relevantOrders.filter((order) => order.offeringApples)
+    const noOffers = relevantOrders.filter((order) => !order.offeringApples)
+
+    const escrowedYes = yesOffers
       .map((x) => x.numApples)
       .reduce((sum, x) => sum.add(x), new BN(0))
 
-    const escrowedNo = relevantOrders
-      .filter((order) => !order.offeringApples)
+    const escrowedNo = noOffers
       .map((x) => x.numOranges)
       .reduce((sum, x) => sum.add(x), new BN(0))
 
@@ -39,7 +40,41 @@ export const usePosition = (market: PublicKey) => {
     const deposited = BN.min(totalYes, totalNo)
 
     const escrowed = escrowedNo.add(escrowedYes)
-    const withdrawable = BN.min(yesHeld, noHeld)
+
+    // if you are using USDC to buy something, then in the UX we show this as an order for USDC -> YES/NO,
+    // in which case we dont want you to withdraw the other side of ur usdc thats being offered
+    const reservedForBuyOrder = {
+      // memo === 0 -> this is a buy order (not a sell order) (just a UX distinction, no impact, hence the field is called memo)
+      no: yesOffers
+        .filter((order) => order.memo === 0)
+        .map((x) => x.numApples)
+        .reduce((sum, x) => sum.add(x), new BN(0)),
+      yes: noOffers
+        .filter((order) => order.memo === 0)
+        .map((x) => x.numApples)
+        .reduce((sum, x) => sum.add(x), new BN(0)),
+    }
+
+    // here we reserve an amount of A equal to the amount of B we are seeking, since this order is trying to buy USDC
+    const reservedForSellOrder = {
+      yes: yesOffers
+        .filter((order) => order.memo === 1)
+        .map((x) => x.numOranges)
+        .reduce((sum, x) => sum.add(x), new BN(0)),
+      no: noOffers
+        .filter((order) => order.memo === 1)
+        .map((x) => x.numApples)
+        .reduce((sum, x) => sum.add(x), new BN(0)),
+    }
+    const reserved = {
+      yes: reservedForBuyOrder.yes.add(reservedForSellOrder.yes),
+      no: reservedForBuyOrder.no.add(reservedForSellOrder.no),
+    }
+
+    const withdrawable = BN.min(
+      yesHeld.sub(reserved.yes),
+      noHeld.sub(reserved.no)
+    )
 
     const data = {
       deposited,

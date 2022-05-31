@@ -5,6 +5,7 @@ import {
 import { displayBN } from "@/utils/BNutils"
 import { amountBoughtAtPercentOdds } from "@/utils/orderMath"
 import { RadioGroup } from "@headlessui/react"
+import { useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
 import clsx from "clsx"
@@ -95,6 +96,7 @@ const useSubmitBet = ({
   percentOdds: number
   resolution: Resolution
 }) => {
+  const { publicKey } = useWallet()
   const { orderBuyAmount, orderSpendAmount, taking } = useAccounting({
     usdcInput,
     percentOdds,
@@ -157,6 +159,10 @@ const useSubmitBet = ({
     console.log(txn)
     await callback(txn)
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
+    queryClient.invalidateQueries(
+      orderbookKeys.userAccount(publicKey ?? undefined)
+    )
+
     // TODO invalidate the correct keys
     queryClient.invalidateQueries(tokenAccountKeys.all)
   }, [
@@ -170,6 +176,7 @@ const useSubmitBet = ({
     takeOrder,
     taking.orderInteractions,
     taking.totalSpend,
+    publicKey,
   ])
 
   return { submit, status }
