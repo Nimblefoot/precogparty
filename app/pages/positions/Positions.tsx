@@ -4,7 +4,11 @@ import {
 } from "@/components/TransactButton"
 import { cancelOrder } from "@/generated/syrup/instructions"
 import { OrderRecordFields } from "@/generated/syrup/types"
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/outline"
+import {
+  ArrowRightIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from "@heroicons/react/outline"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import Link from "next/link"
@@ -27,6 +31,8 @@ import { useResolutionMint } from "pages/markets/Market/Orderbook/usePlaceOrder"
 import BN from "bn.js"
 import { ORDERBOOK_PAGE_MAX_LENGTH } from "config"
 import { usePositions } from "./usePositions"
+import clsx from "clsx"
+import { usePosition } from "./usePosition"
 
 const YesBadge = () => (
   <>
@@ -65,39 +71,14 @@ const Positions = ({}) => {
         <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
-                    >
-                      Market
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                    >
-                      Balance
-                    </th>
-
-                    <th
-                      scope="col"
-                      className="relative py-3.5 pl-3 pr-4 sm:pr-6"
-                    >
-                      <span className="sr-only">Edit</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {positions?.map((position) => (
-                    <Position
-                      key={position.marketAddress.toString()}
-                      {...position}
-                    />
-                  ))}
-                </tbody>
-              </table>
+              <div className="min-w-full divide-y divide-gray-300">
+                {positions?.map((position) => (
+                  <Position
+                    key={position.marketAddress.toString()}
+                    {...position}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -115,26 +96,15 @@ function Position({
   orders,
 }: NonNullable<ReturnType<typeof usePositions>>[number]) {
   const market = useMarket(marketAddress)
-  const yesAccount = useTokenAccount(yesMint)
-  const noAccount = useTokenAccount(noMint)
+  const position = usePosition(marketAddress)
 
-  const yesAmount =
-    yesAccount.data?.value &&
-    yesAccount.data.value.uiAmount !== null &&
-    yesAccount.data.value.uiAmount > 0 &&
-    yesAccount.data.value.uiAmount
-  const noAmount =
-    noAccount.data?.value &&
-    noAccount.data.value.uiAmount !== null &&
-    noAccount.data.value.uiAmount > 0 &&
-    noAccount.data.value.uiAmount
-
-  return (
+  return position ? (
     <>
-      <tr>
-        <td
+      <div className="bg-white whitespace-nowrap px-6 py-4 ">
+        <div
           className={`
-          whitespace-nowrap py-4 pl-4 pr-3 text-lg font-medium sm:pl-6
+          whitespace-nowrap text-lg font-medium flex justify-between
+          bg-white
           ${market.data?.resolution === 0 ? "text-gray-900" : "text-gray-500"}
         `}
         >
@@ -145,29 +115,51 @@ function Position({
               {market.data?.resolution === 2 && <NoBadge />}
             </a>
           </Link>
-        </td>
-        <td
-          className={`
-        whitespace-nowrap px-3 py-4 font-med
-      `}
-        >
-          {yesAmount && <span className="text-lime-700">${yesAmount} YES</span>}
+          <div className={clsx("font-med text-right")}>
+            <div>
+              {position.position === "yes" ? (
+                <>
+                  You have{" "}
+                  <span className="font-medium text-lime-700">
+                    ${displayBN(position.size)} YES
+                  </span>
+                </>
+              ) : position.position === "no" ? (
+                <>
+                  <span className="font-medium text-rose-700">
+                    ${displayBN(position.size)} NO
+                  </span>
+                </>
+              ) : null}
+            </div>
+            <div className="text-sm text-gray-500">
+              {position.deposited.gt(new BN(0)) && (
+                <p>${displayBN(position.deposited)} USDC deposited</p>
+              )}
+              {position.orders.length > 0 && (
+                <p>{position.orders.length} orders</p>
+              )}
+            </div>
+            {/* {yesAmount && <span className="text-lime-700">${yesAmount} YES</span>}
           {yesAmount && noAmount && <>{",  "}</>}
-          {noAmount && <span className="text-rose-700">${noAmount} NO</span>}
-        </td>
+          {noAmount && <span className="text-rose-700">${noAmount} NO</span>} */}
+          </div>
+        </div>
 
-        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+        {/* <div className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
           {market.data?.resolution !== 0 && (
             <RedeemButton address={marketAddress} className="disabled:hidden" />
           )}
-        </td>
-      </tr>
-      {(orders?.length ?? 0) > 0 &&
-        orders?.map((order, i) => (
-          <Order key={JSON.stringify(order) + i} {...order} />
-        ))}
+        </div> */}
+        <div>
+          {(orders?.length ?? 0) > 0 &&
+            orders?.map((order, i) => (
+              <Order key={JSON.stringify(order) + i} {...order} />
+            ))}
+        </div>
+      </div>
     </>
-  )
+  ) : null
 }
 
 const Order = ({
@@ -175,48 +167,45 @@ const Order = ({
   numOranges,
   offeringApples,
   market,
+  memo,
 }: OrderRecordFields) => {
+  const isBuyOrder = memo === 0
+  const offerSize = offeringApples ? numApples : numOranges
+  const seekingSize = offeringApples ? numOranges : numApples
+
   return (
-    <>
-      <tr>
-        <td
-          className="whitespace-nowrap py-3 pl-4 pr-3 font-medium sm:pl-6 bg-gray-100"
-          colSpan={2}
-        >
-          <div className="flex items-center">
-            <div className="h-0 w-6 border border-black mr-2" />
-            {/* TODO check if offering apples */}
-            <div>
-              You&apos;re offering{" "}
-              {offeringApples ? (
-                <span className="text-lime-700">
-                  ${displayBN(numApples)} YES
-                </span>
-              ) : (
-                <span className="text-rose-700">
-                  ${displayBN(numOranges)} NO
-                </span>
-              )}{" "}
-              for{" "}
-              {!offeringApples ? (
-                <span className="text-lime-700">
-                  ${displayBN(numApples)} YES
-                </span>
-              ) : (
-                <span className="text-rose-700">
-                  ${displayBN(numOranges)} NO
-                </span>
-              )}
-            </div>
+    <div className="flex items-center whitespace-nowrap py-2 pl-4 pr-3 font-medium bg-gray-100 text-sm justify-between">
+      <div className="flex">
+        {isBuyOrder ? (
+          <div>${displayBN(offerSize)} USDC</div>
+        ) : (
+          <div
+            className={clsx(offeringApples ? "text-lime-700" : "text-rose-700")}
+          >
+            ${displayBN(offerSize)} {offeringApples ? "YES" : "NO"}
           </div>
-        </td>
-        <td className="bg-gray-100 relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-          <CancelOrderButton
-            order={{ numApples, numOranges, offeringApples, market }}
-          />
-        </td>
-      </tr>
-    </>
+        )}
+        <div className="inline-flex items-center">
+          <ArrowRightIcon className="w-5 h-5 mx-2 inline-block" />
+        </div>
+        {isBuyOrder ? (
+          <div
+            className={clsx(
+              !offeringApples ? "text-lime-700" : "text-rose-700"
+            )}
+          >
+            ${displayBN(seekingSize)} {!offeringApples ? "YES" : "NO"}
+          </div>
+        ) : (
+          <div>${displayBN(seekingSize)} USDC</div>
+        )}
+      </div>
+      <div>
+        <CancelOrderButton
+          order={{ numApples, numOranges, offeringApples, market, memo }}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -328,7 +317,7 @@ const CancelOrderButton = ({ order }: { order: OrderRecordFields }) => {
         status={status}
         verb={"Cancel"}
         onClick={onSubmit}
-        className={"w-full"}
+        className={"w-full text-xs py-1"}
         disabled={!orderbook.data || !publicKey}
       />
     </>
