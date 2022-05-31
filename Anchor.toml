@@ -3,7 +3,7 @@ seeds = true
 init_if_needed = true
 
 [programs.localnet]
-precog = "A5CJyMtyLKbXBphXphCAiRCY1TEFfXzsLJ65oNpYSrn2"
+precog = "9MQSma8Khz1BAYKWw32xSiT8eyUAN5FFFGEXLcuYqFjf"
 syrup = "GXDLaLKoGyCPqWJrSEmt4eTZRjWDBCFSXyWCRtBM3uGy"
 
 [registry]

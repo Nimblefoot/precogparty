@@ -13,7 +13,7 @@
         "typescript": "^4.3.5"
     },
     "scripts": {
-        "generate": "anchor-client-gen --program-id A5CJyMtyLKbXBphXphCAiRCY1TEFfXzsLJ65oNpYSrn2 target/idl/precog.json app/generated/client",
+        "generate": "anchor-client-gen --program-id 9MQSma8Khz1BAYKWw32xSiT8eyUAN5FFFGEXLcuYqFjf target/idl/precog.json app/generated/client",
         "generate-syrup": "anchor-client-gen --program-id GXDLaLKoGyCPqWJrSEmt4eTZRjWDBCFSXyWCRtBM3uGy target/idl/syrup.json app/generated/syrup",
         "build": "anchor build && yarn run generate && yarn run generate-syrup && cp ./target/types/precog.ts ./app/generated/idl/precog.ts"
     }
