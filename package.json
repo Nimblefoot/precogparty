@@ -14,7 +14,7 @@
     },
     "scripts": {
         "generate": "anchor-client-gen --program-id 9MQSma8Khz1BAYKWw32xSiT8eyUAN5FFFGEXLcuYqFjf target/idl/precog.json app/generated/client",
-        "generate-syrup": "anchor-client-gen --program-id GXDLaLKoGyCPqWJrSEmt4eTZRjWDBCFSXyWCRtBM3uGy target/idl/syrup.json app/generated/syrup",
+        "generate-syrup": "anchor-client-gen --program-id 3K1ibBw93WY4PmJ1CBfoTg4mx2yGVvr7WLCsaqAY5g1K target/idl/syrup.json app/generated/syrup",
         "build": "anchor build && yarn run generate && yarn run generate-syrup && cp ./target/types/precog.ts ./app/generated/idl/precog.ts"
     }
 }
