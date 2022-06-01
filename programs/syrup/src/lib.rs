@@ -17,23 +17,27 @@ use anchor_spl::{
 
 declare_id!("3K1ibBw93WY4PmJ1CBfoTg4mx2yGVvr7WLCsaqAY5g1K");
 
-pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
+pub fn delete_order(index: u32, optional_last_page: Option<&mut Account<OrderbookPage>>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
     let order_data = order_page.get(index);
-    let orderbook_id = order_page.orderbook_id.clone();
+    let orderbook_id = order_page.orderbook_id;
 
-    if order_page.key() == last_page.key() && (index as usize) == last_page.len() - 1 {
-        msg!("just need to pop!!!");
-        last_page.pop();
-    } else if let Some(last_order) = last_page.pop() {
-        // there is probably a better way to handle this problem. Rust does not allow you to have two mutable references to the same data!
-        if order_page.key() == last_page.key() {
-            last_page.set(index, last_order);
+    // check if last_page differs from order page
+    if let Some(mut last_page) = optional_last_page {
+        if let Some(last_order) = last_page.pop() {
+            order_page.set(index, last_order);
         } else {
-            order_page.set(index, last_order); // this is wrong and has to get fixed???? should be order_page. stuff broken when the pages are the same???
+            return err!(ErrorCode::LastPageEmpty);
         }
     } else {
-        return err!(ErrorCode::LastPageEmpty);
-    };
+        // if the order_page is the last page and the order is the final entry we just pop
+        if index + 1 == (order_page.len() as u32) {
+            order_page.pop();
+        } else if let Some(last_order) = order_page.pop() {
+            order_page.set(index, last_order)
+        } else {
+            return err!(ErrorCode::LastPageEmpty);
+        }
+    }
 
     *orderbook_length -= 1;
 
@@ -47,9 +51,9 @@ pub fn delete_order(index: u32, last_page: &mut Account<OrderbookPage>, order_pa
     Ok(())
 }
 
-pub fn edit_order(index: u32, new_num_apples: u64, new_num_oranges: u64, order_page:  &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
+pub fn edit_order(index: u32, new_num_apples: u64, new_num_oranges: u64, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
     let mut order_data = order_page.get(index);
-    let orderbook_id = order_page.orderbook_id.clone();
+    let orderbook_id = order_page.orderbook_id;
 
     // Modify the order in the user's orders
     if let Some(user_orders_index) = user_account.find_order(order_data, orderbook_id) {
@@ -187,8 +191,8 @@ pub mod syrup {
             return err!(ErrorCode::OrderTooSmall);
         }
 
-        let last_page = &mut ctx.accounts.last_page; 
-        let order_page = &mut ctx.accounts.order_page; // this could be a second mutable reference to same page!
+        let last_page = None;
+        let order_page = &mut ctx.accounts.order_page;
         let offerer_user_account = &mut ctx.accounts.offerer_user_account;
 
         // need to split up variables to avoid borrower check errors
@@ -225,8 +229,6 @@ pub mod syrup {
 
         if amount_to_exchange == maximum_taker_payment {
             delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
-        } else if last_page.key() == order_page.key() {
-            edit_order(index, new_num_apples, new_num_oranges, last_page, offerer_user_account)?;
         } else {
             edit_order(index, new_num_apples, new_num_oranges, order_page, offerer_user_account)?;
         }
@@ -261,7 +263,7 @@ pub mod syrup {
         };
 
         let order_page = &mut ctx.accounts.order_page;
-        let last_page = &mut ctx.accounts.last_page;
+        let last_page = None;
         let user_account = &mut ctx.accounts.user_account;
 
         // need to split up variables to avoid borrower check errors
@@ -456,12 +458,6 @@ pub struct TakeOrder<'info> {
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
-    #[account(
-        mut, 
-        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
-        bump
-    )]
-    pub last_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
@@ -506,12 +502,6 @@ pub struct CancelOrder<'info> {
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
-    #[account(
-        mut, 
-        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.get_last_page().to_le_bytes().as_ref()], 
-        bump
-    )]
-    pub last_page: Account<'info, OrderbookPage>,
     pub token_program: Program<'info, Token>,
 }
 

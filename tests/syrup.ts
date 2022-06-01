@@ -348,7 +348,6 @@ describe("orderbook", async () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
-        lastPage: lastPageKey,
       })
       .signers([user])
       .rpc()
@@ -411,7 +410,6 @@ describe("orderbook", async () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
-        lastPage: lastPageKey,
       })
       .signers([admin])
       .rpc()
@@ -468,7 +466,6 @@ describe("orderbook", async () => {
         vault: orangesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
-        lastPage: lastPageKey,
       })
       .signers([user])
       .rpc({
