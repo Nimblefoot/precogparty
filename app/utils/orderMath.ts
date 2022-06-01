@@ -55,33 +55,6 @@ export interface UIOrder {
 
 export type OrderbookEntry = Omit<OrderFields, "user">
 
-export const ui2placeOrderFields = ({
-  odds, // odds of yes
-  collateralSize,
-  forResolution,
-}: UIOrder): OrderbookEntry => {
-  let offeringYes, numNo, numYes
-  let collateralUnits = collateralSize * 10 ** COLLATERAL_DECIMALS
-
-  if (forResolution == "yes") {
-    offeringYes = false
-    numNo = collateralUnits
-    numYes = collateralUnits / ratioFromOdds(odds)
-  } else {
-    offeringYes = true
-    numYes = collateralUnits
-    numNo = collateralUnits * ratioFromOdds(odds)
-  }
-
-  console.log(numNo, numYes, "fart")
-
-  return {
-    offeringApples: offeringYes,
-    numApples: new BN(numYes),
-    numOranges: new BN(numNo),
-  }
-}
-
 export const amountBoughtAtPercentOdds = ({
   percentOdds,
   inputAmount,
