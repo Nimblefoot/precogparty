@@ -76,9 +76,7 @@ export class UserAccount {
     const dec = UserAccount.layout.decode(data.slice(8))
 
     return new UserAccount({
-      orders: dec.orders.map((item: any) =>
-        types.OrderRecord.fromDecoded(item)
-      ),
+      orders: dec.orders.map((item) => types.OrderRecord.fromDecoded(item)),
       user: dec.user,
     })
   }
