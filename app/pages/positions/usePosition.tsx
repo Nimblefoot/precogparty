@@ -71,6 +71,7 @@ export const usePosition = (market: PublicKey) => {
         .map((x) => x.numApples)
         .reduce((sum, x) => sum.add(x), new BN(0)),
     }
+
     const reserved = {
       yes: reservedForBuyOrder.yes.add(reservedForSellOrder.yes),
       no: reservedForBuyOrder.no.add(reservedForSellOrder.no),
@@ -88,22 +89,36 @@ export const usePosition = (market: PublicKey) => {
       orders: relevantOrders,
     }
 
+    const available = totalNo.sub(totalYes).sub(reserved.no).sub(escrowedNo)
+    const size = totalNo.sub(totalYes)
+    console.log(
+      totalNo.toString(),
+      totalYes.toString(),
+      reserved.no.toString(),
+      escrowedNo.toString(),
+      totalNo.sub(totalYes).sub(reserved.no).sub(escrowedNo).toString(),
+      size.gt(available)
+    )
+
     if (totalYes.eq(totalNo)) {
       return {
         position: "neutral",
         size: undefined,
+        available: undefined,
         ...data,
       } as const
     } else if (totalYes.lt(totalNo)) {
       return {
         position: "no",
         size: totalNo.sub(totalYes),
+        available: totalNo.sub(totalYes).sub(reserved.no).sub(escrowedNo),
         ...data,
       } as const
     } else if (totalYes.gt(totalNo)) {
       return {
         position: "yes",
         size: totalYes.sub(totalNo),
+        available: totalYes.sub(totalNo).sub(reserved.yes).sub(escrowedYes),
         ...data,
       } as const
     } else {

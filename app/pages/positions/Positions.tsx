@@ -123,12 +123,18 @@ function Position({
                   <span className="font-medium text-lime-700">
                     ${displayBN(position.size)} YES
                   </span>
+                  {position.size.gt(position.available) && (
+                    <> (${displayBN(position.available)} available)</>
+                  )}
                 </>
               ) : position.position === "no" ? (
                 <>
                   <span className="font-medium text-rose-700">
                     ${displayBN(position.size)} NO
                   </span>
+                  {position.size.gt(position.available) && (
+                    <> (${displayBN(position.available)} available)</>
+                  )}
                 </>
               ) : null}
             </div>

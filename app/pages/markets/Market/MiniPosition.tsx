@@ -48,7 +48,12 @@ export const MiniPosition = ({
                           ${displayBN(position.size)} NO
                         </span>
                       </>
-                    ) : null}
+                    ) : null}{" "}
+                    <span className="text-gray-500">
+                      {position.size.gt(position.available) && (
+                        <> (${displayBN(position.available)} available)</>
+                      )}
+                    </span>
                   </div>
                   <div>
                     <Disclosure.Button

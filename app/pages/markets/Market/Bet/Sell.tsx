@@ -5,6 +5,7 @@ import {
 import { BN_, displayBN } from "@/utils/BNutils"
 import { amountBoughtAtPercentOdds } from "@/utils/orderMath"
 import { RadioGroup } from "@headlessui/react"
+import { useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
 import clsx from "clsx"
@@ -147,6 +148,8 @@ const useSubmitSell = ({
   price: number
   selling: Resolution
 }) => {
+  const { publicKey } = useWallet()
+
   const {
     taking: { tokenSpent, takePrice, usdcMade, orderInteractions },
     orderSpendAmount,
@@ -207,6 +210,9 @@ const useSubmitSell = ({
     queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
     // TODO invalidate the correct keys
     queryClient.invalidateQueries(tokenAccountKeys.all)
+    queryClient.invalidateQueries(
+      orderbookKeys.userAccount(publicKey ?? undefined)
+    )
   }, [
     buy,
     callback,
@@ -215,6 +221,7 @@ const useSubmitSell = ({
     orderInteractions,
     orderSpendAmount,
     orderUsdcToMake,
+    publicKey,
     selling,
     takeOrder,
     usdcMade,
