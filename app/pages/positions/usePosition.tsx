@@ -14,16 +14,21 @@ export const usePosition = (market: PublicKey) => {
 
   // doesn't include orders, i suppose it could
   const position = useMemo(() => {
-    if (!userOrders.data) return undefined
+    if (userOrders.data === undefined) return undefined
     if (!yesAccount.data) return undefined
     if (!noAccount.data) return undefined
 
-    const yesHeld = new BN(yesAccount.data.value.amount)
-    const noHeld = new BN(noAccount.data.value.amount)
+    const yesAccountFound =
+      yesAccount.data !== "no account" ? yesAccount.data : undefined
+    const noAccountFound =
+      noAccount.data !== "no account" ? noAccount.data : undefined
 
-    const relevantOrders = userOrders.data.orders.filter((order) =>
-      order.market.equals(market)
-    )
+    const yesHeld = new BN(yesAccountFound?.value.amount ?? 0)
+    const noHeld = new BN(noAccountFound?.value.amount ?? 0)
+
+    const relevantOrders =
+      userOrders.data?.orders.filter((order) => order.market.equals(market)) ??
+      []
     const yesOffers = relevantOrders.filter((order) => order.offeringApples)
     const noOffers = relevantOrders.filter((order) => !order.offeringApples)
 

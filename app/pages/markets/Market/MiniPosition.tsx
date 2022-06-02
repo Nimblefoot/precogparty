@@ -14,6 +14,7 @@ export const MiniPosition = ({
   marketAddress: PublicKey
 }) => {
   const position = usePosition(marketAddress)
+  console.log("po", position)
 
   return position === undefined ? null : (
     <Disclosure>
