@@ -56,7 +56,7 @@ export const usePosition = (market: PublicKey) => {
         .reduce((sum, x) => sum.add(x), new BN(0)),
       yes: noOffers
         .filter((order) => order.memo === 0)
-        .map((x) => x.numApples)
+        .map((x) => x.numOranges)
         .reduce((sum, x) => sum.add(x), new BN(0)),
     }
 
@@ -82,6 +82,28 @@ export const usePosition = (market: PublicKey) => {
       noHeld.sub(reserved.no)
     )
 
+    const escrowedForSale = {
+      yes: yesOffers
+        .filter((order) => order.memo === 1)
+        .map((x) => x.numApples)
+        .reduce((sum, x) => sum.add(x), new BN(0)),
+      no: noOffers
+        .filter((order) => order.memo === 1)
+        .map((x) => x.numOranges)
+        .reduce((sum, x) => sum.add(x), new BN(0)),
+    }
+
+    // couldnt think of a good name, just an intermediate calc
+    const x = {
+      yes: yesHeld.add(escrowedForSale.yes).sub(reservedForBuyOrder.yes),
+      no: noHeld.add(escrowedForSale.no).sub(reservedForBuyOrder.no),
+    }
+    // size of position
+    const size = {
+      yes: x.yes.sub(x.no),
+      no: x.no.sub(x.yes),
+    }
+
     const data = {
       deposited,
       escrowed,
@@ -89,36 +111,27 @@ export const usePosition = (market: PublicKey) => {
       orders: relevantOrders,
     }
 
-    const available = totalNo.sub(totalYes).sub(reserved.no).sub(escrowedNo)
-    const size = totalNo.sub(totalYes)
-    console.log(
-      totalNo.toString(),
-      totalYes.toString(),
-      reserved.no.toString(),
-      escrowedNo.toString(),
-      totalNo.sub(totalYes).sub(reserved.no).sub(escrowedNo).toString(),
-      size.gt(available)
-    )
-
-    if (totalYes.eq(totalNo)) {
+    if (size.yes.eq(size.no)) {
       return {
         position: "neutral",
         size: undefined,
         available: undefined,
         ...data,
       } as const
-    } else if (totalYes.lt(totalNo)) {
+    } else if (size.no.gt(size.yes)) {
       return {
         position: "no",
-        size: totalNo.sub(totalYes),
-        available: totalNo.sub(totalYes).sub(reserved.no).sub(escrowedNo),
+        size: size.no,
+        available: size.no.sub(reservedForSellOrder.no).sub(escrowedForSale.no),
         ...data,
       } as const
-    } else if (totalYes.gt(totalNo)) {
+    } else if (size.yes.gt(size.no)) {
       return {
         position: "yes",
-        size: totalYes.sub(totalNo),
-        available: totalYes.sub(totalNo).sub(reserved.yes).sub(escrowedYes),
+        size: size.yes,
+        available: size.yes
+          .sub(reservedForSellOrder.yes)
+          .sub(escrowedForSale.yes),
         ...data,
       } as const
     } else {
