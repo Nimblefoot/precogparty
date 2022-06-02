@@ -73,7 +73,10 @@ export const MiniPosition = ({
                   </p>
                 )}
                 {position.orders.length > 0 && (
-                  <p>{position.orders.length} orders</p>
+                  <p>
+                    {position.orders.length} order
+                    {position.orders.length > 1 ? "s" : ""}
+                  </p>
                 )}
               </div>
             </div>
