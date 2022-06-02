@@ -126,6 +126,7 @@ const useSubmitBet = ({
             resolution === "yes"
               ? orderBuyAmount.sub(orderSpendAmount)
               : orderSpendAmount,
+          uiSelling: false,
         })
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []

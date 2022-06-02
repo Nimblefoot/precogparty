@@ -51,19 +51,17 @@ export const MiniPosition = ({
                     ) : null}
                   </div>
                   <div>
-                    <Disclosure.Button>
-                      <button
-                        data-name="SELL BUTTON"
-                        type="button"
-                        className={clsx(
-                          "inline-flex items-center px-2.5 py-0.5 border border-transparent text-xs font-medium rounded",
-                          position.position === "yes"
-                            ? "text-lime-700 hover:bg-lime-200 border border-lime-700"
-                            : "text-rose-700 hover:bg-rose-200 border border-rose-700"
-                        )}
-                      >
-                        SELL
-                      </button>
+                    <Disclosure.Button
+                      data-name="SELL BUTTON"
+                      type="button"
+                      className={clsx(
+                        "inline-flex items-center px-2.5 py-0.5 border border-transparent text-xs font-medium rounded",
+                        position.position === "yes"
+                          ? "text-lime-700 hover:bg-lime-200 border border-lime-700"
+                          : "text-rose-700 hover:bg-rose-200 border border-rose-700"
+                      )}
+                    >
+                      SELL
                     </Disclosure.Button>
                   </div>
                 </div>

@@ -18,6 +18,7 @@ import {
 import { queryClient } from "pages/providers"
 import { tokenAccountKeys } from "pages/tokenAccountQuery"
 import React, { useCallback, useMemo, useRef, useState } from "react"
+import useMergeContingentSet from "../hooks/useMergeContingentSet"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "../Orderbook/orderbookQueries"
 import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
@@ -119,9 +120,6 @@ const useSellAccounting = (
       ? usdcMade.mul(new BN(100)).divRound(tokenSpent)
       : undefined
 
-  // TODO this is wrong i think
-  // should be orderSpendAmount / priceImpliedByOdds, cause we want to spend all the money
-
   const orderSpendAmount = inputAmount.sub(tokenSpent ?? new BN(0))
   const orderUsdcToMake = orderSpendAmount.mul(new BN(price)).div(new BN(100))
 
@@ -137,55 +135,52 @@ const useSellAccounting = (
     inputAmount,
   }
 }
-/* 
+
 const useSubmitSell = ({
   marketAddress,
   amountInput,
-  percentOdds,
-  resolution,
+  price,
+  selling,
 }: {
   marketAddress: PublicKey
   amountInput: string
-  percentOdds: number
-  resolution: Resolution
+  price: number
+  selling: Resolution
 }) => {
-  const { orderBuyAmount, orderSpendAmount, taking } = useSellAccounting({
-    amountInput,
-    percentOdds,
-    resolution,
-    marketAddress,
-  })
+  const {
+    taking: { tokenSpent, takePrice, usdcMade, orderInteractions },
+    orderSpendAmount,
+    orderUsdcToMake,
+  } = useSellAccounting(marketAddress, selling, amountInput, price)
 
-  const mintSet = useMintContingentSet(marketAddress)
+  const mergeSet = useMergeContingentSet(marketAddress)
   const buy = usePlaceOrderTxn(marketAddress)
   const takeOrder = useTakeOrder(marketAddress)
 
   const { callback, status } = useTransact()
 
   const submit = useCallback(async () => {
-    const mintTxn = await mintSet({
-      amount: orderSpendAmount.add(taking.totalSpend ?? new BN(0)),
-    })
-
     const placeTxn = orderSpendAmount.gt(new BN(0))
       ? await buy({
-          offeringYes: resolution === "no",
+          offeringYes: selling === "yes",
+          // we subtract orderUsdcToMake because you need to reserve X to merge with Y
           numNo:
-            resolution === "yes"
-              ? orderSpendAmount
-              : orderBuyAmount.sub(orderSpendAmount),
+            selling === "no"
+              ? orderSpendAmount.sub(orderUsdcToMake)
+              : orderUsdcToMake,
           numYes:
-            resolution === "yes"
-              ? orderBuyAmount.sub(orderSpendAmount)
-              : orderSpendAmount,
+            selling === "yes"
+              ? orderSpendAmount.sub(orderUsdcToMake)
+              : orderUsdcToMake,
+          uiSelling: true,
         })
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []
 
     const takeTxns =
-      taking.orderInteractions &&
+      orderInteractions &&
       (await Promise.all(
-        taking.orderInteractions.map((x) =>
+        orderInteractions.map((x) =>
           takeOrder({
             order: x.order,
             pageNumber: x.order.page,
@@ -197,16 +192,15 @@ const useSubmitSell = ({
 
     const takeIxs = takeTxns ? takeTxns.flatMap((tx) => tx.instructions) : []
 
+    const mergeTxn = usdcMade && (await mergeSet({ amount: usdcMade }))
+    const mergeIx = mergeTxn?.instructions ?? []
+
     const computeCost =
       MINT_SET_COST +
       takeIxs.length * TAKE_ORDER_COST +
       (placeTxn ? PLACE_ORDER_COST : 0)
 
-    const txn = new Transaction().add(
-      ...mintTxn.instructions,
-      ...placeIxs,
-      ...takeIxs
-    )
+    const txn = new Transaction().add(...placeIxs, ...takeIxs, ...mergeIx)
 
     console.log(txn)
     await callback(txn)
@@ -217,17 +211,17 @@ const useSubmitSell = ({
     buy,
     callback,
     marketAddress,
-    mintSet,
-    orderBuyAmount,
+    mergeSet,
+    orderInteractions,
     orderSpendAmount,
-    resolution,
+    orderUsdcToMake,
+    selling,
     takeOrder,
-    taking.orderInteractions,
-    taking.totalSpend,
+    usdcMade,
   ])
 
   return { submit, status }
-} */
+}
 
 // TODO display balances
 export function Sell({
@@ -239,7 +233,6 @@ export function Sell({
 }) {
   const [price, setPrice] = useState<number>(80)
   const [amountInput, setAmountInput] = useState<string>("")
-  const [resolution, setResolution] = useState<Resolution>("yes")
 
   const inputRef = useRef(null)
   /* 
@@ -253,7 +246,15 @@ export function Sell({
   const {
     taking: { tokenSpent, takePrice, usdcMade },
     orderSpendAmount,
+    orderUsdcToMake,
   } = useSellAccounting(marketAddress, selling, amountInput, price)
+
+  const { submit, status } = useSubmitSell({
+    marketAddress,
+    amountInput,
+    price,
+    selling,
+  })
 
   const ready = amountInput !== ""
 
@@ -344,10 +345,10 @@ export function Sell({
               <span
                 className={clsx(
                   "font-medium",
-                  resolution === "yes" ? "text-lime-700" : "text-rose-700"
+                  selling === "yes" ? "text-lime-700" : "text-rose-700"
                 )}
               >
-                ${displayBN(tokenSpent)} {resolution.toUpperCase()}
+                ${displayBN(tokenSpent)} {selling.toUpperCase()}
               </span>{" "}
               at {takePrice.toString()}¢ for {displayBN(usdcMade)} USDC
             </li>
@@ -358,23 +359,23 @@ export function Sell({
               <span
                 className={clsx(
                   "font-medium",
-                  resolution === "yes" ? "text-lime-700" : "text-rose-700"
+                  selling === "yes" ? "text-lime-700" : "text-rose-700"
                 )}
               >
-                ${displayBN(orderSpendAmount)} {resolution.toUpperCase()}
+                ${displayBN(orderSpendAmount)} {selling.toUpperCase()}
               </span>{" "}
-              at {price}¢{" "}
+              at {price}¢ for {displayBN(orderUsdcToMake)} USDC
             </li>
           ) : undefined}
         </ol>
       </div>
       <div className="px-4 py-5  sm:px-6 w-full">
         <StatelessTransactButton
-          status={"done"}
-          verb={"Sell " + resolution.toUpperCase()}
+          status={status}
+          verb={"Sell " + selling.toUpperCase()}
           onClick={async () => {
             try {
-              // await submit()
+              await submit()
               setAmountInput("")
             } catch {}
           }}
