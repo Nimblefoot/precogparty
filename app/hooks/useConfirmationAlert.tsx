@@ -9,6 +9,8 @@ const useConfirmationAlert = () => {
     (msg: string, tx: string) => {
       enqueueSnackbar(msg, {
         autoHideDuration: 5000,
+        // TODO make the snackbars not look like arse
+        //content: <div>poopy</div>,
         action: (
           <div className="ml-4">
             <a
