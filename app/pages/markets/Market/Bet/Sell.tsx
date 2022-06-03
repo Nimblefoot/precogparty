@@ -142,11 +142,13 @@ const useSubmitSell = ({
   amountInput,
   price,
   selling,
+  onSuccess,
 }: {
   marketAddress: PublicKey
   amountInput: string
   price: number
   selling: Resolution
+  onSuccess: () => void
 }) => {
   const { publicKey } = useWallet()
 
@@ -206,18 +208,23 @@ const useSubmitSell = ({
     const txn = new Transaction().add(...placeIxs, ...takeIxs, ...mergeIx)
 
     console.log(txn)
-    await callback(txn)
-    queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
-    // TODO invalidate the correct keys
-    queryClient.invalidateQueries(tokenAccountKeys.all)
-    queryClient.invalidateQueries(
-      orderbookKeys.userAccount(publicKey ?? undefined)
-    )
+    await callback(txn, {
+      onSuccess: () => {
+        queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
+        // TODO invalidate the correct keys
+        queryClient.invalidateQueries(tokenAccountKeys.all)
+        queryClient.invalidateQueries(
+          orderbookKeys.userAccount(publicKey ?? undefined)
+        )
+        onSuccess()
+      },
+    })
   }, [
     buy,
     callback,
     marketAddress,
     mergeSet,
+    onSuccess,
     orderInteractions,
     orderSpendAmount,
     orderUsdcToMake,
@@ -261,6 +268,7 @@ export function Sell({
     amountInput,
     price,
     selling,
+    onSuccess: () => setAmountInput(""),
   })
 
   const ready = amountInput !== ""
@@ -381,10 +389,7 @@ export function Sell({
           status={status}
           verb={"Sell " + selling.toUpperCase()}
           onClick={async () => {
-            try {
-              await submit()
-              setAmountInput("")
-            } catch {}
+            await submit()
           }}
           className="w-full"
           disabled={!ready}

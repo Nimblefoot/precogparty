@@ -90,11 +90,13 @@ const useSubmitBet = ({
   usdcInput,
   percentOdds,
   resolution,
+  onSuccess,
 }: {
   marketAddress: PublicKey
   usdcInput: string
   percentOdds: number
   resolution: Resolution
+  onSuccess: () => void
 }) => {
   const { publicKey } = useWallet()
   const { orderBuyAmount, orderSpendAmount, taking } = useAccounting({
@@ -158,26 +160,31 @@ const useSubmitBet = ({
     )
 
     console.log(txn)
-    await callback(txn)
-    queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
-    queryClient.invalidateQueries(
-      orderbookKeys.userAccount(publicKey ?? undefined)
-    )
+    await callback(txn, {
+      onSuccess: () => {
+        queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
+        queryClient.invalidateQueries(
+          orderbookKeys.userAccount(publicKey ?? undefined)
+        )
 
-    // TODO invalidate the correct keys
-    queryClient.invalidateQueries(tokenAccountKeys.all)
+        // TODO invalidate the correct keys
+        queryClient.invalidateQueries(tokenAccountKeys.all)
+        onSuccess()
+      },
+    })
   }, [
-    buy,
-    callback,
-    marketAddress,
     mintSet,
-    orderBuyAmount,
     orderSpendAmount,
-    resolution,
-    takeOrder,
-    taking.orderInteractions,
     taking.totalSpend,
+    taking.orderInteractions,
+    buy,
+    resolution,
+    orderBuyAmount,
+    callback,
+    takeOrder,
+    marketAddress,
     publicKey,
+    onSuccess,
   ])
 
   return { submit, status }
@@ -199,6 +206,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
     usdcInput,
     resolution,
     marketAddress,
+    onSuccess: () => setUsdcInput(""),
   })
 
   const {
@@ -392,10 +400,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
           status={status}
           verb={"Buy " + resolution.toUpperCase()}
           onClick={async () => {
-            try {
-              await submit()
-              setUsdcInput("")
-            } catch {}
+            await submit()
           }}
           className="w-full"
           disabled={!ready}
