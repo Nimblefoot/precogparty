@@ -119,7 +119,6 @@ function Position({
             <div>
               {position.position === "yes" ? (
                 <>
-                  You have{" "}
                   <span className="font-medium text-lime-700">
                     ${displayBN(position.size)} YES
                   </span>
