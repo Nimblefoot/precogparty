@@ -11,13 +11,14 @@ import { BN } from "bn.js"
 import clsx from "clsx"
 import {
   COLLATERAL_DECIMALS,
+  COLLATERAL_MINT,
   MINT_SET_COST,
   PLACE_ORDER_COST,
   Resolution,
   TAKE_ORDER_COST,
 } from "config"
 import { queryClient } from "pages/providers"
-import { tokenAccountKeys } from "pages/tokenAccountQuery"
+import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useRef, useState } from "react"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "../Orderbook/orderbookQueries"
@@ -198,6 +199,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
   const [percentOdds, setPercentOdds] = useState<number>(80)
   const [usdcInput, setUsdcInput] = useState<string>("")
   const [resolution, setResolution] = useState<Resolution>("yes")
+  const userBalance = useTokenAccount(COLLATERAL_MINT)
 
   const inputRef = useRef(null)
 
@@ -218,6 +220,21 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
     resolution,
     marketAddress,
   })
+
+  const validate = (input: string) => {
+    if (userBalance.data && userBalance.data !== "no account") {
+      const amount = new BN(parseFloat(input) * 10 ** COLLATERAL_DECIMALS)
+      const balance = new BN(userBalance.data.value.amount)
+      if (amount.gt(balance)) {
+        return {
+          valid: false,
+          err: "Insufficient balance",
+          suggested: displayBN(balance, 2),
+        } as const
+      }
+    }
+    return { valid: true } as const
+  }
 
   const ready = usdcInput !== ""
 
@@ -270,7 +287,7 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
             <input
               ref={inputRef}
               type="number"
-              step="0.001"
+              step="0.01"
               min="0"
               name="price"
               id="price"
@@ -279,7 +296,12 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
               aria-describedby="price-currency"
               value={usdcInput}
               onChange={(e) => {
-                setUsdcInput(e.target.value)
+                const validation = validate(e.target.value)
+                if (validation.valid) {
+                  setUsdcInput(e.target.value)
+                } else {
+                  setUsdcInput(validation.suggested)
+                }
               }}
             />
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
