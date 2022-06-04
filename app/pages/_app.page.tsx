@@ -24,6 +24,10 @@ import { COLLATERAL_MINT } from "config"
 import { displayBN } from "@/utils/BNutils"
 import BN from "bn.js"
 import clsx from "clsx"
+import useAirdrop from "@/hooks/useAirdrop"
+import TransactButton, {
+  StatelessTransactButton,
+} from "@/components/TransactButton"
 
 const navigation = [
   //{ name: "Home", href: "#", icon: HomeIcon },
@@ -209,6 +213,7 @@ const ConnectWallet = () => {}
 function UserInfoDesktop({}) {
   const { publicKey } = useWallet()
   const balance = useTokenAccount(COLLATERAL_MINT)
+  const { airdrop, status } = useAirdrop()
 
   return (
     <>
@@ -262,16 +267,16 @@ function UserInfoDesktop({}) {
                   USD
                   {process.env.NEXT_PUBLIC_RPC !==
                   "[TODO insert mainnet rpc url]" ? (
-                    <button
-                      type="button"
+                    <StatelessTransactButton
+                      onClick={airdrop}
+                      verb="airdrop"
+                      status={status}
                       className={clsx(
                         "ml-1",
-                        "inline-flex items-center p-0.5 border border-transparent text-xs font-medium rounded",
-                        " border bg-indigo-100 hover:bg-indigo-200"
+                        "inline-flex items-center px-1 py-0.5 border border-transparent text-xs font-medium rounded",
+                        "border bg-indigo-50 hover:bg-gray-200 text-gray-700 border-gray-700"
                       )}
-                    >
-                      airdrop
-                    </button>
+                    />
                   ) : null}
                 </p>
               }
