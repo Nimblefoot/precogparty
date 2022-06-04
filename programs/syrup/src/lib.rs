@@ -201,6 +201,7 @@ pub mod syrup {
         let orderbook_id = ctx.accounts.orderbook_info.id;
         let orderbook_bump = ctx.accounts.orderbook_info.bump;
         let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
+        let last_page_number = ctx.accounts.orderbook_info.get_last_page();
         let orderbook_length = &mut ctx.accounts.orderbook_info.length;
 
         // Transfer from the vault to the taker
@@ -230,8 +231,10 @@ pub mod syrup {
         )?;
 
         if amount_to_exchange == maximum_taker_payment {
-            if let Some(acc) = ctx.remaining_accounts.get(0) {
-                let mut last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
+            if index == last_page_number {
+                delete_order(index, None, order_page, offerer_user_account, orderbook_length)?;            
+            } else if let Some(acc) = ctx.remaining_accounts.get(0) {
+                let last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
     
                 let pda_seeds = [b"counter2".as_ref()];
                 let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
@@ -244,7 +247,7 @@ pub mod syrup {
                     return err!(ErrorCode::WrongRemainingAccount);
                 }
             } else {
-                delete_order(index, None, order_page, offerer_user_account, orderbook_length)?;
+                return err!(ErrorCode::MissingLastPage);
             }
         } else {
             edit_order(index, new_num_apples, new_num_oranges, order_page, offerer_user_account)?;
