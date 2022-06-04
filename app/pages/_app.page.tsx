@@ -255,7 +255,7 @@ function UserInfoDesktop({}) {
                 </p> */}
 
               {
-                <p className="text-xs text-gray-700">
+                <p className="text-xs text-gray-700 whitespace-nowrap">
                   $
                   {displayBN(
                     new BN(
@@ -263,8 +263,7 @@ function UserInfoDesktop({}) {
                         ? balance.data.value.amount
                         : 0
                     )
-                  )}{" "}
-                  USD
+                  )}
                   {process.env.NEXT_PUBLIC_RPC !==
                   "[TODO insert mainnet rpc url]" ? (
                     <StatelessTransactButton

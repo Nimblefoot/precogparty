@@ -72,10 +72,8 @@ export const MiniPosition = ({
                 </div>
               )}
               <div className="text-sm text-gray-500">
-                {position.withdrawable.gt(new BN(0)) && (
-                  <p>
-                    ${displayBN(position.deposited)} USDC deposited in market
-                  </p>
+                {position.deposited.gt(new BN(0)) && (
+                  <p>${displayBN(position.deposited)} USDC deposited</p>
                 )}
                 {position.orders.length > 0 && (
                   <p>
