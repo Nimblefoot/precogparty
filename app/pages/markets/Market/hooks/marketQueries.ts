@@ -7,7 +7,7 @@ import { PublicKey } from "@solana/web3.js"
 import { useCallback, useEffect, useState } from "react"
 import { useQuery } from "react-query"
 
-import useWalletlessProgram from "../../new/hooks/useWalletlessProgram"
+import useWalletlessProgram from "../../../../hooks/useProgram"
 
 export const marketKeys = {
   all: ["markets"],

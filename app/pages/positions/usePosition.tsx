@@ -14,16 +14,21 @@ export const usePosition = (market: PublicKey) => {
 
   // doesn't include orders, i suppose it could
   const position = useMemo(() => {
-    if (!userOrders.data) return undefined
+    if (userOrders.data === undefined) return undefined
     if (!yesAccount.data) return undefined
     if (!noAccount.data) return undefined
 
-    const yesHeld = new BN(yesAccount.data.value.amount)
-    const noHeld = new BN(noAccount.data.value.amount)
+    const yesAccountFound =
+      yesAccount.data !== "no account" ? yesAccount.data : undefined
+    const noAccountFound =
+      noAccount.data !== "no account" ? noAccount.data : undefined
 
-    const relevantOrders = userOrders.data.orders.filter((order) =>
-      order.market.equals(market)
-    )
+    const yesHeld = new BN(yesAccountFound?.value.amount ?? 0)
+    const noHeld = new BN(noAccountFound?.value.amount ?? 0)
+
+    const relevantOrders =
+      userOrders.data?.orders.filter((order) => order.market.equals(market)) ??
+      []
     const yesOffers = relevantOrders.filter((order) => order.offeringApples)
     const noOffers = relevantOrders.filter((order) => !order.offeringApples)
 
@@ -51,7 +56,7 @@ export const usePosition = (market: PublicKey) => {
         .reduce((sum, x) => sum.add(x), new BN(0)),
       yes: noOffers
         .filter((order) => order.memo === 0)
-        .map((x) => x.numApples)
+        .map((x) => x.numOranges)
         .reduce((sum, x) => sum.add(x), new BN(0)),
     }
 
@@ -66,6 +71,7 @@ export const usePosition = (market: PublicKey) => {
         .map((x) => x.numApples)
         .reduce((sum, x) => sum.add(x), new BN(0)),
     }
+
     const reserved = {
       yes: reservedForBuyOrder.yes.add(reservedForSellOrder.yes),
       no: reservedForBuyOrder.no.add(reservedForSellOrder.no),
@@ -76,6 +82,28 @@ export const usePosition = (market: PublicKey) => {
       noHeld.sub(reserved.no)
     )
 
+    const escrowedForSale = {
+      yes: yesOffers
+        .filter((order) => order.memo === 1)
+        .map((x) => x.numApples)
+        .reduce((sum, x) => sum.add(x), new BN(0)),
+      no: noOffers
+        .filter((order) => order.memo === 1)
+        .map((x) => x.numOranges)
+        .reduce((sum, x) => sum.add(x), new BN(0)),
+    }
+
+    // couldnt think of a good name, just an intermediate calc
+    const x = {
+      yes: yesHeld.add(escrowedForSale.yes).sub(reservedForBuyOrder.yes),
+      no: noHeld.add(escrowedForSale.no).sub(reservedForBuyOrder.no),
+    }
+    // size of position
+    const size = {
+      yes: x.yes.sub(x.no),
+      no: x.no.sub(x.yes),
+    }
+
     const data = {
       deposited,
       escrowed,
@@ -83,22 +111,27 @@ export const usePosition = (market: PublicKey) => {
       orders: relevantOrders,
     }
 
-    if (totalYes.eq(totalNo)) {
+    if (size.yes.eq(size.no)) {
       return {
         position: "neutral",
         size: undefined,
+        available: undefined,
         ...data,
       } as const
-    } else if (totalYes.lt(totalNo)) {
+    } else if (size.no.gt(size.yes)) {
       return {
         position: "no",
-        size: totalNo.sub(totalYes),
+        size: size.no,
+        available: size.no.sub(reservedForSellOrder.no).sub(escrowedForSale.no),
         ...data,
       } as const
-    } else if (totalYes.gt(totalNo)) {
+    } else if (size.yes.gt(size.no)) {
       return {
         position: "yes",
-        size: totalYes.sub(totalNo),
+        size: size.yes,
+        available: size.yes
+          .sub(reservedForSellOrder.yes)
+          .sub(escrowedForSale.yes),
         ...data,
       } as const
     } else {

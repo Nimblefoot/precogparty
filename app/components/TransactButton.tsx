@@ -1,3 +1,4 @@
+import useConfirmationAlert from "@/hooks/useConfirmationAlert"
 import { useWallet, useConnection } from "@solana/wallet-adapter-react"
 import { Transaction } from "@solana/web3.js"
 import { connect } from "http2"
@@ -13,7 +14,16 @@ export const useTransact = () => {
   const { sendTransaction, signTransaction, publicKey } = useWallet()
   const { connection } = useConnection()
 
-  const callback = async (txn: Transaction) => {
+  const [snackSuccess, snackError] = useConfirmationAlert()
+
+  const callback = async (
+    txn: Transaction,
+    options?: {
+      onCancel?: () => void | Promise<void>
+      onSuccess?: () => void | Promise<void>
+      onError?: () => void | Promise<void>
+    }
+  ) => {
     if (!signTransaction || !publicKey) {
       return
     }
@@ -23,26 +33,42 @@ export const useTransact = () => {
     txn.recentBlockhash = recentbhash.blockhash
     txn.feePayer = publicKey
 
-    const signed = await signTransaction(txn)
+    let signed
+    try {
+      signed = await signTransaction(txn)
+    } catch (e: any) {
+      if ((e.message as string).includes("User rejected the request")) {
+        setStatus("initial")
+        await options?.onCancel?.()
+        return
+      } else {
+        snackError(e.message)
+        throw e
+      }
+    }
 
     setStatus("sending")
-    // this combines sending and signing steps for now
     console.log(txn)
+
+    let sig
     try {
-      const sig = await connection.sendRawTransaction(signed.serialize(), {
+      sig = await connection.sendRawTransaction(signed.serialize(), {
         //skipPreflight: true,
       })
-
       console.log("sent tx", sig)
-      setStatus("confirming")
 
+      setStatus("confirming")
       const result = await connection.confirmTransaction(sig)
       console.log("confirmed tx", result)
+
+      snackSuccess("Confirmed!", sig)
+
       setStatus("done")
-    } catch (e) {
-      console.log((e as any).message)
-      console.log(txn)
-      console.log(JSON.stringify(txn))
+    } catch (e: any) {
+      console.error(e)
+
+      snackError(e.message, sig)
+      setStatus("initial")
     }
   }
   return { callback, status }

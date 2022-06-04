@@ -119,16 +119,21 @@ function Position({
             <div>
               {position.position === "yes" ? (
                 <>
-                  You have{" "}
                   <span className="font-medium text-lime-700">
                     ${displayBN(position.size)} YES
                   </span>
+                  {position.size.gt(position.available) && (
+                    <> (${displayBN(position.available)} available)</>
+                  )}
                 </>
               ) : position.position === "no" ? (
                 <>
                   <span className="font-medium text-rose-700">
                     ${displayBN(position.size)} NO
                   </span>
+                  {position.size.gt(position.available) && (
+                    <> (${displayBN(position.available)} available)</>
+                  )}
                 </>
               ) : null}
             </div>
@@ -137,7 +142,10 @@ function Position({
                 <p>${displayBN(position.deposited)} USDC deposited</p>
               )}
               {position.orders.length > 0 && (
-                <p>{position.orders.length} orders</p>
+                <p>
+                  {position.orders.length} order
+                  {position.orders.length > 1 ? "s" : ""}{" "}
+                </p>
               )}
             </div>
             {/* {yesAmount && <span className="text-lime-700">${yesAmount} YES</span>}

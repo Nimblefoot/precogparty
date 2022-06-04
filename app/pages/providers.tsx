@@ -12,6 +12,7 @@ import {
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui"
 import { QueryClient, QueryClientProvider } from "react-query"
 import { ReactQueryDevtools } from "react-query/devtools"
+import { SnackbarProvider } from "notistack"
 
 const WalletConnectionProvider: FC = ({ children }) => {
   // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
@@ -42,9 +43,12 @@ const WalletConnectionProvider: FC = ({ children }) => {
 export const queryClient = new QueryClient()
 
 const Providers: FC = ({ children }) => (
-  <QueryClientProvider client={queryClient}>
-    <ReactQueryDevtools />
-    <WalletConnectionProvider>{children}</WalletConnectionProvider>
-  </QueryClientProvider>
+  // @ts-ignore
+  <SnackbarProvider maxSnack={3}>
+    <QueryClientProvider client={queryClient}>
+      <ReactQueryDevtools />
+      <WalletConnectionProvider>{children}</WalletConnectionProvider>
+    </QueryClientProvider>
+  </SnackbarProvider>
 )
 export default Providers

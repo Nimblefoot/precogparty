@@ -67,11 +67,14 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
       offeringYes,
       numYes,
       numNo,
+      uiSelling,
     }: {
       offeringYes: boolean
       numYes: BN
       numNo: BN
+      uiSelling: boolean
     }) => {
+      console.log(offeringYes, numYes.toString(), numNo.toString())
       if (!publicKey) throw new Error("no publickey connected")
 
       // TODO [mild] - await this data
@@ -122,7 +125,7 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
             numOranges: numNo,
             numApples: numYes,
             offeringApples: offeringYes,
-            memo: 0, // TODO: change this to actually work as intended. Just trying not to break the app.
+            memo: uiSelling ? 1 : 0,
           },
         },
         {

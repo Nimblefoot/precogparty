@@ -14,6 +14,7 @@ export const MiniPosition = ({
   marketAddress: PublicKey
 }) => {
   const position = usePosition(marketAddress)
+  console.log("po", position)
 
   return position === undefined ? null : (
     <Disclosure>
@@ -47,22 +48,25 @@ export const MiniPosition = ({
                           ${displayBN(position.size)} NO
                         </span>
                       </>
-                    ) : null}
+                    ) : null}{" "}
+                    <span className="text-gray-500">
+                      {position.size.gt(position.available) && (
+                        <> (${displayBN(position.available)} available)</>
+                      )}
+                    </span>
                   </div>
                   <div>
-                    <Disclosure.Button>
-                      <button
-                        data-name="SELL BUTTON"
-                        type="button"
-                        className={clsx(
-                          "inline-flex items-center px-2.5 py-0.5 border border-transparent text-xs font-medium rounded",
-                          position.position === "yes"
-                            ? "text-lime-700 hover:bg-lime-200 border border-lime-700"
-                            : "text-rose-700 hover:bg-rose-200 border border-rose-700"
-                        )}
-                      >
-                        SELL
-                      </button>
+                    <Disclosure.Button
+                      data-name="SELL BUTTON"
+                      type="button"
+                      className={clsx(
+                        "inline-flex items-center px-2.5 py-0.5 border border-transparent text-xs font-medium rounded",
+                        position.position === "yes"
+                          ? "text-lime-700 hover:bg-lime-200 border border-lime-700"
+                          : "text-rose-700 hover:bg-rose-200 border border-rose-700"
+                      )}
+                    >
+                      SELL
                     </Disclosure.Button>
                   </div>
                 </div>
@@ -74,7 +78,10 @@ export const MiniPosition = ({
                   </p>
                 )}
                 {position.orders.length > 0 && (
-                  <p>{position.orders.length} orders</p>
+                  <p>
+                    {position.orders.length} order
+                    {position.orders.length > 1 ? "s" : ""}
+                  </p>
                 )}
               </div>
             </div>
