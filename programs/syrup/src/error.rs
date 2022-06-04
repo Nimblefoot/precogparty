@@ -23,6 +23,9 @@ pub enum ErrorCode {
     #[msg("Vaults dont match")]
     WrongVault,
 
+    #[msg("Wrong Account Passed to Remaining Accounts.")]
+    WrongRemainingAccount,
+
     #[msg("Orderbook Closed")]
     OrderbookClosed,
 

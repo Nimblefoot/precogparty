@@ -10,12 +10,15 @@ use instructions::transfer_tokens;
 pub mod error;
 use error::ErrorCode;
 
+use solana_program::pubkey;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount}
 };
 
-declare_id!("3K1ibBw93WY4PmJ1CBfoTg4mx2yGVvr7WLCsaqAY5g1K");
+const PROGRAM_ID: Pubkey = pubkey!("3K1ibBw93WY4PmJ1CBfoTg4mx2yGVvr7WLCsaqAY5g1K");
+
+declare_id!(PROGRAM_ID);
 
 pub fn delete_order(index: u32, optional_last_page: Option<&mut Account<OrderbookPage>>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
     let order_data = order_page.get(index);
@@ -263,7 +266,6 @@ pub mod syrup {
         };
 
         let order_page = &mut ctx.accounts.order_page;
-        let last_page = None;
         let user_account = &mut ctx.accounts.user_account;
 
         // need to split up variables to avoid borrower check errors
@@ -295,7 +297,22 @@ pub mod syrup {
             Some(signer_seeds)
         )?;
 
-        delete_order(index, last_page, order_page, user_account, orderbook_length)?;
+        if let Some(acc) = ctx.remaining_accounts.get(0) {
+            let mut last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
+
+            let pda_seeds = [b"counter2".as_ref()];
+            let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
+
+            if pda == *acc.key {
+                delete_order(index, Some(last_page), order_page, user_account, orderbook_length)?;
+
+                acc.exit(&PROGRAM_ID)?;
+            } else {
+                return err!(ErrorCode::WrongRemainingAccount);
+            }
+        } else {
+            delete_order(index, None, order_page, user_account, orderbook_length)?;
+        }
 
         Ok(())
     }
