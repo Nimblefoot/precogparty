@@ -33,6 +33,7 @@ import { ORDERBOOK_PAGE_MAX_LENGTH } from "config"
 import { usePositions } from "./usePositions"
 import clsx from "clsx"
 import { usePosition } from "./usePosition"
+import { useSyrup } from "@/hooks/useProgram"
 
 const YesBadge = () => (
   <>
@@ -221,12 +222,13 @@ const CancelOrderButton = ({ order }: { order: OrderRecordFields }) => {
   const { callback, status } = useTransact()
   const orderbook = useOrderbook(order.market)
   const { publicKey } = useWallet()
+  const program = useSyrup()
 
   const yesMint = useResolutionMint(order.market, "yes")
   const noMint = useResolutionMint(order.market, "no")
 
   const onSubmit = async () => {
-    if (!publicKey)
+    if (!publicKey || !program)
       throw new Error(
         "cancelled order without connecting wallet -- should not be possible"
       )
@@ -291,23 +293,54 @@ const CancelOrderButton = ({ order }: { order: OrderRecordFields }) => {
       SYRUP_ID
     )
 
-    const ix = cancelOrder(
-      {
-        order: found,
-        pageNumber: found.page,
-        index: found.index,
-      },
-      {
-        user: publicKey,
-        userAccount,
-        userAta,
-        vault,
-        orderbookInfo,
-        orderPage,
-        lastPage,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      }
+    // const ix = cancelOrder(
+    //   {
+    //     order: found,
+    //     pageNumber: found.page,
+    //     index: found.index,
+    //   },
+    //   {
+    //     user: publicKey,
+    //     userAccount,
+    //     userAta,
+    //     vault,
+    //     orderbookInfo,
+    //     orderPage,
+    //     tokenProgram: TOKEN_PROGRAM_ID,
+    //   }
+    // )
+
+    const remainingAccounts =
+    found.page == lastPageIndex
+      ? []
+      : [
+          {
+            pubkey: lastPage,
+            isSigner: false,
+            isWritable: true,
+          },
+        ]
+
+    const ix = await program.methods
+    .cancelOrder(
+      found,
+      found.page,
+      found.index
     )
+    .accounts({
+      user: publicKey,
+      userAccount,
+      userAta,
+      vault,
+      orderbookInfo,
+      orderPage,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .remainingAccounts(remainingAccounts)
+    .signers([])
+    .instruction()
+
+
     const tx = new Transaction().add(ix)
     await callback(tx)
 

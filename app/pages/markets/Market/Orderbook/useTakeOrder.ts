@@ -8,7 +8,6 @@ import {
 } from "@solana/web3.js"
 import { ORDERBOOK_PAGE_MAX_LENGTH } from "config"
 import BN from "bn.js"
-import { takeOrder } from "@/generated/syrup/instructions"
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
 import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
@@ -17,10 +16,12 @@ import { ASSOCIATED_PROGRAM_ID } from "@project-serum/anchor/dist/cjs/utils/toke
 import { BN_ } from "@/utils/orderMath"
 import { useResolutionMint } from "./usePlaceOrder"
 import { OrderFields } from "@/generated/syrup/types"
+import { useSyrup } from "@/hooks/useProgram"
 
 const useTakeOrder = (marketAddress: PublicKey) => {
   const { publicKey } = useWallet()
   const { connection } = useConnection()
+  const program = useSyrup()
   const yesMint = useResolutionMint(marketAddress, "yes")
   const noMint = useResolutionMint(marketAddress, "no")
 
@@ -38,7 +39,7 @@ const useTakeOrder = (marketAddress: PublicKey) => {
       index: number
       amountToExchange: BN_
     }) => {
-      if (!publicKey) throw new Error("no publickey connected")
+      if (!publicKey || !program) throw new Error("no publickey connected")
 
       const { offeringApples } = order
 
@@ -103,14 +104,20 @@ const useTakeOrder = (marketAddress: PublicKey) => {
         SYRUP_ID
       )
 
-      const ix = takeOrder(
-        {
-          order,
-          pageNumber,
-          index,
-          amountToExchange,
-        },
-        {
+      const remainingAccounts =
+        pageNumber == lastPageIndex
+          ? []
+          : [
+              {
+                pubkey: lastPage,
+                isSigner: false,
+                isWritable: true,
+              },
+            ]
+
+      const ix = await program.methods
+        .takeOrder(order, amountToExchange, pageNumber, index)
+        .accounts({
           taker: publicKey,
           takerSendingAta,
           takerReceivingAta,
@@ -119,13 +126,13 @@ const useTakeOrder = (marketAddress: PublicKey) => {
           vault,
           orderbookInfo,
           orderPage,
-          lastPage,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
           systemProgram: SystemProgram.programId,
-        }
-      )
+        })
+        .remainingAccounts(remainingAccounts)
+        .instruction()
 
       const txn = new Transaction().add(ix)
       return txn
