@@ -25,6 +25,8 @@ pub enum ErrorCode {
 
     #[msg("Wrong Account Passed to Remaining Accounts.")]
     WrongRemainingAccount,
+    #[msg("Last Page not passed")]
+    MissingLastPage,
 
     #[msg("Orderbook Closed")]
     OrderbookClosed,

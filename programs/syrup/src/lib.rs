@@ -194,7 +194,6 @@ pub mod syrup {
             return err!(ErrorCode::OrderTooSmall);
         }
 
-        let last_page = None;
         let order_page = &mut ctx.accounts.order_page;
         let offerer_user_account = &mut ctx.accounts.offerer_user_account;
 
@@ -231,7 +230,22 @@ pub mod syrup {
         )?;
 
         if amount_to_exchange == maximum_taker_payment {
-            delete_order(index, last_page, order_page, offerer_user_account, orderbook_length)?;
+            if let Some(acc) = ctx.remaining_accounts.get(0) {
+                let mut last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
+    
+                let pda_seeds = [b"counter2".as_ref()];
+                let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
+    
+                if pda == *acc.key {
+                    delete_order(index, Some(last_page), order_page, offerer_user_account, orderbook_length)?;
+    
+                    acc.exit(&PROGRAM_ID)?;
+                } else {
+                    return err!(ErrorCode::WrongRemainingAccount);
+                }
+            } else {
+                delete_order(index, None, order_page, offerer_user_account, orderbook_length)?;
+            }
         } else {
             edit_order(index, new_num_apples, new_num_oranges, order_page, offerer_user_account)?;
         }
@@ -269,9 +283,10 @@ pub mod syrup {
         let user_account = &mut ctx.accounts.user_account;
 
         // need to split up variables to avoid borrower check errors
-        let orderbook_id = ctx.accounts.orderbook_info.id.clone();
+        let orderbook_id = ctx.accounts.orderbook_info.id;
         let orderbook_bump = ctx.accounts.orderbook_info.bump;
         let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
+        let last_page_number = ctx.accounts.orderbook_info.get_last_page();
         let orderbook_length = &mut ctx.accounts.orderbook_info.length;
 
         // Refund order
@@ -297,7 +312,10 @@ pub mod syrup {
             Some(signer_seeds)
         )?;
 
-        if let Some(acc) = ctx.remaining_accounts.get(0) {
+        // if we aren't on the last page we need to load it from remaining accounts
+        if page_number == last_page_number {
+            delete_order(index, None, order_page, user_account, orderbook_length)?;
+        } else if let Some(acc) = ctx.remaining_accounts.get(0) {
             let mut last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
 
             let pda_seeds = [b"counter2".as_ref()];
@@ -311,7 +329,7 @@ pub mod syrup {
                 return err!(ErrorCode::WrongRemainingAccount);
             }
         } else {
-            delete_order(index, None, order_page, user_account, orderbook_length)?;
+            return err!(ErrorCode::MissingLastPage);
         }
 
         Ok(())
