@@ -7,7 +7,7 @@ import {
   SYSVAR_RENT_PUBKEY,
   Transaction,
 } from "@solana/web3.js"
-import { assert } from "chai"
+import { assert, Assertion } from "chai"
 import { Syrup } from "../target/types/syrup"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
 import * as spl from "@solana/spl-token"
@@ -26,7 +26,8 @@ import {
   mintToChecked,
 } from "@solana/spl-token"
 
-const maxLength = 100 //
+const maxLength = 3 //
+const orderbookId = Keypair.generate().publicKey
 
 describe("orderbook", async () => {
   // Configure the client to use the local cluster.
@@ -36,7 +37,6 @@ describe("orderbook", async () => {
   const program = anchor.workspace.Syrup as Program<Syrup>
   const admin = Keypair.generate()
   const user = Keypair.generate()
-  let orderbookId = Keypair.generate().publicKey
 
   // All PDAs set in `before` block
   let adminAccountAddress: PublicKey
@@ -152,7 +152,7 @@ describe("orderbook", async () => {
     await program.methods
       .initializeOrderbook(orderbookId)
       .accounts({
-        admin: provider.wallet.publicKey,
+        admin: admin.publicKey,
         applesMint,
         applesVault,
         orangesMint,
@@ -160,9 +160,9 @@ describe("orderbook", async () => {
         // orderbookInfo, //derivable from seeds
         firstPage: firstPageAddress,
       })
+      .signers([admin])
       .rpc()
 
-    // create a user account for user and admin
     await program.methods
       .createUserAccount()
       .accounts({
@@ -180,7 +180,7 @@ describe("orderbook", async () => {
       .rpc()
   })
 
-  it("places 280 orders", async () => {
+  it("places 10 orders", async () => {
     await mintToChecked(
       program.provider.connection, // connection
       user, // fee payer
@@ -201,8 +201,7 @@ describe("orderbook", async () => {
       6 // decimals
     )
 
-    // user places 140 offering_apples orders. Should deposit 400 units of currency
-    for (let i = 0; i < 140; i++) {
+    for (let i = 0; i < 10; i++) {
       if ((i + 1) % 10 == 0) {
         console.log("place user order: " + (i + 1))
       }
@@ -242,69 +241,64 @@ describe("orderbook", async () => {
           skipPreflight: true,
         })
     }
+  })
 
-    // admin places 140 sell orders. should deposit 100 tokens.
-    for (let i = 0; i < 140; i++) {
-      if ((i + 1) % 10 == 0) {
-        console.log("place admin order: " + (i + 1))
-      }
-      const [infoKey] = await PublicKey.findProgramAddress(
-        [orderbookId.toBytes(), utf8.encode("orderbook-info")],
-        program.programId
-      )
-      const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-      const nextOpenPageIndex = Math.floor(info.length / maxLength)
-      const [currentPageKey] = await PublicKey.findProgramAddress(
-        [
-          orderbookId.toBytes(),
-          utf8.encode("page"),
-          new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
-        ],
-        program.programId
-      )
-
-      await program.methods
-        .placeOrder({
-          user: admin.publicKey,
-          numOranges: new anchor.BN(1e6),
-          offeringApples: false,
-          numApples: new anchor.BN(3e6),
-          memo: 0,
-        })
-        .accounts({
-          user: admin.publicKey,
-          userAta: adminOrangesATA,
-          vault: orangesVault,
-          orderbookInfo: orderbookInfoAddress,
-          currentPage: currentPageKey,
-          userAccount: adminAccountAddress,
-        })
-        .signers([admin])
-        .rpc({
-          skipPreflight: true,
-        })
-    }
-
-    let applesVaultBalance =
-      await program.provider.connection.getTokenAccountBalance(applesVault)
-    assert.equal(
-      applesVaultBalance.value.amount,
-      "280000000",
-      "Apples Vault Balance should match sum of orders."
-    )
-    let orangesVaultBalance =
-      await program.provider.connection.getTokenAccountBalance(orangesVault)
-    assert.equal(
-      orangesVaultBalance.value.amount,
-      "140000000",
-      "Oranges Vault Balance should match sum of orders."
-    )
-
+  it("cancels orders", async () => {
     const [infoKey] = await PublicKey.findProgramAddress(
       [orderbookId.toBytes(), utf8.encode("orderbook-info")],
       program.programId
     )
     const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-    assert.equal(info.length, 280, "Should have 280 orders on the book.")
+    const lastPageIndex = Math.floor((info.length - 1) / maxLength)
+
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        orderbookId.toBytes(),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
+
+    const [firstPageKey] = await PublicKey.findProgramAddress(
+      [
+        orderbookId.toBytes(),
+        utf8.encode("page"),
+        new anchor.BN(0).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
+
+    await program.methods
+      .cancelOrder(
+        {
+          user: user.publicKey,
+          numApples: new anchor.BN(2e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(1e6),
+          memo: 0,
+        },
+        0,
+        0
+      )
+      .accounts({
+        user: user.publicKey,
+        userAccount: userAccountAddress,
+        userAta: userApplesATA,
+        vault: applesVault,
+        orderbookInfo: orderbookInfoAddress,
+        orderPage: firstPageKey,
+      })
+      .remainingAccounts([
+        {
+          pubkey: lastPageKey,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
+      .signers([user])
+      .rpc()
   })
+
+  // it("takes orders", async () => {})
 })

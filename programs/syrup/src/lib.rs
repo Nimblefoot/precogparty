@@ -199,9 +199,11 @@ pub mod syrup {
 
         // need to split up variables to avoid borrower check errors
         let orderbook_id = ctx.accounts.orderbook_info.id;
+        let orderbook_id_bytes = orderbook_id.to_bytes();
         let orderbook_bump = ctx.accounts.orderbook_info.bump;
         let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
         let last_page_number = ctx.accounts.orderbook_info.get_last_page();
+        let last_page_bytes = last_page_number.to_le_bytes();
         let orderbook_length = &mut ctx.accounts.orderbook_info.length;
 
         // Transfer from the vault to the taker
@@ -236,7 +238,7 @@ pub mod syrup {
             } else if let Some(acc) = ctx.remaining_accounts.get(0) {
                 let last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
     
-                let pda_seeds = [b"counter2".as_ref()];
+                let pda_seeds = [orderbook_id_bytes.as_ref(), b"page".as_ref(), last_page_bytes.as_ref()];
                 let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
     
                 if pda == *acc.key {
@@ -287,9 +289,11 @@ pub mod syrup {
 
         // need to split up variables to avoid borrower check errors
         let orderbook_id = ctx.accounts.orderbook_info.id;
+        let orderbook_id_bytes = orderbook_id.to_bytes();
         let orderbook_bump = ctx.accounts.orderbook_info.bump;
         let orderbook_account_info = ctx.accounts.orderbook_info.to_account_info();
         let last_page_number = ctx.accounts.orderbook_info.get_last_page();
+        let last_page_bytes = last_page_number.to_le_bytes();
         let orderbook_length = &mut ctx.accounts.orderbook_info.length;
 
         // Refund order
@@ -319,9 +323,9 @@ pub mod syrup {
         if page_number == last_page_number {
             delete_order(index, None, order_page, user_account, orderbook_length)?;
         } else if let Some(acc) = ctx.remaining_accounts.get(0) {
-            let mut last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
+            let last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
 
-            let pda_seeds = [b"counter2".as_ref()];
+            let pda_seeds = [orderbook_id_bytes.as_ref(), b"page".as_ref(), last_page_bytes.as_ref()];
             let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
 
             if pda == *acc.key {

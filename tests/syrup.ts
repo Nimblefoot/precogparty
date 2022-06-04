@@ -559,7 +559,6 @@ describe("orderbook", async () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: firstPageKey,
-        lastPage: firstPageKey,
       })
       .signers([admin])
       .rpc({
@@ -589,7 +588,6 @@ describe("orderbook", async () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: firstPageKey,
-        lastPage: firstPageKey,
       })
       .signers([user])
       .rpc()
