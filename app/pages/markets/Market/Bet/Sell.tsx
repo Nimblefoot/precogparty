@@ -7,7 +7,7 @@ import { amountBoughtAtPercentOdds } from "@/utils/orderMath"
 import { RadioGroup } from "@headlessui/react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
-import { BN } from "bn.js"
+import { BN, max } from "bn.js"
 import clsx from "clsx"
 import {
   COLLATERAL_DECIMALS,
@@ -16,13 +16,15 @@ import {
   Resolution,
   TAKE_ORDER_COST,
 } from "config"
+import { usePosition } from "pages/positions/usePosition"
 import { queryClient } from "pages/providers"
-import { tokenAccountKeys } from "pages/tokenAccountQuery"
-import React, { useCallback, useMemo, useRef, useState } from "react"
+import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
+import { parse } from "path"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import useMergeContingentSet from "../hooks/useMergeContingentSet"
 import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "../Orderbook/orderbookQueries"
-import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
+import usePlaceOrderTxn, { useResolutionMint } from "../Orderbook/usePlaceOrder"
 import useTakeOrder from "../Orderbook/useTakeOrder"
 import { useRelevantOrders } from "./useRelevantOrders"
 import { useTakeOrders } from "./useTakeOrders"
@@ -245,8 +247,23 @@ export function Sell({
   marketAddress: PublicKey
   selling: Resolution
 }) {
-  const [price, setPrice] = useState<number>(80)
+  const [priceInput, setPriceInput] = useState<string>("80")
   const [amountInput, setAmountInput] = useState<string>("")
+  const position = usePosition(marketAddress)
+
+  const [lastValidPrice, setLastValidPrice] = useState<number>(80)
+  useEffect(() => {
+    const parsed = parseInt(priceInput)
+    if (isNaN(parsed)) {
+      return
+    } else if (parsed < 1) {
+      setLastValidPrice(1)
+    } else if (parsed > 99) {
+      setLastValidPrice(99)
+    } else {
+      setLastValidPrice(parsed)
+    }
+  }, [priceInput])
 
   const inputRef = useRef(null)
   /* 
@@ -261,15 +278,30 @@ export function Sell({
     taking: { tokenSpent, takePrice, usdcMade },
     orderSpendAmount,
     orderUsdcToMake,
-  } = useSellAccounting(marketAddress, selling, amountInput, price)
+  } = useSellAccounting(marketAddress, selling, amountInput, lastValidPrice)
 
   const { submit, status } = useSubmitSell({
     marketAddress,
     amountInput,
-    price,
+    price: lastValidPrice,
     selling,
     onSuccess: () => setAmountInput(""),
   })
+
+  const validate = (input: string) => {
+    if (position !== undefined && position.available) {
+      const amount = new BN(parseFloat(input) * 10 ** COLLATERAL_DECIMALS)
+      const balance = new BN(position.available)
+      if (amount.gt(balance)) {
+        return {
+          valid: false,
+          err: "Insufficient balance",
+          suggested: displayBN(balance, 4),
+        } as const
+      }
+    }
+    return { valid: true } as const
+  }
 
   const ready = amountInput !== ""
 
@@ -299,11 +331,15 @@ export function Sell({
                 min="1"
                 max="99"
                 className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
-                placeholder="0.00"
+                placeholder="1"
                 aria-describedby="price-currency"
-                value={price ?? ""}
+                value={priceInput}
                 onChange={(e) => {
-                  setPrice(parseInt(e.target.value) || 1)
+                  if (parseInt(e.target.value) > 99) {
+                    setPriceInput("99")
+                  } else {
+                    setPriceInput(e.target.value)
+                  }
                 }}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -333,7 +369,12 @@ export function Sell({
                 aria-describedby="price-currency"
                 value={amountInput}
                 onChange={(e) => {
-                  setAmountInput(e.target.value)
+                  const validation = validate(e.target.value)
+                  if (validation.valid) {
+                    setAmountInput(e.target.value)
+                  } else {
+                    setAmountInput(validation.suggested)
+                  }
                 }}
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -379,7 +420,7 @@ export function Sell({
               >
                 ${displayBN(orderSpendAmount)} {selling.toUpperCase()}
               </span>{" "}
-              at {price}¢ for {displayBN(orderUsdcToMake)} USDC
+              at {lastValidPrice}¢ for {displayBN(orderUsdcToMake)} USDC
             </li>
           ) : undefined}
         </ol>

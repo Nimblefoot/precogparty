@@ -80,35 +80,38 @@ export function StatelessTransactButton({
   status,
   onClick,
   className,
+  ...props
 }: {
   verb: string
   disabled?: boolean
   status: Status
   onClick: () => Promise<void>
   className?: string
-}) {
+} & React.DetailedHTMLProps<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  HTMLButtonElement
+>) {
   return (
     <>
-      <div>
-        <ReactCanvasConfetti
-          style={{
-            position: "fixed",
-            pointerEvents: "none",
-            width: "100%",
-            height: "100%",
-            top: 0,
-            left: 0,
-          }}
-          // origin = {x, y}
-          width={1000}
-          height={1000}
-          fire={status === "done"}
-          disableForReducedMotion
-        />
-        <button
-          disabled={disabled}
-          onClick={onClick}
-          className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md 
+      <ReactCanvasConfetti
+        style={{
+          position: "fixed",
+          pointerEvents: "none",
+          width: "100%",
+          height: "100%",
+          top: 0,
+          left: 0,
+        }}
+        // origin = {x, y}
+        width={1000}
+        height={1000}
+        fire={status === "done"}
+        disableForReducedMotion
+      />
+      <button
+        disabled={disabled}
+        onClick={onClick}
+        className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md 
         text-white 
           disabled:bg-gray-300 disabled:shadow-none 
           ${
@@ -121,16 +124,16 @@ export function StatelessTransactButton({
           ${status === "confirming" ? "animate-rainbow " : ""} 
           ${className} 
         `}
-        >
-          {status === "initial" || status === "done"
-            ? verb
-            : status === "sending"
-            ? "Sending..."
-            : status === "signing"
-            ? "Signing..."
-            : "Confirming..."}
-        </button>
-      </div>
+        {...props}
+      >
+        {status === "initial" || status === "done"
+          ? verb
+          : status === "sending"
+          ? "Sending..."
+          : status === "signing"
+          ? "Signing..."
+          : "Confirming..."}
+      </button>
     </>
   )
 }

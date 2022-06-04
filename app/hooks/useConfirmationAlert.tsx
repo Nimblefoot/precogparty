@@ -36,7 +36,7 @@ const useConfirmationAlert = () => {
   const error = useCallback(
     (msg: string, tx?: string) => {
       enqueueSnackbar(msg, {
-        autoHideDuration: 5000,
+        autoHideDuration: 10000,
         action:
           tx !== undefined ? (
             <div className=" ml-4">
