@@ -345,32 +345,6 @@ export type Syrup = {
           }
         },
         {
-          "name": "lastPage",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "OrderbookInfo",
-                "path": "orderbook_info.id"
-              },
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "page"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "OrderbookInfo",
-                "path": "orderbook_info"
-              }
-            ]
-          }
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -490,32 +464,6 @@ export type Syrup = {
                 "kind": "arg",
                 "type": "u32",
                 "path": "page_number"
-              }
-            ]
-          }
-        },
-        {
-          "name": "lastPage",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "OrderbookInfo",
-                "path": "orderbook_info.id"
-              },
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "page"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "OrderbookInfo",
-                "path": "orderbook_info"
               }
             ]
           }
@@ -796,21 +744,31 @@ export type Syrup = {
     },
     {
       "code": 6010,
+      "name": "WrongRemainingAccount",
+      "msg": "Wrong Account Passed to Remaining Accounts."
+    },
+    {
+      "code": 6011,
+      "name": "MissingLastPage",
+      "msg": "Last Page not passed"
+    },
+    {
+      "code": 6012,
       "name": "OrderbookClosed",
       "msg": "Orderbook Closed"
     },
     {
-      "code": 6011,
+      "code": 6013,
       "name": "OrderbookNameAlreadySet",
       "msg": "Orderbook page orderbook name already set"
     },
     {
-      "code": 6012,
+      "code": 6014,
       "name": "MaxOrdersPlaced",
       "msg": "User already placed the maximum number of orders!"
     },
     {
-      "code": 6013,
+      "code": 6015,
       "name": "PageFull",
       "msg": "Order page is full"
     }
@@ -1164,32 +1122,6 @@ export const IDL: Syrup = {
           }
         },
         {
-          "name": "lastPage",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "OrderbookInfo",
-                "path": "orderbook_info.id"
-              },
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "page"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "OrderbookInfo",
-                "path": "orderbook_info"
-              }
-            ]
-          }
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1309,32 +1241,6 @@ export const IDL: Syrup = {
                 "kind": "arg",
                 "type": "u32",
                 "path": "page_number"
-              }
-            ]
-          }
-        },
-        {
-          "name": "lastPage",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "OrderbookInfo",
-                "path": "orderbook_info.id"
-              },
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "page"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "OrderbookInfo",
-                "path": "orderbook_info"
               }
             ]
           }
@@ -1615,21 +1521,31 @@ export const IDL: Syrup = {
     },
     {
       "code": 6010,
+      "name": "WrongRemainingAccount",
+      "msg": "Wrong Account Passed to Remaining Accounts."
+    },
+    {
+      "code": 6011,
+      "name": "MissingLastPage",
+      "msg": "Last Page not passed"
+    },
+    {
+      "code": 6012,
       "name": "OrderbookClosed",
       "msg": "Orderbook Closed"
     },
     {
-      "code": 6011,
+      "code": 6013,
       "name": "OrderbookNameAlreadySet",
       "msg": "Orderbook page orderbook name already set"
     },
     {
-      "code": 6012,
+      "code": 6014,
       "name": "MaxOrdersPlaced",
       "msg": "User already placed the maximum number of orders!"
     },
     {
-      "code": 6013,
+      "code": 6015,
       "name": "PageFull",
       "msg": "Order page is full"
     }

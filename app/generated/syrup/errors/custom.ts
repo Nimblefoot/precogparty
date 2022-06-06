@@ -9,6 +9,8 @@ export type CustomError =
   | OrderTooSmall
   | WrongOrder
   | WrongVault
+  | WrongRemainingAccount
+  | MissingLastPage
   | OrderbookClosed
   | OrderbookNameAlreadySet
   | MaxOrdersPlaced
@@ -124,47 +126,69 @@ export class WrongVault extends Error {
   }
 }
 
-export class OrderbookClosed extends Error {
+export class WrongRemainingAccount extends Error {
   static readonly code = 6010
   readonly code = 6010
+  readonly name = "WrongRemainingAccount"
+  readonly msg = "Wrong Account Passed to Remaining Accounts."
+
+  constructor(readonly logs?: string[]) {
+    super("6010: Wrong Account Passed to Remaining Accounts.")
+  }
+}
+
+export class MissingLastPage extends Error {
+  static readonly code = 6011
+  readonly code = 6011
+  readonly name = "MissingLastPage"
+  readonly msg = "Last Page not passed"
+
+  constructor(readonly logs?: string[]) {
+    super("6011: Last Page not passed")
+  }
+}
+
+export class OrderbookClosed extends Error {
+  static readonly code = 6012
+  readonly code = 6012
   readonly name = "OrderbookClosed"
   readonly msg = "Orderbook Closed"
 
   constructor(readonly logs?: string[]) {
-    super("6010: Orderbook Closed")
+    super("6012: Orderbook Closed")
   }
 }
 
 export class OrderbookNameAlreadySet extends Error {
-  static readonly code = 6011
-  readonly code = 6011
+  static readonly code = 6013
+  readonly code = 6013
   readonly name = "OrderbookNameAlreadySet"
   readonly msg = "Orderbook page orderbook name already set"
 
   constructor(readonly logs?: string[]) {
-    super("6011: Orderbook page orderbook name already set")
+    super("6013: Orderbook page orderbook name already set")
   }
 }
 
 export class MaxOrdersPlaced extends Error {
-  static readonly code = 6012
-  readonly code = 6012
+  static readonly code = 6014
+  readonly code = 6014
   readonly name = "MaxOrdersPlaced"
   readonly msg = "User already placed the maximum number of orders!"
 
   constructor(readonly logs?: string[]) {
-    super("6012: User already placed the maximum number of orders!")
+    super("6014: User already placed the maximum number of orders!")
   }
 }
 
 export class PageFull extends Error {
-  static readonly code = 6013
-  readonly code = 6013
+  static readonly code = 6015
+  readonly code = 6015
   readonly name = "PageFull"
   readonly msg = "Order page is full"
 
   constructor(readonly logs?: string[]) {
-    super("6013: Order page is full")
+    super("6015: Order page is full")
   }
 }
 
@@ -191,12 +215,16 @@ export function fromCode(code: number, logs?: string[]): CustomError | null {
     case 6009:
       return new WrongVault(logs)
     case 6010:
-      return new OrderbookClosed(logs)
+      return new WrongRemainingAccount(logs)
     case 6011:
-      return new OrderbookNameAlreadySet(logs)
+      return new MissingLastPage(logs)
     case 6012:
-      return new MaxOrdersPlaced(logs)
+      return new OrderbookClosed(logs)
     case 6013:
+      return new OrderbookNameAlreadySet(logs)
+    case 6014:
+      return new MaxOrdersPlaced(logs)
+    case 6015:
       return new PageFull(logs)
   }
 

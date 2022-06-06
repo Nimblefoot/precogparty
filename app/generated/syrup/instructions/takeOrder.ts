@@ -20,7 +20,6 @@ export interface TakeOrderAccounts {
   vault: PublicKey
   orderbookInfo: PublicKey
   orderPage: PublicKey
-  lastPage: PublicKey
   tokenProgram: PublicKey
   associatedTokenProgram: PublicKey
   rent: PublicKey
@@ -44,7 +43,6 @@ export function takeOrder(args: TakeOrderArgs, accounts: TakeOrderAccounts) {
     { pubkey: accounts.vault, isSigner: false, isWritable: true },
     { pubkey: accounts.orderbookInfo, isSigner: false, isWritable: true },
     { pubkey: accounts.orderPage, isSigner: false, isWritable: true },
-    { pubkey: accounts.lastPage, isSigner: false, isWritable: true },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
     {
       pubkey: accounts.associatedTokenProgram,
