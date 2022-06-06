@@ -116,13 +116,13 @@ export function StatelessTransactButton({
           "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md",
           "text-white",
           "disabled:bg-gray-300 disabled:shadow-none",
-          className,
 
-          status === "initial" ||
-            (status === "done" && "bg-indigo-600 hover:bg-indigo-700"),
+          (status === "initial" || status === "done") &&
+            "bg-indigo-600 hover:bg-indigo-700",
           status === "signing" && "bg-gray-400  animate-pulse",
           status === "sending" && "bg-gray-400  animate-pulse",
-          status === "confirming" && "animate-rainbow"
+          status === "confirming" && "animate-rainbow",
+          className
         )}
         {...props}
       >
