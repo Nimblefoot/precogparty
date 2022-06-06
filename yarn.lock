@@ -63,7 +63,7 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@project-serum/anchor@^0.24.1", "@project-serum/anchor@^0.24.2":
+"@project-serum/anchor@^0.24.2":
   version "0.24.2"
   resolved "https://registry.yarnpkg.com/@project-serum/anchor/-/anchor-0.24.2.tgz#a3c52a99605c80735f446ca9b3a4885034731004"
   integrity sha512-0/718g8/DnEuwAidUwh5wLYphUYXhUbiClkuRNhvNoa+1Y8a4g2tJyxoae+emV+PG/Gikd/QUBNMkIcimiIRTA==
@@ -81,6 +81,26 @@
     js-sha256 "^0.9.0"
     pako "^2.0.3"
     snake-case "^3.0.4"
+    toml "^3.0.0"
+
+"@project-serum/anchor@https://github.com/kklas/anchor-nightly/releases/download/anchor-latest/anchor-0.24.2-90bbc8b.tgz":
+  version "0.24.2"
+  resolved "https://github.com/kklas/anchor-nightly/releases/download/anchor-latest/anchor-0.24.2-90bbc8b.tgz#2a5e262c6ca20fa77378c5ec8218e03dec95798c"
+  dependencies:
+    "@project-serum/borsh" "^0.2.5"
+    "@solana/web3.js" "^1.36.0"
+    base64-js "^1.5.1"
+    bn.js "^5.1.2"
+    bs58 "^4.0.1"
+    buffer-layout "^1.2.2"
+    camelcase "^5.3.1"
+    cross-fetch "^3.1.5"
+    crypto-hash "^1.3.0"
+    eventemitter3 "^4.0.7"
+    js-sha256 "^0.9.0"
+    pako "^2.0.3"
+    snake-case "^3.0.4"
+    superstruct "^0.15.4"
     toml "^3.0.0"
 
 "@project-serum/borsh@^0.2.5":
@@ -157,13 +177,13 @@
     superstruct "^0.14.2"
     tweetnacl "^1.0.0"
 
-"@ts-morph/common@~0.12.3":
-  version "0.12.3"
-  resolved "https://registry.yarnpkg.com/@ts-morph/common/-/common-0.12.3.tgz#a96e250217cd30e480ab22ec6a0ebbe65fd784ff"
-  integrity sha512-4tUmeLyXJnJWvTFOKtcNJ1yh0a3SsTLi2MUoyj8iUNznFRN1ZquaNe7Oukqrnki2FzZkm0J9adCNLDZxUzvj+w==
+"@ts-morph/common@~0.13.0":
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/@ts-morph/common/-/common-0.13.0.tgz#77dea1565baaf002d1bc2c20e05d1fb3349008a9"
+  integrity sha512-fEJ6j7Cu8yiWjA4UmybOBH9Efgb/64ZTWuvCF4KysGu4xz8ettfyaqFt8WZ1btCxXsGZJjZ2/3svOF6rL+UFdQ==
   dependencies:
-    fast-glob "^3.2.7"
-    minimatch "^3.0.4"
+    fast-glob "^3.2.11"
+    minimatch "^5.0.1"
     mkdirp "^1.0.4"
     path-browserify "^1.0.1"
 
@@ -243,21 +263,21 @@ JSONStream@^1.3.5:
     jsonparse "^1.2.0"
     through ">=2.2.7 <3"
 
-anchor-client-gen@^0.24.0:
-  version "0.24.0"
-  resolved "https://registry.yarnpkg.com/anchor-client-gen/-/anchor-client-gen-0.24.0.tgz#25aebebf93a7d6032866fff821260158338f06c4"
-  integrity sha512-FGGPrvek3l2mNXmU1fmFR09QIUR4bi8PlcM+pqRBox5GonOkR6UQ3Z1+NlVvEaW3CQMxfHxHTyWFEEPZPmpD2A==
+anchor-client-gen@^0.25.0-beta.1:
+  version "0.25.0-beta.1"
+  resolved "https://registry.yarnpkg.com/anchor-client-gen/-/anchor-client-gen-0.25.0-beta.1.tgz#5cb25b6e8165a8f5342675490eead5ffd4b0f9bb"
+  integrity sha512-8Cn8Qi3zslQnE4a/soLAx+c86uSrqb5Xk+LY54ljGDUpXrh3M2OQTlE1CfSlM5ZPYGfcGeiCvgcDFqanJWJrgg==
   dependencies:
-    "@project-serum/anchor" "^0.24.1"
+    "@project-serum/anchor" "https://github.com/kklas/anchor-nightly/releases/download/anchor-latest/anchor-0.24.2-90bbc8b.tgz"
     "@project-serum/borsh" "^0.2.5"
     "@solana/web3.js" "^1.36.0"
     bn.js "^5.1.2"
-    camelcase "^5.3.1"
-    commander "^9.0.0"
+    camelcase "^6.3.0"
+    commander "^9.2.0"
     js-sha256 "^0.9.0"
-    prettier "^2.5.1"
+    prettier "^2.6.2"
     snake-case "^3.0.4"
-    ts-morph "^13.0.3"
+    ts-morph "^14.0.0"
 
 ansi-colors@4.1.1:
   version "4.1.1"
@@ -379,6 +399,13 @@ brace-expansion@^1.1.7:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
 
+brace-expansion@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-2.0.1.tgz#1edc459e0f0c548486ecf9fc99f2221364b9a0ae"
+  integrity sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==
+  dependencies:
+    balanced-match "^1.0.0"
+
 braces@^3.0.2, braces@~3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/braces/-/braces-3.0.2.tgz#3454e1a462ee8d599e236df336cd9ea4f8afe107"
@@ -441,7 +468,7 @@ camelcase@^5.3.1:
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-5.3.1.tgz#e3c9b31569e106811df242f715725a1f4c494320"
   integrity sha512-L28STB170nwWS63UjtlEOE3dldQApaJXZkOI1uMFfzf3rRuPegHaHesyee+YxQ+W6SvRDQV6UrdOdRiR153wJg==
 
-camelcase@^6.0.0:
+camelcase@^6.0.0, camelcase@^6.3.0:
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-6.3.0.tgz#5685b95eb209ac9c0c177467778c9c84df58ba9a"
   integrity sha512-Gmy6FhYlCY7uOElZUSbxo2UCDH8owEk996gkbrpsgGtrJLM3J7jGxl9Ic7Qwwj4ivOE5AWZWRMecDdF7hqGjFA==
@@ -525,7 +552,7 @@ commander@^2.20.3:
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
   integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==
 
-commander@^9.0.0:
+commander@^9.2.0:
   version "9.3.0"
   resolved "https://registry.yarnpkg.com/commander/-/commander-9.3.0.tgz#f619114a5a2d2054e0d9ff1b31d5ccf89255e26b"
   integrity sha512-hv95iU5uXPbK83mjrJKuZyFM/LBAoCV/XhVGkS5Je6tl7sxr6A0ITMw5WoRV46/UaJ46Nllm3Xt7IaJhXTIkzw==
@@ -688,7 +715,7 @@ eyes@^0.1.8:
   resolved "https://registry.yarnpkg.com/eyes/-/eyes-0.1.8.tgz#62cf120234c683785d902348a800ef3e0cc20bc0"
   integrity sha1-Ys8SAjTGg3hdkCNIqADvPgzCC8A=
 
-fast-glob@^3.2.7:
+fast-glob@^3.2.11:
   version "3.2.11"
   resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-3.2.11.tgz#a1172ad95ceb8a16e20caa5c5e56480e5129c1d9"
   integrity sha512-xrO3+1bxSo3ZVHAnqzyuewYT6aMFHRAd4Kcs92MAonjwQZLsK9d0SF1IyQ3k5PoirxTW0Oe/RqFgMQ6TcNE5Ew==
@@ -1061,6 +1088,13 @@ minimatch@^3.0.4:
   dependencies:
     brace-expansion "^1.1.7"
 
+minimatch@^5.0.1:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-5.1.0.tgz#1717b464f4971b144f6aabe8f2d0b8e4511e09c7"
+  integrity sha512-9TPBGGak4nHfGZsPBohm9AWg6NoT7QTCehS3BIJABslyZbzxfV78QM2Y6+i741OPZIafFAaiiEMh5OyIrJPgtg==
+  dependencies:
+    brace-expansion "^2.0.1"
+
 minimist@^1.2.0, minimist@^1.2.5, minimist@^1.2.6:
   version "1.2.6"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.6.tgz#8637a5b759ea0d6e98702cfb3a9283323c93af44"
@@ -1230,7 +1264,7 @@ picomatch@^2.0.4, picomatch@^2.2.1, picomatch@^2.3.1:
   resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.3.1.tgz#3ba3833733646d9d3e4995946c1365a67fb07a42"
   integrity sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==
 
-prettier@^2.5.1:
+prettier@^2.6.2:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.6.2.tgz#e26d71a18a74c3d0f0597f55f01fb6c06c206032"
   integrity sha512-PkUpF+qoXTqhOeWL9fu7As8LXsIUZ1WYaJiY/a7McAQzxjk82OF0tibkFXVCDImZtWxbvojFjerkiLb0/q8mew==
@@ -1425,6 +1459,11 @@ superstruct@^0.14.2:
   resolved "https://registry.yarnpkg.com/superstruct/-/superstruct-0.14.2.tgz#0dbcdf3d83676588828f1cf5ed35cda02f59025b"
   integrity sha512-nPewA6m9mR3d6k7WkZ8N8zpTWfenFH3q9pA2PkuiZxINr9DKB2+40wEQf0ixn8VaGuJ78AB6iWOtStI+/4FKZQ==
 
+superstruct@^0.15.4:
+  version "0.15.5"
+  resolved "https://registry.yarnpkg.com/superstruct/-/superstruct-0.15.5.tgz#0f0a8d3ce31313f0d84c6096cd4fa1bfdedc9dab"
+  integrity sha512-4AOeU+P5UuE/4nOUkmcQdW5y7i9ndt1cQd/3iUe+LTz3RxESf/W/5lg4B74HbDMMv8PHnPnGCQFH45kBcrQYoQ==
+
 supports-color@8.1.1:
   version "8.1.1"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-8.1.1.tgz#cd6fc17e28500cff56c1b86c0a7fd4a54a73005c"
@@ -1475,12 +1514,12 @@ ts-mocha@^8.0.0:
   optionalDependencies:
     tsconfig-paths "^3.5.0"
 
-ts-morph@^13.0.3:
-  version "13.0.3"
-  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-13.0.3.tgz#c0c51d1273ae2edb46d76f65161eb9d763444c1d"
-  integrity sha512-pSOfUMx8Ld/WUreoSzvMFQG5i9uEiWIsBYjpU9+TTASOeUa89j5HykomeqVULm1oqWtBdleI3KEFRLrlA3zGIw==
+ts-morph@^14.0.0:
+  version "14.0.0"
+  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-14.0.0.tgz#6bffb7e4584cf6a9aebce2066bf4258e1d03f9fa"
+  integrity sha512-tO8YQ1dP41fw8GVmeQAdNsD8roZi1JMqB7YwZrqU856DvmG5/710e41q2XauzTYrygH9XmMryaFeLo+kdCziyA==
   dependencies:
-    "@ts-morph/common" "~0.12.3"
+    "@ts-morph/common" "~0.13.0"
     code-block-writer "^11.0.0"
 
 ts-node@7.0.1:

@@ -1,4 +1,4 @@
-import { TransactionInstruction, PublicKey } from "@solana/web3.js" // eslint-disable-line @typescript-eslint/no-unused-vars
+import { TransactionInstruction, PublicKey, AccountMeta } from "@solana/web3.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript-eslint/no-unused-vars
 import { PROGRAM_ID } from "../programId"
@@ -9,7 +9,7 @@ export interface ListMarketAccounts {
 }
 
 export function listMarket(accounts: ListMarketAccounts) {
-  const keys = [
+  const keys: Array<AccountMeta> = [
     { pubkey: accounts.list, isSigner: false, isWritable: true },
     { pubkey: accounts.market, isSigner: false, isWritable: false },
   ]
