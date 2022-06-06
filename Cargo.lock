@@ -1064,9 +1064,9 @@ checksum = "f2dd574626839106c320a323308629dcb1acfc96e32a8cba364ddc61ac23ee83"
 
 [[package]]
 name = "solana-frozen-abi"
-version = "1.9.28"
+version = "1.9.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e30fc7f860ff75b2916735189534c5353db8d84953af7842f8dd9a6982dbcaaf"
+checksum = "c8db0d37f7c345c6417898e675d218d76a1ce6d3bd57584d7f463d48badf1541"
 dependencies = [
  "bs58 0.4.0",
  "bv",
@@ -1084,9 +1084,9 @@ dependencies = [
 
 [[package]]
 name = "solana-frozen-abi-macro"
-version = "1.9.28"
+version = "1.9.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5e0c0121908ff5df45308b11eef48f696876064884d6aa12b70424dae7459d6"
+checksum = "023560984c7f16a53e280866c177d1ad45225614356224c1ade671de16424466"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1096,9 +1096,9 @@ dependencies = [
 
 [[package]]
 name = "solana-logger"
-version = "1.9.28"
+version = "1.9.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbd76a790f207ea9b523fb051c9d446e424e2e0b9fd539bb76c3ea797abf8ea5"
+checksum = "57cb0a4ef4dd740397addf5fa50d9dff572371fd47df2bdecc5fb530546490e2"
 dependencies = [
  "env_logger",
  "lazy_static",
@@ -1107,9 +1107,9 @@ dependencies = [
 
 [[package]]
 name = "solana-program"
-version = "1.9.28"
+version = "1.9.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64c86be9edb9a0cb3fc44f776c6bef21d19bc5f69b0f83b3999d0d9d103e1c61"
+checksum = "9654224bf5d4c6d80f68c3c996683b389693af1c69103af667c683180bad6c5e"
 dependencies = [
  "base64 0.13.0",
  "bincode",
@@ -1150,9 +1150,9 @@ dependencies = [
 
 [[package]]
 name = "solana-sdk-macro"
-version = "1.9.28"
+version = "1.9.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17d66726cf3324c91601f047d34b7f9d9bf26982775f0f673655bb55df00ec87"
+checksum = "bac8cb60eb2e4c85d76ea1f0429dfc0e8b4ba7834e9d69695bb3164f3966e16d"
 dependencies = [
  "bs58 0.4.0",
  "proc-macro2",
@@ -1208,7 +1208,6 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "solana-program",
 ]
 
 [[package]]
