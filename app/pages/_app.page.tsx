@@ -273,7 +273,7 @@ function UserInfoDesktop({}) {
                       className={clsx(
                         "ml-1",
                         "inline-flex items-center px-1 py-0.5 border border-transparent text-xs font-medium rounded",
-                        "border bg-indigo-50 hover:bg-gray-200 text-gray-700 border-gray-700"
+                        "border bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-700"
                       )}
                     />
                   ) : null}
