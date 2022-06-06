@@ -12,6 +12,7 @@ import { getPercentOdds } from "@/utils/orderMath"
 import BetPanel from "./Bet/Bet"
 import interpolateOddsColors from "@/utils/interpolateOddsColors"
 import clsx from "clsx"
+import { TokenControls } from "./TokenControls"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -136,6 +137,7 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
           <BetPanel marketAddress={address} />
 
           {market.data.resolution === 0 && <Resolve market={address} />}
+          <TokenControls address={address} />
         </div>
       </div>
     </>

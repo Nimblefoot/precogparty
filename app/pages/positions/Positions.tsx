@@ -69,6 +69,12 @@ const Positions = ({}) => {
         </div>
       </div>
       <div className="mt-8 flex flex-col">
+        {/* <div className="bg-red-100">
+          <div>Redeem all available</div>
+
+          <div>Withdraw all available</div>
+          <div>Cancel all orders on resolved markets</div>
+        </div> */}
         <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
@@ -140,7 +146,12 @@ function Position({
             </div>
             <div className="text-sm text-gray-500">
               {position.deposited.gt(new BN(0)) && (
-                <p>${displayBN(position.deposited)} USDC deposited</p>
+                <p>
+                  ${displayBN(position.deposited)} USDC deposited{" "}
+                  {position.withdrawable.lt(position.deposited) && (
+                    <>(${displayBN(position.withdrawable)} withdrawable)</>
+                  )}
+                </p>
               )}
               {position.orders.length > 0 && (
                 <p>
@@ -155,11 +166,12 @@ function Position({
           </div>
         </div>
 
-        {/* <div className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-          {market.data?.resolution !== 0 && (
-            <RedeemButton address={marketAddress} className="disabled:hidden" />
-          )}
-        </div> */}
+        {market.data?.resolution !== 0 && (
+          <RedeemButton
+            address={marketAddress}
+            className="mt-2 disabled:hidden"
+          />
+        )}
         <div>
           {(orders?.length ?? 0) > 0 &&
             orders?.map((order, i) => (
@@ -311,35 +323,30 @@ const CancelOrderButton = ({ order }: { order: OrderRecordFields }) => {
     // )
 
     const remainingAccounts =
-    found.page == lastPageIndex
-      ? []
-      : [
-          {
-            pubkey: lastPage,
-            isSigner: false,
-            isWritable: true,
-          },
-        ]
+      found.page == lastPageIndex
+        ? []
+        : [
+            {
+              pubkey: lastPage,
+              isSigner: false,
+              isWritable: true,
+            },
+          ]
 
     const ix = await program.methods
-    .cancelOrder(
-      found,
-      found.page,
-      found.index
-    )
-    .accounts({
-      user: publicKey,
-      userAccount,
-      userAta,
-      vault,
-      orderbookInfo,
-      orderPage,
-      tokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .remainingAccounts(remainingAccounts)
-    .signers([])
-    .instruction()
-
+      .cancelOrder(found, found.page, found.index)
+      .accounts({
+        user: publicKey,
+        userAccount,
+        userAta,
+        vault,
+        orderbookInfo,
+        orderPage,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .remainingAccounts(remainingAccounts)
+      .signers([])
+      .instruction()
 
     const tx = new Transaction().add(ix)
     await callback(tx)

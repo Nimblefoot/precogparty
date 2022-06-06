@@ -18,7 +18,6 @@ function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-// TODO display balances
 export function RedeemButton({
   address,
   className,
@@ -37,8 +36,14 @@ export function RedeemButton({
   const redeemableAmount =
     resolution &&
     {
-      yes: yesAccount.data?.value.amount,
-      no: noAccount.data?.value.amount,
+      yes:
+        yesAccount.data !== undefined && yesAccount.data !== "no account"
+          ? yesAccount.data.value.amount
+          : undefined,
+      no:
+        noAccount.data !== undefined && noAccount.data !== "no account"
+          ? noAccount.data.value.amount
+          : undefined,
     }[resolution]
 
   const { callback, status } = useTransact()
