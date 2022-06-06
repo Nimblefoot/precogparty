@@ -266,16 +266,22 @@ function UserInfoDesktop({}) {
                   )}
                   {process.env.NEXT_PUBLIC_RPC !==
                   "[TODO insert mainnet rpc url]" ? (
-                    <StatelessTransactButton
+                    <button
                       onClick={airdrop}
-                      verb="airdrop"
-                      status={status}
                       className={clsx(
                         "ml-1",
                         "inline-flex items-center px-1 py-0.5 border border-transparent text-xs font-medium rounded",
                         "border bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-700"
                       )}
-                    />
+                    >
+                      {status === "initial" || status === "done"
+                        ? "airdrop"
+                        : status === "sending"
+                        ? "Sending..."
+                        : status === "signing"
+                        ? "Signing..."
+                        : "Confirming..."}
+                    </button>
                   ) : null}
                 </p>
               }
