@@ -32,6 +32,7 @@ import { useMarketsWithPosition } from "./useMarketsWithPosition"
 import clsx from "clsx"
 import { usePosition } from "./usePosition"
 import { useSyrup } from "@/hooks/useProgram"
+import { WithdrawAllButton } from "./Cleaning"
 
 const YesBadge = () => (
   <>
@@ -66,12 +67,13 @@ const Positions = ({}) => {
         </div>
       </div>
       <div className="mt-8 flex flex-col">
-        {/* <div className="bg-red-100">
-          <div>Redeem all available</div>
+        <div className="bg-red-100 flex gap-2 mb-2">
+          <div>
+            <WithdrawAllButton />
+          </div>
 
-          <div>Withdraw all available</div>
-          <div>Cancel all orders on resolved markets</div>
-        </div> */}
+          <div>Clean</div>
+        </div>
         <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
