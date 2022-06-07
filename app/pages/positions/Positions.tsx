@@ -55,7 +55,6 @@ const NoBadge = () => (
 
 const Positions = ({}) => {
   const positions = usePositions()
-  const userOrders = useOrderbookUserAccount()
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -103,7 +102,7 @@ function Position({
   orders,
 }: NonNullable<ReturnType<typeof usePositions>>[number]) {
   const market = useMarket(marketAddress)
-  const position = usePosition(marketAddress)
+  const { data: position } = usePosition(marketAddress)
 
   return position ? (
     <>

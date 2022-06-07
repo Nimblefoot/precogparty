@@ -1,9 +1,15 @@
 import { PublicKey } from "@solana/web3.js"
 import { useOrderbookUserAccount } from "pages/markets/Market/Orderbook/orderbookQueries"
 import { useTokenAccount } from "pages/tokenAccountQuery"
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { useResolutionMint } from "pages/markets/Market/Orderbook/usePlaceOrder"
 import BN from "bn.js"
+import { useQuery } from "react-query"
+
+export const positionKeys = {
+  all: ["position"],
+  market: (address: PublicKey) => [...positionKeys.all, address.toString()],
+}
 
 export const usePosition = (market: PublicKey) => {
   const yesMint = useResolutionMint(market, "yes")
@@ -13,7 +19,7 @@ export const usePosition = (market: PublicKey) => {
   const userOrders = useOrderbookUserAccount()
 
   // doesn't include orders, i suppose it could
-  const position = useMemo(() => {
+  const get = useCallback(() => {
     if (userOrders.data === undefined) return undefined
     if (!yesAccount.data) return undefined
     if (!noAccount.data) return undefined
@@ -139,5 +145,12 @@ export const usePosition = (market: PublicKey) => {
     }
   }, [market, noAccount.data, userOrders.data, yesAccount.data])
 
-  return position
+  const query = useQuery(positionKeys.market(market), get, {
+    enabled:
+      userOrders.data !== undefined &&
+      yesAccount.data !== undefined &&
+      noAccount.data !== undefined,
+  })
+
+  return query
 }

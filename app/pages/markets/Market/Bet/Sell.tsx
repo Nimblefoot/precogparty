@@ -249,7 +249,7 @@ export function Sell({
 }) {
   const [priceInput, setPriceInput] = useState<string>("80")
   const [amountInput, setAmountInput] = useState<string>("")
-  const position = usePosition(marketAddress)
+  const { data: position } = usePosition(marketAddress)
 
   const [lastValidPrice, setLastValidPrice] = useState<number>(80)
   useEffect(() => {
