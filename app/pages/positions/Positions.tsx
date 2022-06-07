@@ -2,7 +2,6 @@ import {
   StatelessTransactButton,
   useTransact,
 } from "@/components/TransactButton"
-import { cancelOrder } from "@/generated/syrup/instructions"
 import { OrderRecordFields } from "@/generated/syrup/types"
 import {
   ArrowRightIcon,
@@ -16,12 +15,11 @@ import { useMarket } from "pages/markets/Market/hooks/marketQueries"
 import {
   orderbookKeys,
   useOrderbook,
-  useOrderbookUserAccount,
 } from "pages/markets/Market/Orderbook/orderbookQueries"
 import { displayBN } from "@/utils/BNutils"
 import { RedeemButton } from "pages/markets/Market/Redeem"
 import { queryClient } from "pages/providers"
-import { tokenAccountKeys, useTokenAccount } from "pages/tokenAccountQuery"
+import { tokenAccountKeys } from "pages/tokenAccountQuery"
 import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
 
 import React from "react"
@@ -30,7 +28,7 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { useResolutionMint } from "pages/markets/Market/Orderbook/usePlaceOrder"
 import BN from "bn.js"
 import { ORDERBOOK_PAGE_MAX_LENGTH } from "config"
-import { usePositions } from "./usePositions"
+import { useMarketsWithPosition } from "./useMarketsWithPosition"
 import clsx from "clsx"
 import { usePosition } from "./usePosition"
 import { useSyrup } from "@/hooks/useProgram"
@@ -54,7 +52,7 @@ const NoBadge = () => (
 )
 
 const Positions = ({}) => {
-  const positions = usePositions()
+  const positions = useMarketsWithPosition()
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -97,10 +95,8 @@ export default Positions
 
 function Position({
   marketAddress,
-  yesMint,
-  noMint,
   orders,
-}: NonNullable<ReturnType<typeof usePositions>>[number]) {
+}: NonNullable<ReturnType<typeof useMarketsWithPosition>>[number]) {
   const market = useMarket(marketAddress)
   const { data: position } = usePosition(marketAddress)
 

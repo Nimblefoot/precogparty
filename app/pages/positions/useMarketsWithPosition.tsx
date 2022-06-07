@@ -4,13 +4,11 @@ import { useOrderbookUserAccount } from "pages/markets/Market/Orderbook/orderboo
 import { useAllTokenAccounts } from "pages/tokenAccountQuery"
 import { useMemo } from "react"
 
-export const usePositions = () => {
+export const useMarketsWithPosition = () => {
   const accounts = useAllTokenAccounts()
   const markets = useMarkets()
   const userOrders = useOrderbookUserAccount()
 
-  // TODO maybe wrap this in useQuery?
-  // TODO in future we should have pointers from tokens to markets on chain
   const positions = useMemo(() => {
     if (!markets.data) return undefined
     if (!accounts.data) return undefined
@@ -34,13 +32,8 @@ export const usePositions = () => {
           market.publicKey.equals(x.market)
         )
 
-        if (yesAccount || noAccount)
-          return {
-            marketAddress: market.publicKey,
-            yesMint: yesAccount?.mint,
-            noMint: noAccount?.mint,
-            orders,
-          } as const
+        if (yesAccount || noAccount || (orders?.length ?? 0) > 0)
+          return { marketAddress: market.publicKey, orders } as const
       })
       .filter((x): x is typeof x & {} => x !== undefined)
   }, [accounts.data, markets.data, userOrders.data?.orders])
