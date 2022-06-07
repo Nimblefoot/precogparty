@@ -137,7 +137,7 @@ const useTakeOrder = (marketAddress: PublicKey) => {
       const txn = new Transaction().add(ix)
       return txn
     },
-    [marketAddress, noMint, orderbookQuery.data, publicKey, yesMint]
+    [marketAddress, noMint, orderbookQuery.data, program, publicKey, yesMint]
   )
 
   return callback

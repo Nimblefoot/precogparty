@@ -1,4 +1,4 @@
-import { TransactionInstruction, PublicKey } from "@solana/web3.js" // eslint-disable-line @typescript-eslint/no-unused-vars
+import { TransactionInstruction, PublicKey, AccountMeta } from "@solana/web3.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -34,7 +34,7 @@ export const layout = borsh.struct([
 ])
 
 export function takeOrder(args: TakeOrderArgs, accounts: TakeOrderAccounts) {
-  const keys = [
+  const keys: Array<AccountMeta> = [
     { pubkey: accounts.taker, isSigner: true, isWritable: true },
     { pubkey: accounts.takerSendingAta, isSigner: false, isWritable: true },
     { pubkey: accounts.takerReceivingAta, isSigner: false, isWritable: true },

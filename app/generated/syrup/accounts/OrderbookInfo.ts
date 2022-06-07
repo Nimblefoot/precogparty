@@ -113,7 +113,11 @@ export class OrderbookInfo {
       bump: dec.bump,
       closed: dec.closed,
       id: dec.id,
-      tradeLog: dec.tradeLog.map((item) => types.TradeRecord.fromDecoded(item)),
+      tradeLog: dec.tradeLog.map(
+        (
+          item: any /* eslint-disable-line @typescript-eslint/no-explicit-any */
+        ) => types.TradeRecord.fromDecoded(item)
+      ),
     })
   }
 
