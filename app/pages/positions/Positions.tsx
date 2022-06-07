@@ -100,7 +100,7 @@ function Position({
   orders,
 }: NonNullable<ReturnType<typeof useMarketsWithPosition>>[number]) {
   const market = useMarket(marketAddress)
-  const { data: position } = usePosition(marketAddress)
+  const position = usePosition(marketAddress)
 
   return position ? (
     <>
