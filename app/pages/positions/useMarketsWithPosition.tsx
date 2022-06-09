@@ -1,8 +1,9 @@
-import { PublicKey } from "@solana/web3.js"
+import { PublicKey, TokenAmount } from "@solana/web3.js"
 import { useMarkets } from "pages/markets/Market/hooks/marketQueries"
 import { useOrderbookUserAccount } from "pages/markets/Market/Orderbook/orderbookQueries"
 import { useAllTokenAccounts } from "pages/tokenAccountQuery"
 import { useMemo } from "react"
+import { computePosition } from "./usePosition"
 
 export const useMarketsWithPosition = () => {
   const accounts = useAllTokenAccounts()
@@ -37,6 +38,62 @@ export const useMarketsWithPosition = () => {
       })
       .filter((x): x is typeof x & {} => x !== undefined)
   }, [accounts.data, markets.data, userOrders.data?.orders])
+
+  return positions
+}
+
+export const usePositions = () => {
+  const { data: accounts } = useAllTokenAccounts()
+  const markets = useMarkets()
+  const { data: userOrders } = useOrderbookUserAccount()
+
+  const positions = useMemo(() => {
+    if (!markets.data) return undefined
+    if (!accounts) return undefined
+    if (userOrders === undefined) return undefined
+
+    const nonzero = accounts?.value.filter(
+      ({ account }) => account.data.parsed.info.tokenAmount.amount > 0
+    )
+
+    return markets.data
+      .map((market) => {
+        const [yesAccount] = nonzero.filter(({ account }) =>
+          new PublicKey(account.data.parsed.info.mint).equals(
+            market.account.yesMint
+          )
+        )
+        const [noAccount] = nonzero.filter(({ account }) =>
+          new PublicKey(account.data.parsed.info.mint).equals(
+            market.account.noMint
+          )
+        )
+        const orders = userOrders?.orders.filter((x) =>
+          market.publicKey.equals(x.market)
+        )
+        if (yesAccount || noAccount || (orders?.length ?? 0) > 0)
+          return [
+            market.publicKey,
+            computePosition(
+              userOrders,
+              yesAccount
+                ? {
+                    value: yesAccount.account.data.parsed.info
+                      .tokenAmount as TokenAmount,
+                  }
+                : "no account",
+              noAccount
+                ? {
+                    value: noAccount.account.data.parsed.info
+                      .tokenAmount as TokenAmount,
+                  }
+                : "no account",
+              market.publicKey
+            ),
+          ] as const
+      })
+      .filter((x): x is typeof x & {} => x !== undefined)
+  }, [accounts, markets.data, userOrders])
 
   return positions
 }

@@ -8,22 +8,29 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { COLLATERAL_MINT } from "config"
 import getATAandCreateIxIfNeeded from "@/utils/getATAandCreateIxIfNeeded"
 import { BN_ } from "../../../../utils/BNutils"
+import { PROGRAM_ID } from "@/generated/client/programId"
 
 const useMergeContingentSet = (address: PublicKey) => {
   const { publicKey } = useWallet()
   const { connection } = useConnection()
-  // TODO we are just getting PDAs so we could just derive them
-  const market = useMarket(address)
 
   const callback = useCallback(
     async ({ amount }: { amount: BN_ }) => {
       if (!publicKey) throw new Error("no publickey connected")
-      if (!market.data)
-        throw new Error(
-          "race condition - handler called before market data ready"
-        )
 
-      const { yesMint, noMint, collateralVault } = market.data
+      const [yesMint] = await PublicKey.findProgramAddress(
+        [Buffer.from(`yes_mint`), address.toBuffer()],
+        PROGRAM_ID
+      )
+      const [noMint] = await PublicKey.findProgramAddress(
+        [Buffer.from(`no_mint`), address.toBuffer()],
+        PROGRAM_ID
+      )
+      const collateralVault = await getAssociatedTokenAddress(
+        COLLATERAL_MINT,
+        address,
+        true
+      )
 
       const userYes = await getAssociatedTokenAddress(yesMint, publicKey)
       const userNo = await getAssociatedTokenAddress(noMint, publicKey)
@@ -52,7 +59,7 @@ const useMergeContingentSet = (address: PublicKey) => {
       const txn = new Transaction().add(...init, x)
       return txn
     },
-    [publicKey, market.data, connection, address]
+    [publicKey, connection, address]
   )
 
   return callback
