@@ -21,16 +21,19 @@ pub struct Order {
 #[account]
 #[derive(Default)]
 pub struct TradeLog {
-    pub trades: VecDeque<TradeRecord>,
+    pub trades: Vec<TradeRecord>,
 }
 impl TradeLog {
     pub const MAX_ITEMS: usize = 100;
-    pub const LEN: usize = 8 + (17 * TradeLog::MAX_ITEMS);
+    pub const LEN: usize = 4 // std::mem::size_of::<VecDeque<TradeRecord>>
+    + (17 * TradeLog::MAX_ITEMS);
     pub fn push(&mut self, record: TradeRecord) {
         if self.trades.len() == TradeLog::MAX_ITEMS {
-            self.trades.pop_front();
+            // I think this can be very costly! Needs investigation!
+            // Ideally would use VecDeque, but anchor's IDL no supporty...
+            self.trades.remove(0);
         }
-        self.trades.push_back(record);
+        self.trades.push(record);
     }
 }
 
