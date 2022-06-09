@@ -1,13 +1,8 @@
-import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
-import { Precog } from "../target/types/precog";
+import * as anchor from "@project-serum/anchor"
+import { Program } from "@project-serum/anchor"
+import { Precog } from "../target/types/precog"
 
-import {
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-} from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js"
 import {
   createAssociatedTokenAccountInstruction,
   createInitializeMintInstruction,
@@ -17,61 +12,61 @@ import {
   getMinimumBalanceForRentExemptMint,
   MINT_SIZE,
   TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { assert } from "chai";
+} from "@solana/spl-token"
+import { assert } from "chai"
 
 const assertThrowsAsync = async (fn: () => Promise<any>, msg?: string) => {
-  let error = null;
+  let error = null
   try {
-    await fn();
+    await fn()
   } catch (err) {
-    error = err;
+    error = err
   }
-  assert.instanceOf(error, Error, msg);
-};
+  assert.instanceOf(error, Error, msg)
+}
 
-describe("end-to-end", async () => {
+describe("end-to-end", () => {
   // Configure the client to use the local cluster.
 
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
-  const connection = provider.connection;
-  const program = anchor.workspace.Precog as Program<Precog>;
+  const provider = anchor.AnchorProvider.env()
+  anchor.setProvider(provider)
+  const connection = provider.connection
+  const program = anchor.workspace.Precog as Program<Precog>
 
-  const user = provider.wallet.publicKey;
-  const marketName = "test market";
+  const user = provider.wallet.publicKey
+  const marketName = "test market"
 
-  let marketAccount: PublicKey;
+  let marketAccount: PublicKey
   before(async () => {
-    [marketAccount] = await PublicKey.findProgramAddress(
+    ;[marketAccount] = await PublicKey.findProgramAddress(
       [Buffer.from("market_account"), Buffer.from(marketName)],
       program.programId
-    );
-  });
+    )
+  })
 
   it("end-to-end", async () => {
     const [noMint] = await PublicKey.findProgramAddress(
       [Buffer.from("no_mint"), marketAccount.toBuffer()],
       program.programId
-    );
+    )
 
     const [yesMint] = await PublicKey.findProgramAddress(
       [Buffer.from("yes_mint"), marketAccount.toBuffer()],
       program.programId
-    );
+    )
 
     /* SET UP COLLATERAL */
     const { collateralMint, userCollateral } = await (async () => {
-      const collateralMintKeypair = new Keypair();
-      const collateralMint = collateralMintKeypair.publicKey;
+      const collateralMintKeypair = new Keypair()
+      const collateralMint = collateralMintKeypair.publicKey
       const userCollateral = await getAssociatedTokenAddress(
         collateralMint,
         user
-      );
+      )
 
       const lamports = await getMinimumBalanceForRentExemptMint(
         provider.connection
-      );
+      )
 
       const IXcreateMintAccount = SystemProgram.createAccount({
         fromPubkey: user,
@@ -79,48 +74,48 @@ describe("end-to-end", async () => {
         space: MINT_SIZE,
         lamports,
         programId: TOKEN_PROGRAM_ID,
-      });
+      })
       const IXinitMint = createInitializeMintInstruction(
         collateralMint,
         6,
         user,
         null
-      );
+      )
       const IXcreateUserCollateral = createAssociatedTokenAccountInstruction(
         user,
         userCollateral,
         user,
         collateralMint
-      );
+      )
       const IXmintCollateral = createMintToInstruction(
         collateralMint,
         userCollateral,
         user,
         1000
-      );
+      )
       const tx = new Transaction().add(
         IXcreateMintAccount,
         IXinitMint,
         IXcreateUserCollateral,
         IXmintCollateral
-      );
+      )
 
       const sig = await provider
         .sendAndConfirm(tx, [collateralMintKeypair])
         .catch((e) => {
-          console.log(e);
-          throw e;
-        });
-      console.log("set up fake collateral", sig);
+          console.log(e)
+          throw e
+        })
+      console.log("set up fake collateral", sig)
 
-      return { collateralMint, userCollateral };
-    })();
+      return { collateralMint, userCollateral }
+    })()
 
     const collateralVault = await getAssociatedTokenAddress(
       collateralMint,
       marketAccount,
       true
-    );
+    )
 
     const sig = await program.methods
       .createMarket(marketName, "fart")
@@ -136,20 +131,20 @@ describe("end-to-end", async () => {
       })
       .rpc()
       .catch((e) => {
-        console.log(e);
-        throw e;
-      });
+        console.log(e)
+        throw e
+      })
 
-    console.log("createMarket", sig);
+    console.log("createMarket", sig)
 
     const marketData = await program.account.predictionMarket.fetch(
       marketAccount
-    );
+    )
 
-    console.log(marketData);
+    console.log(marketData)
 
-    const userNo = await getAssociatedTokenAddress(noMint, user);
-    const userYes = await getAssociatedTokenAddress(yesMint, user);
+    const userNo = await getAssociatedTokenAddress(noMint, user)
+    const userYes = await getAssociatedTokenAddress(yesMint, user)
 
     /* 
     const accounts = {
@@ -166,14 +161,14 @@ describe("end-to-end", async () => {
 
     const startingCollateralAmount = parseInt(
       (await getAccount(connection, userCollateral)).amount.toString()
-    );
+    )
 
     /* TEST MINT SET */
     await (async () => {
       const userAtaIxs = [
         createAssociatedTokenAccountInstruction(user, userNo, user, noMint),
         createAssociatedTokenAccountInstruction(user, userYes, user, yesMint),
-      ];
+      ]
       /* 
       const expectedFailure = await program.methods
         .mintContingentSet(new anchor.BN(1000000))
@@ -212,22 +207,22 @@ describe("end-to-end", async () => {
         .preInstructions(userAtaIxs)
         .rpc()
         .catch((e) => {
-          console.log(e);
-          throw e;
-        });
+          console.log(e)
+          throw e
+        })
 
-      console.log("mint contingent set", sig);
+      console.log("mint contingent set", sig)
 
-      const userNoAccount = await getAccount(connection, userNo);
-      assert.equal(userNoAccount.amount.toString(), "10");
-      const userYesAccount = await getAccount(connection, userYes);
-      assert.equal(userYesAccount.amount.toString(), "10");
+      const userNoAccount = await getAccount(connection, userNo)
+      assert.equal(userNoAccount.amount.toString(), "10")
+      const userYesAccount = await getAccount(connection, userYes)
+      assert.equal(userYesAccount.amount.toString(), "10")
 
       const endingCollateralAmount = parseInt(
         (await getAccount(connection, userCollateral)).amount.toString()
-      );
-      assert.equal(endingCollateralAmount, startingCollateralAmount - 10);
-    })();
+      )
+      assert.equal(endingCollateralAmount, startingCollateralAmount - 10)
+    })()
 
     /* TEST MERGE SET */
     await (async () => {
@@ -245,21 +240,21 @@ describe("end-to-end", async () => {
         })
         .rpc()
         .catch((e) => {
-          console.log(e);
-          throw e;
-        });
-      console.log("merge set", sig3);
+          console.log(e)
+          throw e
+        })
+      console.log("merge set", sig3)
 
       const postMergeCollateral = parseInt(
         (await getAccount(connection, userCollateral)).amount.toString()
-      );
-      const userNoAccount = await getAccount(connection, userNo);
-      const userYesAccount = await getAccount(connection, userYes);
+      )
+      const userNoAccount = await getAccount(connection, userNo)
+      const userYesAccount = await getAccount(connection, userYes)
 
-      assert.equal(userNoAccount.amount.toString(), "0");
-      assert.equal(userYesAccount.amount.toString(), "0");
-      assert.equal(postMergeCollateral, startingCollateralAmount);
-    })();
+      assert.equal(userNoAccount.amount.toString(), "0")
+      assert.equal(userYesAccount.amount.toString(), "0")
+      assert.equal(postMergeCollateral, startingCollateralAmount)
+    })()
 
     /* RESOLVE MARKET */
     await (async () => {
@@ -273,7 +268,7 @@ describe("end-to-end", async () => {
             })
             .rpc(),
         "can't resolve with a nonsense outcome"
-      );
+      )
 
       const sig = await program.methods
         .resolveMarket(2)
@@ -281,8 +276,8 @@ describe("end-to-end", async () => {
           resolutionAuthority: user,
           marketAccount,
         })
-        .rpc();
-      console.log("resolve market NO", sig);
+        .rpc()
+      console.log("resolve market NO", sig)
 
       await assertThrowsAsync(
         () =>
@@ -294,8 +289,8 @@ describe("end-to-end", async () => {
             })
             .rpc(),
         "can't resolve a resolved market"
-      );
-    })();
+      )
+    })()
 
     /* TEST REDEEM CONTINGENT COINS */
     await (async () => {
@@ -313,9 +308,9 @@ describe("end-to-end", async () => {
         })
         .rpc()
         .catch((e) => {
-          console.log(e);
-          throw e;
-        });
+          console.log(e)
+          throw e
+        })
 
       await assertThrowsAsync(
         () =>
@@ -331,7 +326,7 @@ describe("end-to-end", async () => {
             })
             .rpc(),
         "can't redeem more than you have"
-      );
+      )
       await assertThrowsAsync(
         () =>
           program.methods
@@ -346,7 +341,7 @@ describe("end-to-end", async () => {
             })
             .rpc(),
         "can't redeem when outcome is not met"
-      );
+      )
       const sig = await program.methods
         .redeemContingentCoin(new anchor.BN(20))
         .accounts({
@@ -357,32 +352,32 @@ describe("end-to-end", async () => {
           collateralVault,
           userCollateral,
         })
-        .rpc();
-      console.log("redeemed NO coin", sig);
+        .rpc()
+      console.log("redeemed NO coin", sig)
 
-      const userNoAccount = await getAccount(connection, userNo);
+      const userNoAccount = await getAccount(connection, userNo)
       const postRedemptionCollateral = parseInt(
         (await getAccount(connection, userCollateral)).amount.toString()
-      );
-      assert.equal(userNoAccount.amount.toString(), "0");
-      assert.equal(postRedemptionCollateral, startingCollateralAmount);
-    })();
-  });
+      )
+      assert.equal(userNoAccount.amount.toString(), "0")
+      assert.equal(postRedemptionCollateral, startingCollateralAmount)
+    })()
+  })
 
   it("Updates description URI", async () => {
-    const desc = "poopynoopy";
+    const desc = "poopynoopy"
     const sig = await program.methods
       .updateMarketDescription(desc)
       .accounts({
         descriptionAuthority: user,
         marketAccount,
       })
-      .rpc();
-    console.log("updated description", sig);
+      .rpc()
+    console.log("updated description", sig)
     const onchainDescription = (
       await program.account.predictionMarket.fetch(marketAccount)
-    ).description;
-    const s = Buffer.from(onchainDescription).toString().trimEnd();
-    assert.strictEqual(desc, s, "description uri updated");
-  });
-});
+    ).description
+    const s = Buffer.from(onchainDescription).toString().trimEnd()
+    assert.strictEqual(desc, s, "description uri updated")
+  })
+})
