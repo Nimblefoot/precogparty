@@ -80,7 +80,6 @@ export const WithdrawAllButton = () => {
 
   return (
     <>
-      {JSON.stringify(positions)}
       <StatelessTransactButton
         onClick={withdrawAll}
         status={status}
