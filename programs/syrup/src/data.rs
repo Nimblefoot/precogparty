@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::error::ErrorCode;
 use anchor_lang::{prelude::*, solana_program::clock::NUM_CONSECUTIVE_LEADER_SLOTS};
 
@@ -14,6 +16,22 @@ pub struct Order {
     pub user: Pubkey,          // 32
     pub num_oranges: u64,      // 8
     pub memo: u8,              // 1 - 50 total.
+}
+
+#[account]
+#[derive(Default)]
+pub struct TradeLog {
+    pub trades: VecDeque<TradeRecord>,
+}
+impl TradeLog {
+    pub const MAX_ITEMS: usize = 100;
+    pub const LEN: usize = 8 + (17 * TradeLog::MAX_ITEMS);
+    pub fn push(&mut self, record: TradeRecord) {
+        if self.trades.len() == TradeLog::MAX_ITEMS {
+            self.trades.pop_front();
+        }
+        self.trades.push_back(record);
+    }
 }
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]

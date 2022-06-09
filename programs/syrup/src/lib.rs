@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use data::TradeLog;
 use data::{OrderbookPage, Order, OrderbookInfo};
 pub mod data;
 use user_account::UserAccount;
@@ -270,6 +271,7 @@ pub mod syrup {
             }
         };
         ctx.accounts.orderbook_info.add_trade_to_log(trade_record);
+        ctx.accounts.trade_log.push(trade_record);
 
         Ok(())
     }
@@ -405,6 +407,14 @@ pub struct InitializeOrderbook<'info> {
         associated_token::authority = orderbook_info
     )]
     pub oranges_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        init,
+        payer=admin,
+        seeds=[id.to_bytes().as_ref(), "trades".as_ref()],
+        space = 8 + TradeLog::LEN, 
+        bump
+    )]
+    pub trade_log: Account<'info, TradeLog>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
@@ -500,6 +510,12 @@ pub struct TakeOrder<'info> {
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
+    #[account(
+        mut,
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "trades".as_ref()],
+        bump
+    )]
+    pub trade_log: Account<'info, TradeLog>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
