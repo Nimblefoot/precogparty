@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use data::TradeLog;
-use data::{OrderbookPage, Order, OrderbookInfo};
+use data::{Order, OrderbookInfo, OrderbookPage};
 pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
@@ -11,17 +11,23 @@ use instructions::transfer_tokens;
 pub mod error;
 use error::ErrorCode;
 
-use solana_program::pubkey;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount}
+    token::{Mint, Token, TokenAccount},
 };
+use solana_program::pubkey;
 
 const PROGRAM_ID: Pubkey = pubkey!("3K1ibBw93WY4PmJ1CBfoTg4mx2yGVvr7WLCsaqAY5g1K");
 
 declare_id!(PROGRAM_ID);
 
-pub fn delete_order(index: u32, optional_last_page: Option<&mut Account<OrderbookPage>>, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>, orderbook_length: &mut u32) ->  std::result::Result<(), anchor_lang::error::Error> {
+pub fn delete_order(
+    index: u32,
+    optional_last_page: Option<&mut Account<OrderbookPage>>,
+    order_page: &mut Account<OrderbookPage>,
+    user_account: &mut Account<UserAccount>,
+    orderbook_length: &mut u32,
+) -> std::result::Result<(), anchor_lang::error::Error> {
     let order_data = order_page.get(index);
     let orderbook_id = order_page.orderbook_id;
 
@@ -55,7 +61,13 @@ pub fn delete_order(index: u32, optional_last_page: Option<&mut Account<Orderboo
     Ok(())
 }
 
-pub fn edit_order(index: u32, new_num_apples: u64, new_num_oranges: u64, order_page: &mut Account<OrderbookPage>, user_account: &mut Account<UserAccount>) -> std::result::Result<(), anchor_lang::error::Error> {
+pub fn edit_order(
+    index: u32,
+    new_num_apples: u64,
+    new_num_oranges: u64,
+    order_page: &mut Account<OrderbookPage>,
+    user_account: &mut Account<UserAccount>,
+) -> std::result::Result<(), anchor_lang::error::Error> {
     let mut order_data = order_page.get(index);
     let orderbook_id = order_page.orderbook_id;
 
@@ -73,10 +85,8 @@ pub fn edit_order(index: u32, new_num_apples: u64, new_num_oranges: u64, order_p
     Ok(())
 }
 
-
 #[program]
 pub mod syrup {
-    use anchor_lang::solana_program::clock::DEFAULT_DEV_SLOTS_PER_EPOCH;
 
     use crate::data::TradeRecord;
 
@@ -113,7 +123,9 @@ pub mod syrup {
 
         // set the id of the new page if you initialized it
         if ctx.accounts.current_page.is_orderbook_id_blank() {
-            ctx.accounts.current_page.set_orderbook_id(ctx.accounts.orderbook_info.id.clone());
+            ctx.accounts
+                .current_page
+                .set_orderbook_id(ctx.accounts.orderbook_info.id.clone());
         }
 
         let amount_transferred = if order.offering_apples {
@@ -121,14 +133,14 @@ pub mod syrup {
         } else {
             order.num_oranges
         };
-        
+
         transfer_tokens(
-            amount_transferred, 
+            amount_transferred,
             ctx.accounts.user_ata.to_account_info(),
             ctx.accounts.vault.to_account_info(),
             ctx.accounts.user.to_account_info(),
             ctx.accounts.token_program.to_account_info(),
-            None
+            None,
         )?;
 
         // create and append order record
@@ -137,7 +149,7 @@ pub mod syrup {
             offering_apples: order.offering_apples,
             num_apples: order.num_apples,
             num_oranges: order.num_oranges,
-            memo: order.memo
+            memo: order.memo,
         };
 
         // add to the lists of offers
@@ -150,8 +162,14 @@ pub mod syrup {
         Ok(())
     }
 
-    #[allow(unused_variables)] 
-    pub fn take_order(ctx: Context<TakeOrder>, order: Order, amount_to_exchange: u64, page_number: u32, index: u32) -> Result<()> {
+    #[allow(unused_variables)]
+    pub fn take_order(
+        ctx: Context<TakeOrder>,
+        order: Order,
+        amount_to_exchange: u64,
+        page_number: u32,
+        index: u32,
+    ) -> Result<()> {
         if ctx.accounts.orderbook_info.is_closed() {
             return err!(ErrorCode::OrderbookClosed);
         }
@@ -171,12 +189,14 @@ pub mod syrup {
         };
 
         if order_data.offering_apples {
-            vault_outgoing_amount = ((amount_to_exchange as u128) * (order.num_apples as u128) / (maximum_taker_payment as u128)) as u64;
+            vault_outgoing_amount = ((amount_to_exchange as u128) * (order.num_apples as u128)
+                / (maximum_taker_payment as u128)) as u64;
             new_num_apples = order.num_apples - vault_outgoing_amount;
             new_num_oranges = order.num_oranges - amount_to_exchange;
             vault_mint = ctx.accounts.orderbook_info.apples_mint;
         } else {
-            vault_outgoing_amount = (amount_to_exchange * order.num_oranges) / maximum_taker_payment;
+            vault_outgoing_amount =
+                (amount_to_exchange * order.num_oranges) / maximum_taker_payment;
             new_num_apples = order.num_apples - amount_to_exchange;
             new_num_oranges = order.num_oranges - vault_outgoing_amount;
             vault_mint = ctx.accounts.orderbook_info.oranges_mint;
@@ -221,7 +241,7 @@ pub mod syrup {
             ctx.accounts.taker_receiving_ata.to_account_info(),
             orderbook_account_info,
             ctx.accounts.token_program.to_account_info(),
-            Some(signer_seeds)
+            Some(signer_seeds),
         )?;
 
         transfer_tokens(
@@ -230,21 +250,37 @@ pub mod syrup {
             ctx.accounts.offerer_receiving_ata.to_account_info(),
             ctx.accounts.taker.to_account_info(),
             ctx.accounts.token_program.to_account_info(),
-            None
+            None,
         )?;
 
         if amount_to_exchange == maximum_taker_payment {
             if index == last_page_number {
-                delete_order(index, None, order_page, offerer_user_account, orderbook_length)?;            
+                delete_order(
+                    index,
+                    None,
+                    order_page,
+                    offerer_user_account,
+                    orderbook_length,
+                )?;
             } else if let Some(acc) = ctx.remaining_accounts.get(0) {
                 let last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
-    
-                let pda_seeds = [orderbook_id_bytes.as_ref(), b"page".as_ref(), last_page_bytes.as_ref()];
+
+                let pda_seeds = [
+                    orderbook_id_bytes.as_ref(),
+                    b"page".as_ref(),
+                    last_page_bytes.as_ref(),
+                ];
                 let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
-    
+
                 if pda == *acc.key {
-                    delete_order(index, Some(last_page), order_page, offerer_user_account, orderbook_length)?;
-    
+                    delete_order(
+                        index,
+                        Some(last_page),
+                        order_page,
+                        offerer_user_account,
+                        orderbook_length,
+                    )?;
+
                     acc.exit(&PROGRAM_ID)?;
                 } else {
                     return err!(ErrorCode::WrongRemainingAccount);
@@ -253,21 +289,31 @@ pub mod syrup {
                 return err!(ErrorCode::MissingLastPage);
             }
         } else {
-            edit_order(index, new_num_apples, new_num_oranges, order_page, offerer_user_account)?;
+            edit_order(
+                index,
+                new_num_apples,
+                new_num_oranges,
+                order_page,
+                offerer_user_account,
+            )?;
         }
+
+        let clock = Clock::get()?;
 
         // add to trade record
         let trade_record: TradeRecord = if order.offering_apples {
             TradeRecord {
                 buy_order_for_apples: true,
                 num_apples: amount_to_exchange,
-                num_oranges: vault_outgoing_amount
+                num_oranges: vault_outgoing_amount,
+                time: clock.unix_timestamp,
             }
         } else {
             TradeRecord {
                 buy_order_for_apples: false,
                 num_apples: vault_outgoing_amount,
-                num_oranges: amount_to_exchange
+                num_oranges: amount_to_exchange,
+                time: clock.unix_timestamp,
             }
         };
         ctx.accounts.orderbook_info.add_trade_to_log(trade_record);
@@ -277,8 +323,12 @@ pub mod syrup {
     }
 
     #[allow(unused_variables)]
-    pub fn cancel_order(ctx: Context<CancelOrder>, order: Order, page_number: u32, index: u32) -> Result<()> {
-
+    pub fn cancel_order(
+        ctx: Context<CancelOrder>,
+        order: Order,
+        page_number: u32,
+        index: u32,
+    ) -> Result<()> {
         let order_data: Order = ctx.accounts.order_page.get(index);
         if order_data != order {
             return err!(ErrorCode::WrongOrder);
@@ -306,9 +356,9 @@ pub mod syrup {
         ];
         let signer_seeds = &[&seeds[..]];
 
-        let amount = if order_data.offering_apples { 
+        let amount = if order_data.offering_apples {
             order.num_apples
-        } else { 
+        } else {
             order.num_oranges
         };
 
@@ -318,7 +368,7 @@ pub mod syrup {
             ctx.accounts.user_ata.to_account_info(),
             orderbook_account_info,
             ctx.accounts.token_program.to_account_info(),
-            Some(signer_seeds)
+            Some(signer_seeds),
         )?;
 
         // if we aren't on the last page we need to load it from remaining accounts
@@ -327,11 +377,21 @@ pub mod syrup {
         } else if let Some(acc) = ctx.remaining_accounts.get(0) {
             let last_page = &mut Account::<OrderbookPage>::try_from(acc)?;
 
-            let pda_seeds = [orderbook_id_bytes.as_ref(), b"page".as_ref(), last_page_bytes.as_ref()];
+            let pda_seeds = [
+                orderbook_id_bytes.as_ref(),
+                b"page".as_ref(),
+                last_page_bytes.as_ref(),
+            ];
             let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
 
             if pda == *acc.key {
-                delete_order(index, Some(last_page), order_page, user_account, orderbook_length)?;
+                delete_order(
+                    index,
+                    Some(last_page),
+                    order_page,
+                    user_account,
+                    orderbook_length,
+                )?;
 
                 acc.exit(&PROGRAM_ID)?;
             } else {
@@ -360,10 +420,10 @@ pub struct CreateUserAccount<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(
-        init, 
-        payer = user, 
-        seeds = ["user-account".as_ref(), user.key().as_ref()], 
-        space = 8 + UserAccount::LEN, 
+        init,
+        payer = user,
+        seeds = ["user-account".as_ref(), user.key().as_ref()],
+        space = 8 + UserAccount::LEN,
         bump
     )]
     pub user_account: Box<Account<'info, UserAccount>>,
@@ -376,18 +436,18 @@ pub struct InitializeOrderbook<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(
-        init, 
-        payer = admin, 
-        seeds = [id.to_bytes().as_ref(), "orderbook-info".as_ref()], 
-        space = 8 + OrderbookInfo::LEN, 
+        init,
+        payer = admin,
+        seeds = [id.to_bytes().as_ref(), "orderbook-info".as_ref()],
+        space = 8 + OrderbookInfo::LEN,
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
-        init, 
-        payer=admin, 
-        seeds=[id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
-        space = 8 + OrderbookPage::LEN, 
+        init,
+        payer=admin,
+        seeds=[id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()],
+        space = 8 + OrderbookPage::LEN,
         bump
     )]
     pub first_page: Account<'info, OrderbookPage>,
@@ -409,9 +469,9 @@ pub struct InitializeOrderbook<'info> {
     pub oranges_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         init,
-        payer=admin,
-        seeds=[id.to_bytes().as_ref(), "trades".as_ref()],
-        space = 8 + TradeLog::LEN, 
+        payer = admin,
+        seeds = [id.to_bytes().as_ref(), "trades".as_ref()],
+        space = 8 + TradeLog::LEN,
         bump
     )]
     pub trade_log: Account<'info, TradeLog>,
@@ -430,8 +490,8 @@ pub struct PlaceOrder<'info> {
     )]
     pub user: Signer<'info>,
     #[account(
-        mut, 
-        seeds=["user-account".as_ref(), user.key().as_ref()], 
+        mut,
+        seeds=["user-account".as_ref(), user.key().as_ref()],
         bump
     )]
     pub user_account: Box<Account<'info, UserAccount>>,
@@ -450,10 +510,10 @@ pub struct PlaceOrder<'info> {
     #[account(mut, seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], bump)]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
-        init_if_needed, 
-        payer=user, 
-        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()], 
-        space = 8 + OrderbookPage::LEN, 
+        init_if_needed,
+        payer=user,
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), orderbook_info.next_open_page().to_le_bytes().as_ref()],
+        space = 8 + OrderbookPage::LEN,
         bump
     )]
     pub current_page: Box<Account<'info, OrderbookPage>>,
@@ -481,8 +541,8 @@ pub struct TakeOrder<'info> {
     )]
     pub taker_receiving_ata: Box<Account<'info, TokenAccount>>,
     #[account(
-        mut, 
-        seeds = ["user-account".as_ref(), order.user.key().as_ref()], 
+        mut,
+        seeds = ["user-account".as_ref(), order.user.key().as_ref()],
         bump
     )]
     pub offerer_user_account: Box<Account<'info, UserAccount>>,
@@ -499,14 +559,14 @@ pub struct TakeOrder<'info> {
     )]
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
-        mut, 
-        seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], 
+        mut,
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()],
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
-        mut, 
-        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        mut,
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()],
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
@@ -549,14 +609,14 @@ pub struct CancelOrder<'info> {
     )]
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
-        mut, 
-        seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], 
+        mut,
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()],
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
-        mut, 
-        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()], 
+        mut,
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "page".as_ref(), page_number.to_le_bytes().as_ref()],
         bump
     )]
     pub order_page: Account<'info, OrderbookPage>,
@@ -572,7 +632,7 @@ pub struct CloseOrderbook<'info> {
     pub admin: Signer<'info>,
     #[account(
         mut,
-        seeds = [orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()], 
+        seeds = [orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()],
         bump
     )]
     pub orderbook_info: Account<'info, OrderbookInfo>,
