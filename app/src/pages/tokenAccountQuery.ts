@@ -22,7 +22,8 @@ export const useTokenAccount = (mint: PublicKey | undefined) => {
   const get = useCallback(async () => {
     const ATA = await getAssociatedTokenAddress(mint!, publicKey!)
     try {
-      return connection.getTokenAccountBalance(ATA)
+      const balance = await connection.getTokenAccountBalance(ATA)
+      return balance
     } catch (e) {
       return "no account"
     }
