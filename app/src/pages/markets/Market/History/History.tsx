@@ -2,6 +2,8 @@ import { PublicKey } from "@solana/web3.js"
 import { ResponsiveLine, Serie } from "@nivo/line"
 import React from "react"
 
+const formatTrades = (trades) => {}
+
 export function HistoryDumb({ data, id }: { data: Serie["data"]; id: string }) {
   return (
     /* @ts-ignore this errors due to some insane error with importing the wrong react types version or something insane like that */
