@@ -42,7 +42,7 @@ export function HistoryDumb({ trades, openTime, closeTime }: TradeLogFields) {
     /* @ts-ignore this errors due to some insane error with importing the wrong react types version or something insane like that */
     <ResponsiveLine
       data={[{ id: "YES", data, color: "#84cc16" }]}
-      margin={{ top: 5, right: 20, bottom: 50, left: 40 }}
+      margin={{ top: 5, right: 20, bottom: 25, left: 40 }}
       xScale={{
         type: "time",
         useUTC: false,
