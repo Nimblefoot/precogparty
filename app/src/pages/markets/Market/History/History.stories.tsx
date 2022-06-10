@@ -1,17 +1,37 @@
 import React from "react"
 import { ComponentStory, ComponentMeta } from "@storybook/react"
-import { HistoryDumb } from "./History"
+import { formatTrades, HistoryDumb } from "./History"
+import { TradeRecordFields } from "@/generated/syrup/types"
+import BN from "bn.js"
 
-const data = [
-  { x: "2018-01-01", y: 7 },
-  { x: "2018-01-02", y: 5 },
-  { x: "2018-01-03", y: 11 },
-  { x: "2018-01-04", y: 9 },
-  { x: "2018-01-05", y: 12 },
-  { x: "2018-01-06", y: 16 },
-  { x: "2018-01-07", y: 13 },
-  { x: "2018-01-08", y: 13 },
+const dummyTrades: TradeRecordFields[] = [
+  {
+    numApples: new BN(1000),
+    numOranges: new BN(3000),
+    buyOrderForApples: true,
+    time: new BN(1654821900),
+  },
+  {
+    numApples: new BN(1000),
+    numOranges: new BN(3000),
+    buyOrderForApples: true,
+    time: new BN(1654921900),
+  },
+  {
+    numApples: new BN(2000),
+    numOranges: new BN(7000),
+    buyOrderForApples: true,
+    time: new BN(1654991900),
+  },
+  {
+    numApples: new BN(2000),
+    numOranges: new BN(5000),
+    buyOrderForApples: true,
+    time: new BN(1655321900),
+  },
 ]
+
+const data = formatTrades(dummyTrades)
 
 // More on default export: https://storybook.js.org/docs/react/writing-stories/introduction#default-export
 export default {
@@ -25,6 +45,6 @@ export default {
 
 export const Primary = () => (
   <div style={{ width: 700, height: 400 }}>
-    <HistoryDumb data={data} id="1" />
+    <HistoryDumb data={data} />
   </div>
 )
