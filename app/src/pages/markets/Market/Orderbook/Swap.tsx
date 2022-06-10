@@ -3,13 +3,9 @@ import {
   useTransact,
 } from "src/components/TransactButton"
 import { PublicKey } from "@solana/web3.js"
-import { BN } from "bn.js"
-import { COLLATERAL_DECIMALS } from "config"
-import { useTokenAccount } from "pages/tokenAccountQuery"
 import React, { useCallback, useState } from "react"
-import { useMarket } from "../hooks/marketQueries"
-import { displayBN } from "../../../../utils/BNutils"
 import usePlaceOrderTxn, { useResolutionMint } from "./usePlaceOrder"
+import { useTokenAccount } from "src/pages/tokenAccountQuery"
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ")
