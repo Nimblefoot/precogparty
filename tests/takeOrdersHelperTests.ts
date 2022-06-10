@@ -1,5 +1,7 @@
 import { assert } from "chai"
-import { takeOrdersHelper } from "../app/utils/takeOrdersHelper"
+import { takeOrdersHelper, seeWhatHappens } from "../app/utils/takeOrdersHelper"
+
+seeWhatHappens([13, 3, 8, 9, 10], 14)
 
 describe("Take Order Helper", () => {
   it("spoofs an order", () => {
