@@ -103,6 +103,9 @@ pub mod syrup {
 
         ctx.accounts.first_page.set_orderbook_id(id);
 
+        let clock = Clock::get()?;
+        ctx.accounts.trade_log.open_time = clock.unix_timestamp;
+
         Ok(())
     }
 
@@ -411,6 +414,9 @@ pub mod syrup {
 
         ctx.accounts.orderbook_info.close_orderbook();
 
+        let clock = Clock::get()?;
+        ctx.accounts.trade_log.close_time = clock.unix_timestamp;
+
         Ok(())
     }
 }
@@ -635,5 +641,11 @@ pub struct CloseOrderbook<'info> {
         seeds = [orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()],
         bump
     )]
+    #[account(
+        mut,
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "trades".as_ref()],
+        bump
+    )]
+    pub trade_log: Account<'info, TradeLog>,
     pub orderbook_info: Account<'info, OrderbookInfo>,
 }

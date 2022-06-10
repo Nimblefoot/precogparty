@@ -20,11 +20,13 @@ pub struct Order {
 #[derive(Default)]
 pub struct TradeLog {
     pub trades: Vec<TradeRecord>,
+    pub open_time: i64,  // 8
+    pub close_time: i64, // 8
 }
 impl TradeLog {
     pub const MAX_ITEMS: usize = 100;
     pub const LEN: usize = 4 // std::mem::size_of::<VecDeque<TradeRecord>>
-    + (TradeRecord::LEN * TradeLog::MAX_ITEMS);
+    + (TradeRecord::LEN * TradeLog::MAX_ITEMS) + 8 + 8;
     pub fn push(&mut self, record: TradeRecord) {
         if self.trades.len() == TradeLog::MAX_ITEMS {
             // I think this can be very costly! Needs investigation!
