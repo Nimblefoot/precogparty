@@ -1,7 +1,5 @@
-use std::collections::VecDeque;
-
 use crate::error::ErrorCode;
-use anchor_lang::{prelude::*, solana_program::clock::NUM_CONSECUTIVE_LEADER_SLOTS};
+use anchor_lang::prelude::*;
 
 #[cfg(feature = "orderbook-page-small-size")]
 const MAX_SIZE: usize = 3;
