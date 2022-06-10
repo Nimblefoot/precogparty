@@ -1,3 +1,5 @@
+export { TradeLog } from "./TradeLog"
+export type { TradeLogFields, TradeLogJSON } from "./TradeLog"
 export { OrderbookInfo } from "./OrderbookInfo"
 export type { OrderbookInfoFields, OrderbookInfoJSON } from "./OrderbookInfo"
 export { OrderbookPage } from "./OrderbookPage"
