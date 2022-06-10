@@ -56,7 +56,7 @@ export function HistoryDumb({ trades, openTime, closeTime }: TradeLogFields) {
         min: 0,
         max: 100,
       }}
-      yFormat={(n) => n.toString() + "%"}
+      yFormat={(n) => (n as number).toFixed(2) + "%"}
       axisTop={null}
       axisRight={null}
       axisBottom={{
