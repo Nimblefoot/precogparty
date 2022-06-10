@@ -45,7 +45,7 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
   return market.data ? (
     <>
       <div className="flex px-4 sm:px-6 md:px-8 max-w-7xl mx-auto gap-5">
-        <div data-name="MAIN CARD" className="flex-grow">
+        <div data-name="MAIN CARD" className="flex-grow flex gap-5 flex-col">
           <div className="shadow bg-white rounded-lg">
             <div className="">
               {/* Main body */}
@@ -133,10 +133,10 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
               >
                 {market.data.description}
               </div>
-              <div className="px-4 py-5 sm:px-6 ">
-                <Orders marketAddress={address} />
-              </div>
             </div>
+          </div>
+          <div className="bg-white rounded-lg">
+            <Orders marketAddress={address} />
           </div>
         </div>
         {/* 2nd column */}
