@@ -38,12 +38,16 @@ export const useTransact = () => {
     try {
       signed = await signTransaction(txn)
     } catch (e: any) {
+      setStatus("initial")
       if ((e.message as string).includes("User rejected the request")) {
-        setStatus("initial")
         await options?.onCancel?.()
         return
       } else {
+        console.log("pooey")
+        console.error(e)
         snackError(e.message)
+        await options?.onError?.()
+
         throw e
       }
     }
@@ -64,9 +68,12 @@ export const useTransact = () => {
 
       snackSuccess("Confirmed!", sig)
 
+      await options?.onSuccess?.()
       setStatus("done")
     } catch (e: any) {
+      console.log(e.logs)
       console.error(e)
+      await options?.onError?.()
 
       snackError(e.message, sig)
       setStatus("initial")
