@@ -67,6 +67,7 @@ export function HistoryDumb({ trades, openTime, closeTime }: TradeLogFields) {
       }}
       axisLeft={{
         tickValues: [0, 25, 50, 75, 100],
+        format: (x) => x + "%",
         tickSize: 5,
         tickPadding: 5,
         tickRotation: 0,
