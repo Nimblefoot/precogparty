@@ -36,7 +36,7 @@ export function Resolve({ market }: { market: PublicKey }) {
             inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-full shadow-sm 
             ${
               resolution === "yes"
-                ? "bg-green-500 hover:bg-green-600 border-transparent text-white"
+                ? "bg-lime-500 hover:bg-lime-600 border-transparent text-white"
                 : "border-gray-300 bg-white hover:bg-gray-50 text-gray-500"
             }
           `}
@@ -52,7 +52,7 @@ export function Resolve({ market }: { market: PublicKey }) {
             inline-flex items-center justify-center px-6 py-3 border  text-base font-medium rounded-full shadow-sm text-white 
             ${
               resolution === "no"
-                ? "bg-red-500 hover:bg-red-600 border-transparent text-white"
+                ? "bg-rose-500 hover:bg-rose-600 border-transparent text-white"
                 : "border-gray-300 bg-white hover:bg-gray-50 text-gray-500"
             }
           `}
