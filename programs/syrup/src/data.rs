@@ -1,5 +1,5 @@
 use crate::error::ErrorCode;
-use anchor_lang::{prelude::*, solana_program::clock::NUM_CONSECUTIVE_LEADER_SLOTS};
+use anchor_lang::prelude::*;
 
 #[cfg(feature = "orderbook-page-small-size")]
 const MAX_SIZE: usize = 3;
@@ -37,6 +37,51 @@ pub struct OrderbookInfo {
 }
 
 const TRADE_LOG_LENGTH: usize = 5;
+
+const TRADE_QUEUE_LENGTH: usize = 500;
+#[account]
+pub struct TradeQueue {
+    data: Vec<TradeRecord>,
+    start: u32,
+}
+
+impl Default for TradeQueue {
+    fn default() -> Self {
+        Self {
+            start: 0,
+            data: Vec::with_capacity(TRADE_QUEUE_LENGTH),
+        }
+    }
+}
+
+impl TradeQueue {
+    pub fn is_full(&self) -> bool {
+        self.data.len() == TRADE_QUEUE_LENGTH
+    }
+
+    pub fn push(&mut self, record: TradeRecord) {
+        if self.is_full() {
+            self.data[self.start as usize] = record;
+            self.start = (self.start + 1).rem_euclid(TRADE_QUEUE_LENGTH as u32)
+        } else {
+            self.data.push(record);
+        }
+    }
+
+    pub fn get(&self, index: i32) -> Option<&TradeRecord> {
+        let offset = index.rem_euclid(TRADE_QUEUE_LENGTH as i32) as u32;
+
+        let starting_pos = if self.is_full() {
+            (self.start - 1).rem_euclid(TRADE_QUEUE_LENGTH as u32)
+        } else {
+            (self.data.len() - 1) as u32
+        };
+
+        let pos = (starting_pos + offset).rem_euclid(TRADE_QUEUE_LENGTH as u32);
+
+        self.data.get(pos as usize)
+    }
+}
 
 impl OrderbookInfo {
     pub const LEN: usize = (32 * 4) + 17 * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
@@ -142,5 +187,27 @@ impl OrderbookPage {
 
     pub fn is_orderbook_id_blank(&self) -> bool {
         !self.id_set
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::data::TradeQueue;
+
+    use super::TradeRecord;
+
+    #[test]
+    fn it_works() {
+        let mut log = TradeQueue::default();
+
+        for x in 1..112 {
+            let record = TradeRecord {
+                buy_order_for_apples: true,
+                num_apples: 1,
+                num_oranges: x,
+            };
+
+            log.push(record);
+        }
     }
 }
