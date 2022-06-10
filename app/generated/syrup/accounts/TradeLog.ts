@@ -6,14 +6,20 @@ import { PROGRAM_ID } from "../programId"
 
 export interface TradeLogFields {
   trades: Array<types.TradeRecordFields>
+  openTime: BN
+  closeTime: BN
 }
 
 export interface TradeLogJSON {
   trades: Array<types.TradeRecordJSON>
+  openTime: string
+  closeTime: string
 }
 
 export class TradeLog {
   readonly trades: Array<types.TradeRecord>
+  readonly openTime: BN
+  readonly closeTime: BN
 
   static readonly discriminator = Buffer.from([
     32, 113, 191, 71, 0, 74, 68, 182,
@@ -21,12 +27,16 @@ export class TradeLog {
 
   static readonly layout = borsh.struct([
     borsh.vec(types.TradeRecord.layout(), "trades"),
+    borsh.i64("openTime"),
+    borsh.i64("closeTime"),
   ])
 
   constructor(fields: TradeLogFields) {
     this.trades = fields.trades.map(
       (item) => new types.TradeRecord({ ...item })
     )
+    this.openTime = fields.openTime
+    this.closeTime = fields.closeTime
   }
 
   static async fetch(
@@ -76,18 +86,24 @@ export class TradeLog {
           item: any /* eslint-disable-line @typescript-eslint/no-explicit-any */
         ) => types.TradeRecord.fromDecoded(item)
       ),
+      openTime: dec.openTime,
+      closeTime: dec.closeTime,
     })
   }
 
   toJSON(): TradeLogJSON {
     return {
       trades: this.trades.map((item) => item.toJSON()),
+      openTime: this.openTime.toString(),
+      closeTime: this.closeTime.toString(),
     }
   }
 
   static fromJSON(obj: TradeLogJSON): TradeLog {
     return new TradeLog({
       trades: obj.trades.map((item) => types.TradeRecord.fromJSON(item)),
+      openTime: new BN(obj.openTime),
+      closeTime: new BN(obj.closeTime),
     })
   }
 }

@@ -218,6 +218,9 @@ const useSubmitSell = ({
         queryClient.invalidateQueries(
           orderbookKeys.userAccount(publicKey ?? undefined)
         )
+        if (takeIxs.length > 0)
+          queryClient.invalidateQueries(orderbookKeys.log(marketAddress))
+
         onSuccess()
       },
     })

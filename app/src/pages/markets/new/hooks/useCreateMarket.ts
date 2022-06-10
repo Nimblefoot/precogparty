@@ -95,6 +95,10 @@ const useCreateMarket = () => {
         ],
         SYRUP_ID
       )
+      const [tradeLog] = await PublicKey.findProgramAddress(
+        [marketAccount.toBuffer(), utf8.encode("trades")],
+        SYRUP_ID
+      )
 
       const applesVault = await getAssociatedTokenAddress(
         yesMint,
@@ -119,6 +123,7 @@ const useCreateMarket = () => {
           orangesVault,
           orderbookInfo,
           firstPage,
+          tradeLog,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,

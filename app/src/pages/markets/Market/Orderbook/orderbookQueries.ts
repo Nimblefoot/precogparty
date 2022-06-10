@@ -1,6 +1,7 @@
 import {
   OrderbookInfo,
   OrderbookPage,
+  TradeLog,
   UserAccount,
 } from "@/generated/syrup/accounts"
 import { PROGRAM_ID as SYRUP_ID } from "@/generated/syrup/programId"
@@ -15,6 +16,7 @@ export const orderbookKeys = {
   all: ["orderbooks"],
   book: (address: PublicKey) => [...orderbookKeys.all, address.toString()],
   userAccount: (address?: PublicKey) => ["user", address?.toString()],
+  log: (address: PublicKey) => ["log", address.toString()],
 } as const
 
 export type Orderbook = {
@@ -77,5 +79,27 @@ export const useOrderbookUserAccount = () => {
       enabled: !!publicKey,
     }
   )
+  return query
+}
+
+export const useOrderbookLog = (marketAddress: PublicKey) => {
+  const { connection } = useConnection()
+
+  const fetchData = useCallback(async () => {
+    const [tradeLog] = await PublicKey.findProgramAddress(
+      [marketAddress.toBuffer(), utf8.encode("trades")],
+      SYRUP_ID
+    )
+
+    const data = await TradeLog.fetch(connection, tradeLog)
+
+    if (data === null)
+      throw new Error(`no orderbook log found ${marketAddress.toString()}`)
+
+    return data
+  }, [connection, marketAddress])
+
+  const query = useQuery(orderbookKeys.log(marketAddress), fetchData)
+
   return query
 }

@@ -13,6 +13,7 @@ import BetPanel from "./Bet/Bet"
 import interpolateOddsColors from "src/utils/interpolateOddsColors"
 import clsx from "clsx"
 import { TokenControls } from "./TokenControls"
+import { History } from "./History/History"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -117,6 +118,13 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
                     </div>
                   )}
                 </div>
+              </div>
+              <div
+                className={clsx(
+                  "max-w-7xl mx-auto px-4 py-4 rounded-t-lg sm:px-6 lg:px-8"
+                )}
+              >
+                <History market={address} />
               </div>
               <div
                 className={clsx(

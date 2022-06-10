@@ -160,13 +160,14 @@ const useSubmitBet = ({
       ...takeIxs
     )
 
-    console.log(txn)
     await callback(txn, {
       onSuccess: () => {
         queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
         queryClient.invalidateQueries(
           orderbookKeys.userAccount(publicKey ?? undefined)
         )
+        if (takeIxs.length > 0)
+          queryClient.invalidateQueries(orderbookKeys.log(marketAddress))
 
         // TODO invalidate the correct keys
         queryClient.invalidateQueries(tokenAccountKeys.all)

@@ -557,6 +557,26 @@ export type Syrup = {
               }
             ]
           }
+        },
+        {
+          "name": "tradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "OrderbookInfo",
+                "path": "orderbook_info.id"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trades"
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -575,6 +595,14 @@ export type Syrup = {
                 "defined": "TradeRecord"
               }
             }
+          },
+          {
+            "name": "openTime",
+            "type": "i64"
+          },
+          {
+            "name": "closeTime",
+            "type": "i64"
           }
         ]
       }
@@ -1393,6 +1421,26 @@ export const IDL: Syrup = {
               }
             ]
           }
+        },
+        {
+          "name": "tradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "OrderbookInfo",
+                "path": "orderbook_info.id"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trades"
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -1411,6 +1459,14 @@ export const IDL: Syrup = {
                 "defined": "TradeRecord"
               }
             }
+          },
+          {
+            "name": "openTime",
+            "type": "i64"
+          },
+          {
+            "name": "closeTime",
+            "type": "i64"
           }
         ]
       }

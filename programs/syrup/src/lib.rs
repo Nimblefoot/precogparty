@@ -641,11 +641,11 @@ pub struct CloseOrderbook<'info> {
         seeds = [orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()],
         bump
     )]
+    pub orderbook_info: Account<'info, OrderbookInfo>,
     #[account(
         mut,
         seeds=[orderbook_info.id.to_bytes().as_ref(), "trades".as_ref()],
         bump
     )]
     pub trade_log: Account<'info, TradeLog>,
-    pub orderbook_info: Account<'info, OrderbookInfo>,
 }

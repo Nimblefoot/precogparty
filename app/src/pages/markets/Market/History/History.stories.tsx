@@ -1,6 +1,6 @@
 import React from "react"
 import { ComponentStory, ComponentMeta } from "@storybook/react"
-import { HistoryDumb } from "./History"
+import { HistoryDumb } from "./HistoryDumb"
 import { TradeRecordFields } from "@/generated/syrup/types"
 import BN from "bn.js"
 
@@ -29,6 +29,12 @@ const dummyTrades: TradeRecordFields[] = [
     buyOrderForApples: true,
     time: new BN(1654821900),
   },
+  {
+    numApples: new BN(1000),
+    numOranges: new BN(30000),
+    buyOrderForApples: true,
+    time: new BN(1654871900),
+  },
 ]
 
 // More on default export: https://storybook.js.org/docs/react/writing-stories/introduction#default-export
@@ -42,7 +48,11 @@ export default {
 } as ComponentMeta<typeof HistoryDumb>
 
 export const Primary = () => (
-  <div style={{ width: 700, height: 400 }}>
-    <HistoryDumb trades={dummyTrades} />
+  <div className="p-5" style={{ width: 700, height: 400 }}>
+    <HistoryDumb
+      openTime={new BN(1654321900)}
+      trades={dummyTrades}
+      closeTime={new BN(0)}
+    />
   </div>
 )
