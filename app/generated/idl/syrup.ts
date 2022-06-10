@@ -75,6 +75,25 @@ export type Syrup = {
           "isSigner": false
         },
         {
+          "name": "tradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "type": "publicKey",
+                "path": "id"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trades"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -345,6 +364,26 @@ export type Syrup = {
           }
         },
         {
+          "name": "tradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "OrderbookInfo",
+                "path": "orderbook_info.id"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trades"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -518,12 +557,56 @@ export type Syrup = {
               }
             ]
           }
+        },
+        {
+          "name": "tradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "OrderbookInfo",
+                "path": "orderbook_info.id"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trades"
+              }
+            ]
+          }
         }
       ],
       "args": []
     }
   ],
   "accounts": [
+    {
+      "name": "tradeLog",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "trades",
+            "type": {
+              "vec": {
+                "defined": "TradeRecord"
+              }
+            }
+          },
+          {
+            "name": "openTime",
+            "type": "i64"
+          },
+          {
+            "name": "closeTime",
+            "type": "i64"
+          }
+        ]
+      }
+    },
     {
       "name": "orderbookInfo",
       "type": {
@@ -658,6 +741,10 @@ export type Syrup = {
           {
             "name": "numOranges",
             "type": "u64"
+          },
+          {
+            "name": "time",
+            "type": "i64"
           }
         ]
       }
@@ -852,6 +939,25 @@ export const IDL: Syrup = {
           "isSigner": false
         },
         {
+          "name": "tradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "type": "publicKey",
+                "path": "id"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trades"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1122,6 +1228,26 @@ export const IDL: Syrup = {
           }
         },
         {
+          "name": "tradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "OrderbookInfo",
+                "path": "orderbook_info.id"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trades"
+              }
+            ]
+          }
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1295,12 +1421,56 @@ export const IDL: Syrup = {
               }
             ]
           }
+        },
+        {
+          "name": "tradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "OrderbookInfo",
+                "path": "orderbook_info.id"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trades"
+              }
+            ]
+          }
         }
       ],
       "args": []
     }
   ],
   "accounts": [
+    {
+      "name": "tradeLog",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "trades",
+            "type": {
+              "vec": {
+                "defined": "TradeRecord"
+              }
+            }
+          },
+          {
+            "name": "openTime",
+            "type": "i64"
+          },
+          {
+            "name": "closeTime",
+            "type": "i64"
+          }
+        ]
+      }
+    },
     {
       "name": "orderbookInfo",
       "type": {
@@ -1435,6 +1605,10 @@ export const IDL: Syrup = {
           {
             "name": "numOranges",
             "type": "u64"
+          },
+          {
+            "name": "time",
+            "type": "i64"
           }
         ]
       }

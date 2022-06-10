@@ -7,23 +7,27 @@ export interface TradeRecordFields {
   numApples: BN
   buyOrderForApples: boolean
   numOranges: BN
+  time: BN
 }
 
 export interface TradeRecordJSON {
   numApples: string
   buyOrderForApples: boolean
   numOranges: string
+  time: string
 }
 
 export class TradeRecord {
   readonly numApples: BN
   readonly buyOrderForApples: boolean
   readonly numOranges: BN
+  readonly time: BN
 
   constructor(fields: TradeRecordFields) {
     this.numApples = fields.numApples
     this.buyOrderForApples = fields.buyOrderForApples
     this.numOranges = fields.numOranges
+    this.time = fields.time
   }
 
   static layout(property?: string) {
@@ -32,6 +36,7 @@ export class TradeRecord {
         borsh.u64("numApples"),
         borsh.bool("buyOrderForApples"),
         borsh.u64("numOranges"),
+        borsh.i64("time"),
       ],
       property
     )
@@ -43,6 +48,7 @@ export class TradeRecord {
       numApples: obj.numApples,
       buyOrderForApples: obj.buyOrderForApples,
       numOranges: obj.numOranges,
+      time: obj.time,
     })
   }
 
@@ -51,6 +57,7 @@ export class TradeRecord {
       numApples: fields.numApples,
       buyOrderForApples: fields.buyOrderForApples,
       numOranges: fields.numOranges,
+      time: fields.time,
     }
   }
 
@@ -59,6 +66,7 @@ export class TradeRecord {
       numApples: this.numApples.toString(),
       buyOrderForApples: this.buyOrderForApples,
       numOranges: this.numOranges.toString(),
+      time: this.time.toString(),
     }
   }
 
@@ -67,6 +75,7 @@ export class TradeRecord {
       numApples: new BN(obj.numApples),
       buyOrderForApples: obj.buyOrderForApples,
       numOranges: new BN(obj.numOranges),
+      time: new BN(obj.time),
     })
   }
 

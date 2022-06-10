@@ -5,12 +5,12 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "baseUrl": ".",
     "paths": {
-      "@/components/*": ["components/*"],
+      "@/components/*": ["src/components/*"],
       "@/constants/*": ["constants/*"],
-      "@/hooks/*": ["hooks/*"],
+      "@/hooks/*": ["src/hooks/*"],
       "@/generated/*": ["generated/*"],
-      "@/styles/*": ["styles/*"],
-      "@/utils/*": ["utils/*"]
+      "@/styles/*": ["src/styles/*"],
+      "@/utils/*": ["src/utils/*"]
     },
     "allowJs": true,
     "skipLibCheck": true,

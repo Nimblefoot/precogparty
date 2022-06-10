@@ -1,5 +1,5 @@
 use crate::error::ErrorCode;
-use anchor_lang::{prelude::*, solana_program::clock::NUM_CONSECUTIVE_LEADER_SLOTS};
+use anchor_lang::prelude::*;
 
 #[cfg(feature = "orderbook-page-small-size")]
 const MAX_SIZE: usize = 3;
@@ -16,11 +16,36 @@ pub struct Order {
     pub memo: u8,              // 1 - 50 total.
 }
 
+#[account]
+#[derive(Default)]
+pub struct TradeLog {
+    pub trades: Vec<TradeRecord>,
+    pub open_time: i64,  // 8
+    pub close_time: i64, // 8
+}
+impl TradeLog {
+    pub const MAX_ITEMS: usize = 100;
+    pub const LEN: usize = 4 // std::mem::size_of::<VecDeque<TradeRecord>>
+    + (TradeRecord::LEN * TradeLog::MAX_ITEMS) + 8 + 8;
+    pub fn push(&mut self, record: TradeRecord) {
+        if self.trades.len() == TradeLog::MAX_ITEMS {
+            // I think this can be very costly! Needs investigation!
+            // Ideally would use VecDeque, but anchor's IDL no supporty...
+            self.trades.remove(0);
+        }
+        self.trades.push(record);
+    }
+}
+
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
 pub struct TradeRecord {
     pub num_apples: u64,            // 8
     pub buy_order_for_apples: bool, // 1
-    pub num_oranges: u64,           // 8 - 17 total
+    pub num_oranges: u64,           // 8
+    pub time: i64,                  // 8 - 25 total
+}
+impl TradeRecord {
+    pub const LEN: usize = 25;
 }
 
 #[account]
@@ -39,7 +64,7 @@ pub struct OrderbookInfo {
 const TRADE_LOG_LENGTH: usize = 5;
 
 impl OrderbookInfo {
-    pub const LEN: usize = (32 * 4) + 17 * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
+    pub const LEN: usize = (32 * 4) + TradeRecord::LEN * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
 
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {

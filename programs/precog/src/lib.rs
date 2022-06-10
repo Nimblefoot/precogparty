@@ -1,7 +1,3 @@
-use std::convert::{TryFrom, TryInto};
-
-use std::ops::Deref;
-
 use anchor_lang::prelude::*;
 
 use anchor_spl::{
@@ -12,8 +8,6 @@ use anchor_spl::{
 
 declare_id!("9MQSma8Khz1BAYKWw32xSiT8eyUAN5FFFGEXLcuYqFjf");
 
-// Actually this should just depend on the collateral's decimals
-const TOKEN_DECIMALS: u8 = 6;
 #[program]
 pub mod precog {
 
