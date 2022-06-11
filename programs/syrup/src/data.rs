@@ -205,7 +205,7 @@ mod tests {
     use super::TradeRecord;
 
     #[test]
-    fn it_works() {
+    fn it_works_if_not_full() {
         let mut log = TradeQueue::default();
 
         for x in 0..111 {
@@ -221,5 +221,27 @@ mod tests {
         assert_eq!(log.get(3).unwrap().num_oranges, 3);
         assert_eq!(log.get(110).unwrap().num_oranges, 110);
         assert_eq!(log.get(-111).unwrap().num_oranges, 0);
+    }
+
+    #[test]
+    fn it_works_when_full() {
+        let mut log = TradeQueue::default();
+
+        for x in 0..711 {
+            let record = TradeRecord {
+                buy_order_for_apples: true,
+                num_apples: 1,
+                num_oranges: x,
+            };
+
+            log.push(record);
+        }
+
+        // assert_eq!(log.get(3).unwrap().num_oranges, 503);
+        // assert_eq!(log.get(110).unwrap().num_oranges, 610);
+        assert_eq!(log.get(-1).unwrap().num_oranges, 710);
+        assert_eq!(log.get(0).unwrap().num_oranges, 211);
+        assert_eq!(log.get(100).unwrap().num_oranges, 311);
+        assert_eq!(log.get(-51).unwrap().num_oranges, 660);
     }
 }
