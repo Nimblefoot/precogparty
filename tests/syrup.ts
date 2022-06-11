@@ -43,6 +43,7 @@ describe("orderbook", () => {
   let userAccountAddress: PublicKey
   let orderbookInfoAddress: PublicKey
   let firstPageAddress: PublicKey
+  let TradeLogAddress: PublicKey
   let applesVault: PublicKey
   let orangesVault: PublicKey
   let applesMint: PublicKey
@@ -132,6 +133,10 @@ describe("orderbook", () => {
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
+      program.programId
+    )
+    ;[TradeLogAddress] = await PublicKey.findProgramAddress(
+      [orderbookId.toBytes(), utf8.encode("trades")],
       program.programId
     )
 
@@ -410,6 +415,7 @@ describe("orderbook", () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
+        tradeLog: TradeLogAddress,
       })
       .signers([admin])
       .rpc()
@@ -466,6 +472,7 @@ describe("orderbook", () => {
         vault: orangesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
+        tradeLog: TradeLogAddress,
       })
       .signers([user])
       .rpc({
@@ -559,6 +566,7 @@ describe("orderbook", () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: firstPageKey,
+        tradeLog: TradeLogAddress,
       })
       .signers([admin])
       .rpc({

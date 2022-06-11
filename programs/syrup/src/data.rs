@@ -22,18 +22,44 @@ pub struct TradeLog {
     pub trades: Vec<TradeRecord>,
     pub open_time: i64,  // 8
     pub close_time: i64, // 8
+    pub start: u32,
 }
+
 impl TradeLog {
-    pub const MAX_ITEMS: usize = 100;
-    pub const LEN: usize = 4 // std::mem::size_of::<VecDeque<TradeRecord>>
-    + (TradeRecord::LEN * TradeLog::MAX_ITEMS) + 8 + 8;
+    pub const MAX_ITEMS: u32 = 200;
+    pub const LEN: usize = 4 + (TradeRecord::LEN * (TradeLog::MAX_ITEMS as usize)) + 8 + 8;
+
+    pub fn is_full(&self) -> bool {
+        self.trades.len() == TradeLog::MAX_ITEMS as usize
+    }
+
     pub fn push(&mut self, record: TradeRecord) {
-        if self.trades.len() == TradeLog::MAX_ITEMS {
-            // I think this can be very costly! Needs investigation!
-            // Ideally would use VecDeque, but anchor's IDL no supporty...
-            self.trades.remove(0);
+        if self.is_full() {
+            self.trades[self.start as usize] = record;
+            self.start = (self.start + 1).rem_euclid(TradeLog::MAX_ITEMS as u32)
+        } else {
+            self.trades.push(record);
         }
-        self.trades.push(record);
+    }
+
+    pub fn get(&self, index: i32) -> Option<&TradeRecord> {
+        if self.trades.is_empty() {
+            return None;
+        }
+
+        let starting_pos = if index >= 0 {
+            self.start
+        } else if index < 0 && self.is_full() {
+            (self.start).rem_euclid(TradeLog::MAX_ITEMS)
+        } else {
+            (self.trades.len() as u32).rem_euclid(TradeLog::MAX_ITEMS)
+        };
+
+        let offset = index.rem_euclid(TradeLog::MAX_ITEMS as i32) as u32;
+
+        let pos = (starting_pos + offset).rem_euclid(TradeLog::MAX_ITEMS);
+
+        self.trades.get(pos as usize)
     }
 }
 
@@ -62,59 +88,6 @@ pub struct OrderbookInfo {
 }
 
 const TRADE_LOG_LENGTH: usize = 5;
-
-const TRADE_QUEUE_LENGTH: u32 = 500;
-#[account]
-pub struct TradeQueue {
-    data: Vec<TradeRecord>,
-    start: u32,
-}
-
-impl Default for TradeQueue {
-    fn default() -> Self {
-        Self {
-            start: 0,
-            data: Vec::with_capacity(TRADE_QUEUE_LENGTH as usize),
-        }
-    }
-}
-
-impl TradeQueue {
-    pub fn is_full(&self) -> bool {
-        self.data.len() == TRADE_QUEUE_LENGTH as usize
-    }
-
-    pub fn push(&mut self, record: TradeRecord) {
-        if self.is_full() {
-            self.data[self.start as usize] = record;
-            self.start = (self.start + 1).rem_euclid(TRADE_QUEUE_LENGTH as u32)
-        } else {
-            self.data.push(record);
-        }
-    }
-
-    pub fn get(&self, index: i32) -> Option<&TradeRecord> {
-        if self.data.len() == 0 {
-            return None;
-        }
-
-        // let neg_one = (-1i32).rem_euclid(TRADE_QUEUE_LENGTH as i32) as u32;
-
-        let starting_pos = if index >= 0 {
-            self.start
-        } else if index < 0 && self.is_full() {
-            (self.start).rem_euclid(TRADE_QUEUE_LENGTH)
-        } else {
-            (self.data.len() as u32).rem_euclid(TRADE_QUEUE_LENGTH)
-        };
-
-        let offset = index.rem_euclid(TRADE_QUEUE_LENGTH as i32) as u32;
-
-        let pos = (starting_pos + offset).rem_euclid(TRADE_QUEUE_LENGTH);
-
-        self.data.get(pos as usize)
-    }
-}
 
 impl OrderbookInfo {
     pub const LEN: usize = (32 * 4) + TradeRecord::LEN * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
@@ -225,13 +198,13 @@ impl OrderbookPage {
 
 #[cfg(test)]
 mod tests {
-    use crate::data::TradeQueue;
+    use crate::data::TradeLog;
 
     use super::TradeRecord;
 
     #[test]
     fn it_works_if_not_full() {
-        let mut log = TradeQueue::default();
+        let mut log = TradeLog::default();
 
         for x in 0..111 {
             let record = TradeRecord {
@@ -251,7 +224,7 @@ mod tests {
 
     #[test]
     fn it_works_when_full() {
-        let mut log = TradeQueue::default();
+        let mut log = TradeLog::default();
 
         for x in 0..711 {
             let record = TradeRecord {
@@ -265,8 +238,8 @@ mod tests {
         }
 
         assert_eq!(log.get(-1).unwrap().num_oranges, 710);
-        assert_eq!(log.get(0).unwrap().num_oranges, 211);
-        assert_eq!(log.get(100).unwrap().num_oranges, 311);
+        assert_eq!(log.get(0).unwrap().num_oranges, 511);
+        assert_eq!(log.get(100).unwrap().num_oranges, 611);
         assert_eq!(log.get(-51).unwrap().num_oranges, 660);
     }
 }
