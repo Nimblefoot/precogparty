@@ -77,14 +77,14 @@ impl TradeLog {
 #[account]
 #[derive(Default)]
 pub struct OrderbookInfo {
-    pub admin: Pubkey,                  // 32
-    pub length: u32,                    // 4
-    pub apples_mint: Pubkey,            // 32
-    pub oranges_mint: Pubkey,           // 32
-    pub bump: u8,                       // 1
-    closed: bool,                       // 1
-    pub id: Pubkey,                     // 32
-    pub most_recent_trade: TradeRecord, // 25
+    pub admin: Pubkey,                          // 32
+    pub length: u32,                            // 4
+    pub apples_mint: Pubkey,                    // 32
+    pub oranges_mint: Pubkey,                   // 32
+    pub bump: u8,                               // 1
+    closed: bool,                               // 1
+    pub id: Pubkey,                             // 32
+    pub most_recent_trade: Option<TradeRecord>, // 25
 }
 
 impl OrderbookInfo {
@@ -103,7 +103,7 @@ impl OrderbookInfo {
     }
 
     pub fn update_most_recent_trade(&mut self, record: TradeRecord) {
-        self.most_recent_trade = record;
+        self.most_recent_trade = Some(record);
     }
 
     pub fn is_closed(&self) -> bool {

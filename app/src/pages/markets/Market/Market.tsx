@@ -39,8 +39,8 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
 
   const percentOdds =
     book.data &&
-    book.data.info.tradeLog[book.data.info.tradeLog.length - 1] &&
-    getPercentOdds(book.data.info.tradeLog[book.data.info.tradeLog.length - 1])
+    book.data.info.mostRecentTrade &&
+    getPercentOdds(book.data.info.mostRecentTrade)
 
   return market.data ? (
     <>
