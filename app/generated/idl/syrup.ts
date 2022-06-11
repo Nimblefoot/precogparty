@@ -603,6 +603,10 @@ export type Syrup = {
           {
             "name": "closeTime",
             "type": "i64"
+          },
+          {
+            "name": "start",
+            "type": "u32"
           }
         ]
       }
@@ -641,9 +645,9 @@ export type Syrup = {
             "type": "publicKey"
           },
           {
-            "name": "tradeLog",
+            "name": "mostRecentTrade",
             "type": {
-              "vec": {
+              "option": {
                 "defined": "TradeRecord"
               }
             }
@@ -1467,6 +1471,10 @@ export const IDL: Syrup = {
           {
             "name": "closeTime",
             "type": "i64"
+          },
+          {
+            "name": "start",
+            "type": "u32"
           }
         ]
       }
@@ -1505,9 +1513,9 @@ export const IDL: Syrup = {
             "type": "publicKey"
           },
           {
-            "name": "tradeLog",
+            "name": "mostRecentTrade",
             "type": {
-              "vec": {
+              "option": {
                 "defined": "TradeRecord"
               }
             }

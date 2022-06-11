@@ -8,18 +8,21 @@ export interface TradeLogFields {
   trades: Array<types.TradeRecordFields>
   openTime: BN
   closeTime: BN
+  start: number
 }
 
 export interface TradeLogJSON {
   trades: Array<types.TradeRecordJSON>
   openTime: string
   closeTime: string
+  start: number
 }
 
 export class TradeLog {
   readonly trades: Array<types.TradeRecord>
   readonly openTime: BN
   readonly closeTime: BN
+  readonly start: number
 
   static readonly discriminator = Buffer.from([
     32, 113, 191, 71, 0, 74, 68, 182,
@@ -29,6 +32,7 @@ export class TradeLog {
     borsh.vec(types.TradeRecord.layout(), "trades"),
     borsh.i64("openTime"),
     borsh.i64("closeTime"),
+    borsh.u32("start"),
   ])
 
   constructor(fields: TradeLogFields) {
@@ -37,6 +41,7 @@ export class TradeLog {
     )
     this.openTime = fields.openTime
     this.closeTime = fields.closeTime
+    this.start = fields.start
   }
 
   static async fetch(
@@ -88,6 +93,7 @@ export class TradeLog {
       ),
       openTime: dec.openTime,
       closeTime: dec.closeTime,
+      start: dec.start,
     })
   }
 
@@ -96,6 +102,7 @@ export class TradeLog {
       trades: this.trades.map((item) => item.toJSON()),
       openTime: this.openTime.toString(),
       closeTime: this.closeTime.toString(),
+      start: this.start,
     }
   }
 
@@ -104,6 +111,7 @@ export class TradeLog {
       trades: obj.trades.map((item) => types.TradeRecord.fromJSON(item)),
       openTime: new BN(obj.openTime),
       closeTime: new BN(obj.closeTime),
+      start: obj.start,
     })
   }
 }

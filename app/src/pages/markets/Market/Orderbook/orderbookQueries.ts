@@ -96,7 +96,15 @@ export const useOrderbookLog = (marketAddress: PublicKey) => {
     if (data === null)
       throw new Error(`no orderbook log found ${marketAddress.toString()}`)
 
-    return data
+    const trades = data.trades
+    const start = data.start
+
+    return {
+      trades: trades.slice(start).concat(trades.slice(0, start)),
+      start: data.start,
+      openTime: data.openTime,
+      closeTime: data.closeTime,
+    }
   }, [connection, marketAddress])
 
   const query = useQuery(orderbookKeys.log(marketAddress), fetchData)

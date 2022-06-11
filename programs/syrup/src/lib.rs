@@ -32,7 +32,7 @@ pub fn delete_order(
     let orderbook_id = order_page.orderbook_id;
 
     // check if last_page differs from order page
-    if let Some(mut last_page) = optional_last_page {
+    if let Some(last_page) = optional_last_page {
         if let Some(last_order) = last_page.pop() {
             order_page.set(index, last_order);
         } else {
@@ -128,7 +128,7 @@ pub mod syrup {
         if ctx.accounts.current_page.is_orderbook_id_blank() {
             ctx.accounts
                 .current_page
-                .set_orderbook_id(ctx.accounts.orderbook_info.id.clone());
+                .set_orderbook_id(ctx.accounts.orderbook_info.id);
         }
 
         let amount_transferred = if order.offering_apples {
@@ -319,7 +319,9 @@ pub mod syrup {
                 time: clock.unix_timestamp,
             }
         };
-        ctx.accounts.orderbook_info.add_trade_to_log(trade_record);
+        ctx.accounts
+            .orderbook_info
+            .update_most_recent_trade(trade_record);
         ctx.accounts.trade_log.push(trade_record);
 
         Ok(())

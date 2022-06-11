@@ -16,27 +16,6 @@ pub struct Order {
     pub memo: u8,              // 1 - 50 total.
 }
 
-#[account]
-#[derive(Default)]
-pub struct TradeLog {
-    pub trades: Vec<TradeRecord>,
-    pub open_time: i64,  // 8
-    pub close_time: i64, // 8
-}
-impl TradeLog {
-    pub const MAX_ITEMS: usize = 100;
-    pub const LEN: usize = 4 // std::mem::size_of::<VecDeque<TradeRecord>>
-    + (TradeRecord::LEN * TradeLog::MAX_ITEMS) + 8 + 8;
-    pub fn push(&mut self, record: TradeRecord) {
-        if self.trades.len() == TradeLog::MAX_ITEMS {
-            // I think this can be very costly! Needs investigation!
-            // Ideally would use VecDeque, but anchor's IDL no supporty...
-            self.trades.remove(0);
-        }
-        self.trades.push(record);
-    }
-}
-
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
 pub struct TradeRecord {
     pub num_apples: u64,            // 8
@@ -50,21 +29,66 @@ impl TradeRecord {
 
 #[account]
 #[derive(Default)]
-pub struct OrderbookInfo {
-    pub admin: Pubkey,               // 32
-    pub length: u32,                 // 4
-    pub apples_mint: Pubkey,         // 32
-    pub oranges_mint: Pubkey,        // 32
-    pub bump: u8,                    // 1
-    closed: bool,                    // 1
-    pub id: Pubkey,                  // 32
-    pub trade_log: Vec<TradeRecord>, // 17 x MAX_SIZE = 160
+pub struct TradeLog {
+    pub trades: Vec<TradeRecord>,
+    pub open_time: i64,  // 8
+    pub close_time: i64, // 8
+    pub start: u32,
 }
 
-const TRADE_LOG_LENGTH: usize = 5;
+impl TradeLog {
+    pub const MAX_ITEMS: u32 = 200;
+    pub const LEN: usize = 4 + (TradeRecord::LEN * (TradeLog::MAX_ITEMS as usize)) + 8 + 8;
+
+    pub fn is_full(&self) -> bool {
+        self.trades.len() == TradeLog::MAX_ITEMS as usize
+    }
+
+    pub fn push(&mut self, record: TradeRecord) {
+        if self.is_full() {
+            self.trades[self.start as usize] = record;
+            self.start = (self.start + 1).rem_euclid(TradeLog::MAX_ITEMS as u32)
+        } else {
+            self.trades.push(record);
+        }
+    }
+
+    pub fn get(&self, index: i32) -> Option<&TradeRecord> {
+        if self.trades.is_empty() {
+            return None;
+        }
+
+        let starting_pos = if index >= 0 {
+            self.start
+        } else if index < 0 && self.is_full() {
+            (self.start).rem_euclid(TradeLog::MAX_ITEMS)
+        } else {
+            (self.trades.len() as u32).rem_euclid(TradeLog::MAX_ITEMS)
+        };
+
+        let offset = index.rem_euclid(TradeLog::MAX_ITEMS as i32) as u32;
+
+        let pos = (starting_pos + offset).rem_euclid(TradeLog::MAX_ITEMS);
+
+        self.trades.get(pos as usize)
+    }
+}
+
+#[account]
+#[derive(Default)]
+pub struct OrderbookInfo {
+    pub admin: Pubkey,                          // 32
+    pub length: u32,                            // 4
+    pub apples_mint: Pubkey,                    // 32
+    pub oranges_mint: Pubkey,                   // 32
+    pub bump: u8,                               // 1
+    closed: bool,                               // 1
+    pub id: Pubkey,                             // 32
+    pub most_recent_trade: Option<TradeRecord>, // 25
+}
 
 impl OrderbookInfo {
-    pub const LEN: usize = (32 * 4) + TradeRecord::LEN * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
+    pub const LEN: usize = (32 * 4) + TradeRecord::LEN + 32 + 4 + 1 + 1;
 
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
@@ -78,11 +102,8 @@ impl OrderbookInfo {
         (self.length) / (MAX_SIZE as u32)
     }
 
-    pub fn add_trade_to_log(&mut self, record: TradeRecord) {
-        if self.trade_log.len() == TRADE_LOG_LENGTH {
-            self.trade_log.remove(0);
-        }
-        self.trade_log.push(record);
+    pub fn update_most_recent_trade(&mut self, record: TradeRecord) {
+        self.most_recent_trade = Some(record);
     }
 
     pub fn is_closed(&self) -> bool {
@@ -167,5 +188,53 @@ impl OrderbookPage {
 
     pub fn is_orderbook_id_blank(&self) -> bool {
         !self.id_set
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::data::TradeLog;
+
+    use super::TradeRecord;
+
+    #[test]
+    fn it_works_if_not_full() {
+        let mut log = TradeLog::default();
+
+        for x in 0..111 {
+            let record = TradeRecord {
+                buy_order_for_apples: true,
+                num_apples: 1,
+                num_oranges: x,
+                time: 0,
+            };
+
+            log.push(record);
+        }
+
+        assert_eq!(log.get(3).unwrap().num_oranges, 3);
+        assert_eq!(log.get(110).unwrap().num_oranges, 110);
+        assert_eq!(log.get(-111).unwrap().num_oranges, 0);
+    }
+
+    #[test]
+    fn it_works_when_full() {
+        let mut log = TradeLog::default();
+
+        for x in 0..711 {
+            let record = TradeRecord {
+                buy_order_for_apples: true,
+                num_apples: 1,
+                num_oranges: x,
+                time: 0,
+            };
+
+            log.push(record);
+        }
+
+        assert_eq!(log.get(-1).unwrap().num_oranges, 710);
+        assert_eq!(log.get(0).unwrap().num_oranges, 511);
+        assert_eq!(log.get(100).unwrap().num_oranges, 611);
+        assert_eq!(log.get(-51).unwrap().num_oranges, 660);
     }
 }
