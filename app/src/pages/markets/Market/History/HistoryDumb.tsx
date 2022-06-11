@@ -27,14 +27,17 @@ export function HistoryDumb({
 }: Omit<TradeLogFields, "start">) {
   const data = formatTrades(trades)
 
-  // this point will mark either market close, or will be offscreen but cause the line to continue into present.
-  const fakePoint = !closeTime.eq(new BN(0))
-    ? { x: new Date(closeTime.toNumber() * 1000), y: data[data.length - 1].y }
-    : {
-        x: dayjs(new Date()).add(1, "month").toDate(),
-        y: data[data.length - 1].y,
-      }
+  const lastPoint = data.length > 0 ? data[data.length - 1] : undefined
 
+  // this point will mark either market close, or will be offscreen but cause the line to continue into present.
+  const fakePoint =
+    lastPoint &&
+    (!closeTime.eq(new BN(0))
+      ? { x: new Date(closeTime.toNumber() * 1000), y: lastPoint.y }
+      : {
+          x: dayjs(new Date()).add(1, "month").toDate(),
+          y: lastPoint.y,
+        })
   // If time of closing is nonzero, market is closed, so use that
   const latestTime = closeTime.eq(new BN(0))
     ? new Date()
@@ -53,7 +56,13 @@ export function HistoryDumb({
   return (
     /* @ts-ignore this errors due to some insane error with importing the wrong react types version or something insane like that */
     <ResponsiveLine
-      data={[{ id: "YES", data: [...data, fakePoint], color: "#84cc16" }]}
+      data={[
+        {
+          id: "YES",
+          data: [...data, ...(fakePoint ? [fakePoint] : [])],
+          color: "#84cc16",
+        },
+      ]}
       margin={{ top: 5, right: 20, bottom: 25, left: 40 }}
       xScale={{
         type: "time",
