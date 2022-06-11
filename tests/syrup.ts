@@ -509,8 +509,12 @@ describe("orderbook", () => {
     const orderbookInfo = await program.account.orderbookInfo.fetchNullable(
       orderbookInfoAddress
     )
+
+    const tradeLog = await program.account.tradeLog.fetchNullable(
+      TradeLogAddress
+    )
     // @ts-ignore
-    const lastTrades = orderbookInfo.tradeLog.reverse().map((trade) => ({
+    const lastTrades = tradeLog.trades.reverse().map((trade) => ({
       buyOrderForApples: trade.buyOrderForApples,
       numOranges: trade.numOranges.toString(),
       numApples: trade.numApples.toString(),

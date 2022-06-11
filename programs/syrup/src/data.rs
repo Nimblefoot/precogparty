@@ -16,6 +16,17 @@ pub struct Order {
     pub memo: u8,              // 1 - 50 total.
 }
 
+#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
+pub struct TradeRecord {
+    pub num_apples: u64,            // 8
+    pub buy_order_for_apples: bool, // 1
+    pub num_oranges: u64,           // 8
+    pub time: i64,                  // 8 - 25 total
+}
+impl TradeRecord {
+    pub const LEN: usize = 25;
+}
+
 #[account]
 #[derive(Default)]
 pub struct TradeLog {
@@ -63,34 +74,21 @@ impl TradeLog {
     }
 }
 
-#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
-pub struct TradeRecord {
-    pub num_apples: u64,            // 8
-    pub buy_order_for_apples: bool, // 1
-    pub num_oranges: u64,           // 8
-    pub time: i64,                  // 8 - 25 total
-}
-impl TradeRecord {
-    pub const LEN: usize = 25;
-}
-
 #[account]
 #[derive(Default)]
 pub struct OrderbookInfo {
-    pub admin: Pubkey,               // 32
-    pub length: u32,                 // 4
-    pub apples_mint: Pubkey,         // 32
-    pub oranges_mint: Pubkey,        // 32
-    pub bump: u8,                    // 1
-    closed: bool,                    // 1
-    pub id: Pubkey,                  // 32
-    pub trade_log: Vec<TradeRecord>, // 17 x MAX_SIZE = 160
+    pub admin: Pubkey,                  // 32
+    pub length: u32,                    // 4
+    pub apples_mint: Pubkey,            // 32
+    pub oranges_mint: Pubkey,           // 32
+    pub bump: u8,                       // 1
+    closed: bool,                       // 1
+    pub id: Pubkey,                     // 32
+    pub most_recent_trade: TradeRecord, // 25
 }
 
-const TRADE_LOG_LENGTH: usize = 5;
-
 impl OrderbookInfo {
-    pub const LEN: usize = (32 * 4) + TradeRecord::LEN * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
+    pub const LEN: usize = (32 * 4) + TradeRecord::LEN + 32 + 4 + 1 + 1;
 
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
@@ -104,11 +102,8 @@ impl OrderbookInfo {
         (self.length) / (MAX_SIZE as u32)
     }
 
-    pub fn add_trade_to_log(&mut self, record: TradeRecord) {
-        if self.trade_log.len() == TRADE_LOG_LENGTH {
-            self.trade_log.remove(0);
-        }
-        self.trade_log.push(record);
+    pub fn update_most_recent_trade(&mut self, record: TradeRecord) {
+        self.most_recent_trade = record;
     }
 
     pub fn is_closed(&self) -> bool {

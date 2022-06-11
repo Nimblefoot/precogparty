@@ -319,7 +319,9 @@ pub mod syrup {
                 time: clock.unix_timestamp,
             }
         };
-        ctx.accounts.orderbook_info.add_trade_to_log(trade_record);
+        ctx.accounts
+            .orderbook_info
+            .update_most_recent_trade(trade_record);
         ctx.accounts.trade_log.push(trade_record);
 
         Ok(())
