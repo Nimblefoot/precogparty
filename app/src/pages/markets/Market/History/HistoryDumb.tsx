@@ -20,7 +20,11 @@ function arrayMin(arr: number[]) {
   })
 }
 
-export function HistoryDumb({ trades, openTime, closeTime, start }: TradeLogFields) {
+export function HistoryDumb({
+  trades,
+  openTime,
+  closeTime,
+}: Omit<TradeLogFields, "start">) {
   const data = formatTrades(trades)
 
   // If time of closing is nonzero, market is closed, so use that
