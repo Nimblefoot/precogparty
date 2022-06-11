@@ -37,9 +37,10 @@ const navigation = [
     href: "/markets/browse",
     icon: CollectionIcon,
   },
-  { name: "New", href: "/markets/new", icon: PlusCircleIcon },
 
   { name: "Positions", href: "/positions", icon: TrendingUpIcon },
+  { name: "New market", href: "/markets/new", icon: PlusCircleIcon },
+
   // { name: "About", href: "#", icon: CalendarIcon },
 ]
 
