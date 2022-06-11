@@ -1,0 +1,34 @@
+<svg id="Layer_2" viewBox="-1.292 40.078 204.238 209.333" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <linearGradient id="gradient-4" bx:pinned="true">
+      <stop offset="0" style="stop-color: rgb(68, 255, 0);"></stop>
+      <stop offset="1" style="stop-color: rgb(255, 0, 55);"></stop>
+    </linearGradient>
+    <linearGradient id="color-0" bx:pinned="true">
+      <stop style="stop-color: #dd3e54;" offset="0"></stop>
+      <stop style="stop-color: #6be585;" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="color-1" bx:pinned="true">
+      <stop style="stop-color: #00c3ff;" offset="0"></stop>
+      <stop style="stop-color: #ffff1c;" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="color-1-0" gradientUnits="userSpaceOnUse" x1="111.538" y1="9.63" x2="111.538" y2="265.235" gradientTransform="matrix(1.047923, 0, 0, 1, 0, 0)" xlink:href="#color-1"></linearGradient>
+    <linearGradient id="color-2" bx:pinned="true">
+      <stop style="stop-color: rgb(4, 12, 19);" offset="0"></stop>
+      <stop style="stop-color: rgb(36, 45, 55);" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="color-2-0" gradientUnits="userSpaceOnUse" x1="159.128" y1="94.538" x2="159.128" y2="180.798" xlink:href="#color-2"></linearGradient>
+    <linearGradient id="color-2-1" gradientUnits="userSpaceOnUse" x1="63.43" y1="39.009" x2="63.43" y2="236.326" xlink:href="#color-2"></linearGradient>
+  </defs>
+  <rect x="-71.926" y="12.309" width="311.763" height="249.738" style="stroke: rgb(0, 0, 0); fill: rgb(255, 255, 255); stroke-width: 0px;"></rect>
+  <g id="Layer_3">
+    <g>
+      <path d="M 86.53 160.346 C 101.699 173.546 110.727 182.595 112.733 198.316 C 114.84 214.823 107.415 228.667 89.971 237.489 C 83.535 240.745 76.24 242.295 69.036 241.939 C 49.496 240.978 37.09 231.355 32.301 215.412 C 27.74 200.234 32.306 188.296 40.795 170.068 C 42.56 166.274 43.434 162.556 43.712 159.055 C 44.557 148.335 39.417 138.229 30.517 131.565 C 15.366 120.228 7.27 104.905 6.29 93.041 C 3.127 54.893 38.763 48.065 38.763 48.065 C 38.763 48.065 74.097 39.808 86.723 75.945 C 90.652 87.182 89.489 104.473 80.259 120.992 C 74.839 130.7 74.253 142.022 79.386 151.473 C 81.063 154.557 83.375 157.598 86.53 160.346 Z M 195.069 115.704 C 200.022 139.003 185.148 161.906 161.849 166.858 C 138.549 171.811 115.647 156.938 110.694 133.638 C 105.742 110.339 120.615 87.436 143.914 82.483 C 167.214 77.531 190.117 92.404 195.069 115.704 Z" style="paint-order: fill; fill-rule: nonzero; stroke: rgb(0, 0, 0); filter: none; stroke-width: 12px;"></path>
+    </g>
+    <rect x="1.416" y="9.63" width="230.935" height="255.605" style="stroke: rgb(0, 0, 0); mix-blend-mode: lighten; fill: url(#color-1-0);" transform="matrix(-0.22495, -0.97437, 0.97437, -0.224952, -4.428965, 280.087341)"></rect>
+  </g>
+  <g transform="matrix(0.978147, -0.207912, 0.207911, 0.978147, -26.915882, 24.769825)">
+    <path d="M 86.809 158.769 C 98.902 174.834 105.851 185.562 104.545 201.357 C 103.174 217.941 93.033 229.939 74.136 234.941 C 67.163 236.788 59.706 236.788 52.733 234.941 C 33.82 229.939 23.686 217.947 22.316 201.357 C 21.01 185.562 27.959 174.834 40.052 158.769 C 42.567 155.425 44.195 151.97 45.195 148.604 C 48.25 138.293 45.324 127.34 38.004 118.971 C 25.541 104.732 20.808 88.06 22.316 76.252 C 27.153 38.28 63.43 39.01 63.43 39.01 C 63.43 39.01 99.708 38.28 104.545 76.252 C 106.052 88.06 101.32 104.732 88.857 118.971 C 81.537 127.34 78.61 138.293 81.666 148.604 C 82.665 151.97 84.294 155.425 86.809 158.769 Z" style="paint-order: fill; fill-rule: nonzero; stroke: rgb(0, 0, 0); filter: none; stroke-width: 0px; fill: url(#color-2-1);"></path>
+    <circle cx="159.128" cy="137.668" r="43.13" style="paint-order: fill; fill-rule: nonzero; stroke: rgb(0, 0, 0); filter: none; stroke-width: 0px; fill: url(#color-2-0);"></circle>
+  </g>
+</svg>
