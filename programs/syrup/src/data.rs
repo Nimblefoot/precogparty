@@ -16,11 +16,36 @@ pub struct Order {
     pub memo: u8,              // 1 - 50 total.
 }
 
+#[account]
+#[derive(Default)]
+pub struct TradeLog {
+    pub trades: Vec<TradeRecord>,
+    pub open_time: i64,  // 8
+    pub close_time: i64, // 8
+}
+impl TradeLog {
+    pub const MAX_ITEMS: usize = 100;
+    pub const LEN: usize = 4 // std::mem::size_of::<VecDeque<TradeRecord>>
+    + (TradeRecord::LEN * TradeLog::MAX_ITEMS) + 8 + 8;
+    pub fn push(&mut self, record: TradeRecord) {
+        if self.trades.len() == TradeLog::MAX_ITEMS {
+            // I think this can be very costly! Needs investigation!
+            // Ideally would use VecDeque, but anchor's IDL no supporty...
+            self.trades.remove(0);
+        }
+        self.trades.push(record);
+    }
+}
+
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
 pub struct TradeRecord {
     pub num_apples: u64,            // 8
     pub buy_order_for_apples: bool, // 1
-    pub num_oranges: u64,           // 8 - 17 total
+    pub num_oranges: u64,           // 8
+    pub time: i64,                  // 8 - 25 total
+}
+impl TradeRecord {
+    pub const LEN: usize = 25;
 }
 
 #[account]
@@ -92,7 +117,7 @@ impl TradeQueue {
 }
 
 impl OrderbookInfo {
-    pub const LEN: usize = (32 * 4) + 17 * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
+    pub const LEN: usize = (32 * 4) + TradeRecord::LEN * TRADE_LOG_LENGTH + 32 + 4 + 1 + 1;
 
     pub fn get_last_page(&self) -> u32 {
         if self.length == 0u32 {
@@ -213,6 +238,7 @@ mod tests {
                 buy_order_for_apples: true,
                 num_apples: 1,
                 num_oranges: x,
+                time: 0,
             };
 
             log.push(record);
@@ -232,13 +258,12 @@ mod tests {
                 buy_order_for_apples: true,
                 num_apples: 1,
                 num_oranges: x,
+                time: 0,
             };
 
             log.push(record);
         }
 
-        // assert_eq!(log.get(3).unwrap().num_oranges, 503);
-        // assert_eq!(log.get(110).unwrap().num_oranges, 610);
         assert_eq!(log.get(-1).unwrap().num_oranges, 710);
         assert_eq!(log.get(0).unwrap().num_oranges, 211);
         assert_eq!(log.get(100).unwrap().num_oranges, 311);
