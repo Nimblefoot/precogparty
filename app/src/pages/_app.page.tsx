@@ -2,6 +2,7 @@
 import "@/styles/solanaWalletAdapter.css"
 import "../styles/globals.css"
 import type { AppProps } from "next/app"
+import Image from "next/image"
 import Blockies from "react-blockies"
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import { useWallet } from "@solana/wallet-adapter-react"
@@ -36,9 +37,10 @@ const navigation = [
     href: "/markets/browse",
     icon: CollectionIcon,
   },
-  { name: "New", href: "/markets/new", icon: PlusCircleIcon },
 
   { name: "Positions", href: "/positions", icon: TrendingUpIcon },
+  { name: "New market", href: "/markets/new", icon: PlusCircleIcon },
+
   // { name: "About", href: "#", icon: CalendarIcon },
 ]
 
@@ -149,8 +151,22 @@ const Layout = ({ Component, pageProps }: AppProps) => {
             {/* Sidebar component, swap this element with another sidebar if you like */}
             <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
               <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto gap-5">
-                <div className="flex items-center flex-shrink-0 px-4">
-                  precog.markets
+                <div className="flex items-center flex-shrink-0 px-4 gap-3 bg-white">
+                  <Image
+                    src="/precogs.svg"
+                    height={35}
+                    width={35}
+                    alt="precog logo"
+                  />
+                  <div
+                    className="text-lg mb-1"
+                    style={{
+                      fontFamily: "'Quicksand', sans-serif",
+                      fontWeight: 600,
+                    }}
+                  >
+                    precog.markets
+                  </div>
                 </div>
                 <UserInfoDesktop />
 
