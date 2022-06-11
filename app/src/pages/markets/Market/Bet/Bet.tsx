@@ -280,6 +280,15 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
             <label className="block text-sm font-medium text-gray-700">
               Your wager
             </label>
+            <div className="block text-sm  text-gray-400">
+              {userBalance.data === undefined
+                ? "Balance: ..."
+                : userBalance.data === "no account"
+                ? "No balance"
+                : `Balance: $${displayBN(
+                    new BN(userBalance.data.value.amount)
+                  )}`}
+            </div>
           </div>
           <div className="mt-1 relative rounded-md shadow-sm w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -292,9 +301,10 @@ export function Bet({ marketAddress }: { marketAddress: PublicKey }) {
               min="0"
               name="price"
               id="price"
-              className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
+              className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md disabled:bg-gray-50"
               placeholder="0.00"
               aria-describedby="price-currency"
+              disabled={userBalance.data === "no account"}
               value={usdcInput}
               onChange={(e) => {
                 const validation = validate(e.target.value)
