@@ -38,7 +38,7 @@ pub struct OrderbookInfo {
 
 const TRADE_LOG_LENGTH: usize = 5;
 
-const TRADE_QUEUE_LENGTH: usize = 500;
+const TRADE_QUEUE_LENGTH: u32 = 500;
 #[account]
 pub struct TradeQueue {
     data: Vec<TradeRecord>,
@@ -49,14 +49,14 @@ impl Default for TradeQueue {
     fn default() -> Self {
         Self {
             start: 0,
-            data: Vec::with_capacity(TRADE_QUEUE_LENGTH),
+            data: Vec::with_capacity(TRADE_QUEUE_LENGTH as usize),
         }
     }
 }
 
 impl TradeQueue {
     pub fn is_full(&self) -> bool {
-        self.data.len() == TRADE_QUEUE_LENGTH
+        self.data.len() == TRADE_QUEUE_LENGTH as usize
     }
 
     pub fn push(&mut self, record: TradeRecord) {
@@ -69,15 +69,23 @@ impl TradeQueue {
     }
 
     pub fn get(&self, index: i32) -> Option<&TradeRecord> {
-        let offset = index.rem_euclid(TRADE_QUEUE_LENGTH as i32) as u32;
+        if self.data.len() == 0 {
+            return None;
+        }
 
-        let starting_pos = if self.is_full() {
-            (self.start - 1).rem_euclid(TRADE_QUEUE_LENGTH as u32)
+        // let neg_one = (-1i32).rem_euclid(TRADE_QUEUE_LENGTH as i32) as u32;
+
+        let starting_pos = if index >= 0 {
+            self.start
+        } else if index < 0 && self.is_full() {
+            (self.start).rem_euclid(TRADE_QUEUE_LENGTH)
         } else {
-            (self.data.len() - 1) as u32
+            (self.data.len() as u32).rem_euclid(TRADE_QUEUE_LENGTH)
         };
 
-        let pos = (starting_pos + offset).rem_euclid(TRADE_QUEUE_LENGTH as u32);
+        let offset = index.rem_euclid(TRADE_QUEUE_LENGTH as i32) as u32;
+
+        let pos = (starting_pos + offset).rem_euclid(TRADE_QUEUE_LENGTH);
 
         self.data.get(pos as usize)
     }
@@ -200,7 +208,7 @@ mod tests {
     fn it_works() {
         let mut log = TradeQueue::default();
 
-        for x in 1..112 {
+        for x in 0..111 {
             let record = TradeRecord {
                 buy_order_for_apples: true,
                 num_apples: 1,
@@ -209,5 +217,9 @@ mod tests {
 
             log.push(record);
         }
+
+        assert_eq!(log.get(3).unwrap().num_oranges, 3);
+        assert_eq!(log.get(110).unwrap().num_oranges, 110);
+        assert_eq!(log.get(-111).unwrap().num_oranges, 0);
     }
 }
