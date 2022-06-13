@@ -79,7 +79,11 @@ export class OrderbookPage {
     const dec = OrderbookPage.layout.decode(data.slice(8))
 
     return new OrderbookPage({
-      list: dec.list.map((item) => types.Order.fromDecoded(item)),
+      list: dec.list.map(
+        (
+          item: any /* eslint-disable-line @typescript-eslint/no-explicit-any */
+        ) => types.Order.fromDecoded(item)
+      ),
       orderbookId: dec.orderbookId,
       idSet: dec.idSet,
     })

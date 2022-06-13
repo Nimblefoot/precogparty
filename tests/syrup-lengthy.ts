@@ -28,7 +28,7 @@ import {
 
 const maxLength = 100 //
 
-describe("orderbook", async () => {
+describe("orderbook", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider)

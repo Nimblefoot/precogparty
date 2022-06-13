@@ -1,4 +1,4 @@
-import { TransactionInstruction, PublicKey } from "@solana/web3.js" // eslint-disable-line @typescript-eslint/no-unused-vars
+import { TransactionInstruction, PublicKey, AccountMeta } from "@solana/web3.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -16,6 +16,7 @@ export interface InitializeOrderbookAccounts {
   applesVault: PublicKey
   orangesMint: PublicKey
   orangesVault: PublicKey
+  tradeLog: PublicKey
   tokenProgram: PublicKey
   associatedTokenProgram: PublicKey
   rent: PublicKey
@@ -28,7 +29,7 @@ export function initializeOrderbook(
   args: InitializeOrderbookArgs,
   accounts: InitializeOrderbookAccounts
 ) {
-  const keys = [
+  const keys: Array<AccountMeta> = [
     { pubkey: accounts.admin, isSigner: true, isWritable: true },
     { pubkey: accounts.orderbookInfo, isSigner: false, isWritable: true },
     { pubkey: accounts.firstPage, isSigner: false, isWritable: true },
@@ -36,6 +37,7 @@ export function initializeOrderbook(
     { pubkey: accounts.applesVault, isSigner: false, isWritable: true },
     { pubkey: accounts.orangesMint, isSigner: false, isWritable: false },
     { pubkey: accounts.orangesVault, isSigner: false, isWritable: true },
+    { pubkey: accounts.tradeLog, isSigner: false, isWritable: true },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
     {
       pubkey: accounts.associatedTokenProgram,

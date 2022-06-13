@@ -4,7 +4,7 @@ import {
   ui2placeOrderFields,
   UIOrder,
   ratioFromOdds,
-} from "../app/utils/orderMath"
+} from "../app/src/utils/orderMath"
 import { assert } from "chai"
 import { BN } from "@project-serum/anchor"
 

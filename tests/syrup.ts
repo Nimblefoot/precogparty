@@ -29,7 +29,7 @@ import {
 const maxLength = 100 //
 const orderbookId = Keypair.generate().publicKey
 
-describe("orderbook", async () => {
+describe("orderbook", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env()
   anchor.setProvider(provider)
@@ -43,6 +43,7 @@ describe("orderbook", async () => {
   let userAccountAddress: PublicKey
   let orderbookInfoAddress: PublicKey
   let firstPageAddress: PublicKey
+  let TradeLogAddress: PublicKey
   let applesVault: PublicKey
   let orangesVault: PublicKey
   let applesMint: PublicKey
@@ -132,6 +133,10 @@ describe("orderbook", async () => {
         utf8.encode("page"),
         new anchor.BN(0).toArrayLike(Buffer, "le", 4),
       ],
+      program.programId
+    )
+    ;[TradeLogAddress] = await PublicKey.findProgramAddress(
+      [orderbookId.toBytes(), utf8.encode("trades")],
       program.programId
     )
 
@@ -410,6 +415,7 @@ describe("orderbook", async () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
+        tradeLog: TradeLogAddress,
       })
       .signers([admin])
       .rpc()
@@ -466,6 +472,7 @@ describe("orderbook", async () => {
         vault: orangesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
+        tradeLog: TradeLogAddress,
       })
       .signers([user])
       .rpc({
@@ -502,8 +509,12 @@ describe("orderbook", async () => {
     const orderbookInfo = await program.account.orderbookInfo.fetchNullable(
       orderbookInfoAddress
     )
+
+    const tradeLog = await program.account.tradeLog.fetchNullable(
+      TradeLogAddress
+    )
     // @ts-ignore
-    const lastTrades = orderbookInfo.tradeLog.reverse().map((trade) => ({
+    const lastTrades = tradeLog.trades.reverse().map((trade) => ({
       buyOrderForApples: trade.buyOrderForApples,
       numOranges: trade.numOranges.toString(),
       numApples: trade.numApples.toString(),
@@ -559,6 +570,7 @@ describe("orderbook", async () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: firstPageKey,
+        tradeLog: TradeLogAddress,
       })
       .signers([admin])
       .rpc({

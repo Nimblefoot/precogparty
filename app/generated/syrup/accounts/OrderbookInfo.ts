@@ -12,7 +12,7 @@ export interface OrderbookInfoFields {
   bump: number
   closed: boolean
   id: PublicKey
-  tradeLog: Array<types.TradeRecordFields>
+  mostRecentTrade: types.TradeRecordFields | null
 }
 
 export interface OrderbookInfoJSON {
@@ -23,7 +23,7 @@ export interface OrderbookInfoJSON {
   bump: number
   closed: boolean
   id: string
-  tradeLog: Array<types.TradeRecordJSON>
+  mostRecentTrade: types.TradeRecordJSON | null
 }
 
 export class OrderbookInfo {
@@ -34,7 +34,7 @@ export class OrderbookInfo {
   readonly bump: number
   readonly closed: boolean
   readonly id: PublicKey
-  readonly tradeLog: Array<types.TradeRecord>
+  readonly mostRecentTrade: types.TradeRecord | null
 
   static readonly discriminator = Buffer.from([
     126, 118, 193, 78, 125, 233, 132, 90,
@@ -48,7 +48,7 @@ export class OrderbookInfo {
     borsh.u8("bump"),
     borsh.bool("closed"),
     borsh.publicKey("id"),
-    borsh.vec(types.TradeRecord.layout(), "tradeLog"),
+    borsh.option(types.TradeRecord.layout(), "mostRecentTrade"),
   ])
 
   constructor(fields: OrderbookInfoFields) {
@@ -59,9 +59,10 @@ export class OrderbookInfo {
     this.bump = fields.bump
     this.closed = fields.closed
     this.id = fields.id
-    this.tradeLog = fields.tradeLog.map(
-      (item) => new types.TradeRecord({ ...item })
-    )
+    this.mostRecentTrade =
+      (fields.mostRecentTrade &&
+        new types.TradeRecord({ ...fields.mostRecentTrade })) ||
+      null
   }
 
   static async fetch(
@@ -113,7 +114,10 @@ export class OrderbookInfo {
       bump: dec.bump,
       closed: dec.closed,
       id: dec.id,
-      tradeLog: dec.tradeLog.map((item) => types.TradeRecord.fromDecoded(item)),
+      mostRecentTrade:
+        (dec.mostRecentTrade &&
+          types.TradeRecord.fromDecoded(dec.mostRecentTrade)) ||
+        null,
     })
   }
 
@@ -126,7 +130,8 @@ export class OrderbookInfo {
       bump: this.bump,
       closed: this.closed,
       id: this.id.toString(),
-      tradeLog: this.tradeLog.map((item) => item.toJSON()),
+      mostRecentTrade:
+        (this.mostRecentTrade && this.mostRecentTrade.toJSON()) || null,
     }
   }
 
@@ -139,7 +144,10 @@ export class OrderbookInfo {
       bump: obj.bump,
       closed: obj.closed,
       id: new PublicKey(obj.id),
-      tradeLog: obj.tradeLog.map((item) => types.TradeRecord.fromJSON(item)),
+      mostRecentTrade:
+        (obj.mostRecentTrade &&
+          types.TradeRecord.fromJSON(obj.mostRecentTrade)) ||
+        null,
     })
   }
 }
