@@ -597,10 +597,7 @@ pub struct TakeOrder<'info> {
 #[derive(Accounts)]
 #[instruction(order: Order, page_number: u32, index: u32)]
 pub struct CancelOrder<'info> {
-    #[account(
-        mut,
-        address = order.user
-    )]
+    #[account(mut)]
     pub user: Signer<'info>,
     #[account(
         mut,

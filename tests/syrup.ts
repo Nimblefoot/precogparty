@@ -529,7 +529,7 @@ describe("orderbook", () => {
     ])
   })
 
-  it("closes an orderbook. Taking is blocked but you can still cancel.", async () => {
+  it("Closes an orderbook. Taking is blocked but you can still cancel, you can cancel other people's orders.", async () => {
     await program.methods
       .closeOrderbook()
       .accounts({
@@ -581,6 +581,7 @@ describe("orderbook", () => {
           "should not be able to take orders after the orderbook is closed!"
       )
 
+    // can cancel other people's orders if orderbook is closed
     await program.methods
       .cancelOrder(
         {
@@ -594,14 +595,14 @@ describe("orderbook", () => {
         0
       )
       .accounts({
-        user: user.publicKey,
+        user: admin.publicKey,
         userAccount: userAccountAddress,
         userAta: userApplesATA,
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: firstPageKey,
       })
-      .signers([user])
+      .signers([admin])
       .rpc()
   })
 
