@@ -337,7 +337,11 @@ pub mod syrup {
         let order_data: Order = ctx.accounts.order_page.get(index);
         if order_data != order {
             return err!(ErrorCode::WrongOrder);
-        } else if ctx.accounts.user.key() != order_data.user {
+        }
+        // if orderbook is closed you can cancel other people's orders
+        else if !ctx.accounts.orderbook_info.is_closed()
+            && ctx.accounts.user.key() != order_data.user
+        {
             return err!(ErrorCode::IncorrectUser);
         };
 
@@ -600,13 +604,13 @@ pub struct CancelOrder<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
-        seeds = ["user-account".as_ref(), user.key().as_ref()],
+        seeds = ["user-account".as_ref(), order.user.as_ref()],
         bump
     )]
     pub user_account: Box<Account<'info, UserAccount>>,
     #[account(
         mut,
-        associated_token::authority = user,
+        associated_token::authority = order.user,
         associated_token::mint = if order.offering_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
     )]
     pub user_ata: Box<Account<'info, TokenAccount>>,
