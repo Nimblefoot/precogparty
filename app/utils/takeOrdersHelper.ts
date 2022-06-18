@@ -25,15 +25,28 @@ export const seeWhatHappens = function (
 ): Array<number> {
   let data = Array.from(Array(length).keys())
 
-  let end = data[-1]
+  let endIdx = data.length - 1
 
-  console.log(data)
+  let res = []
 
   for (let counter = 0; counter < positions.length; counter++) {
     let idx = data.findIndex((x) => x == positions[counter])
 
-    console.log(idx)
+    let temp = data[endIdx]
+    data[endIdx] = data[idx]
+    data[idx] = temp
+
+    res.push(idx)
+
+    endIdx -= 1
   }
+
+  console.log("positions")
+  console.log(positions)
+  console.log("resulting data")
+  console.log(data)
+  console.log("positons when we popped them off")
+  console.log(res)
 
   return [0]
 }
