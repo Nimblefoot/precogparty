@@ -30,7 +30,7 @@ export const seeWhatHappens = function (
   console.log(data)
 
   for (let counter = 0; counter < positions.length; counter++) {
-    let idx = data.findIndex((x) => x == positions[-counter])
+    let idx = data.findIndex((x) => x == positions[counter])
 
     console.log(idx)
   }
