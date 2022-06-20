@@ -281,7 +281,7 @@ function UserInfoDesktop({}) {
                     )
                   )}
                   {process.env.NEXT_PUBLIC_RPC !==
-                  "[TODO insert mainnet rpc url]" ? (
+                  "https://api.mainnet-beta.solana.com" ? (
                     <button
                       onClick={airdrop}
                       className={clsx(
