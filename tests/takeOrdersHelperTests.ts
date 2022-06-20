@@ -11,14 +11,14 @@ import {
 
 // seeWhatHappens([3, 2, 1], 4)
 
-seePaginationHappen(
-  [
-    [2, 1],
-    [0, 0],
-  ],
-  11,
-  2
-)
+let pos: Array<[number, number]> = [
+  [2, 1],
+  [0, 0],
+]
+
+let res = seePaginationHappen(pos, 11, 2)
+console.log(pos)
+console.log(res)
 
 describe("Take Order Helper", () => {
   it("spoofs an order", () => {

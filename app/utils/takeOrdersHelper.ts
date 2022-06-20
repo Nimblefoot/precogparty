@@ -70,9 +70,11 @@ export const seePaginationHappen = function (
   length: number,
   pageSize: number
 ): Array<[number, number]> {
+  let results: Array<[number, number]>
+  results = []
+
   const numFullPages = Math.floor(length / pageSize)
   let lastPageLength = length - numFullPages * pageSize
-  let lastPageIdx = lastPageLength > 0 ? numFullPages : numFullPages - 1
 
   let lastPage =
     lastPageLength > 0 ? Array(lastPageLength).fill([-1, -1]) : null
@@ -90,7 +92,30 @@ export const seePaginationHappen = function (
     pages[x][y] = [x, y]
   }
 
-  console.log(search2D(pages, [2, 1]))
+  // console.log(search2D(pages, [2, 1]))
 
-  return [[0, 0]]
+  for (let data of positions) {
+    console.log("lokking for: " + data)
+    let [x, y] = search2D(pages, data)
+    results.push([x, y])
+
+    // add check if you cant find the page
+
+    let lastPageIdx = pages.length - 1
+    let lastElIdx = pages[lastPageIdx].length - 1
+
+    if (x == lastPageIdx && y == lastElIdx) {
+      pages[lastPageIdx].pop()
+    } else {
+      pages[x][y] = pages[lastPageIdx][lastElIdx]
+      pages[lastPageIdx].pop()
+    }
+
+    // get rid of empty pages
+    if (pages[lastPageIdx].length == 0) {
+      pages.pop()
+    }
+  }
+
+  return results
 }
