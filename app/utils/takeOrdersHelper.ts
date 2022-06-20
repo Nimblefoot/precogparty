@@ -50,3 +50,47 @@ export const seeWhatHappens = function (
 
   return [0]
 }
+
+export const search2D = function <T>(arr: Array<Array<T>>, target: T) {
+  for (let x = 0; x < arr.length; x++) {
+    let y = arr[x].findIndex(
+      (val) => JSON.stringify(val) == JSON.stringify(target)
+    )
+
+    if (y > -1) {
+      return [x, y]
+    }
+  }
+
+  return [-1, -1]
+}
+
+export const seePaginationHappen = function (
+  positions: Array<[number, number]>,
+  length: number,
+  pageSize: number
+): Array<[number, number]> {
+  const numFullPages = Math.floor(length / pageSize)
+  let lastPageLength = length - numFullPages * pageSize
+  let lastPageIdx = lastPageLength > 0 ? numFullPages : numFullPages - 1
+
+  let lastPage =
+    lastPageLength > 0 ? Array(lastPageLength).fill([-1, -1]) : null
+
+  let fullPages = Array(numFullPages)
+    .fill(null)
+    .map(() => Array(pageSize).fill([-1, -1]))
+  let pages = lastPage ? fullPages.concat(lastPage) : fullPages
+
+  for (let data of positions) {
+    // console.log(data)
+
+    let x = data[0]
+    let y = data[1]
+    pages[x][y] = [x, y]
+  }
+
+  console.log(search2D(pages, [2, 1]))
+
+  return [[0, 0]]
+}
