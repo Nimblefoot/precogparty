@@ -11,12 +11,23 @@ import {
 
 // seeWhatHappens([3, 2, 1], 4)
 
-let pos: Array<[number, number]> = [
+let pos, res: Array<[number, number]>
+
+pos = [
   [2, 1],
   [0, 0],
 ]
 
-let res = seePaginationHappen(pos, 11, 2)
+// res = seePaginationHappen(pos, 11, 2)
+// console.log(pos)
+// console.log(res)
+
+pos = [
+  [0, 0],
+  [0, 1],
+  [0, 2],
+]
+res = seePaginationHappen(pos, 3, 3)
 console.log(pos)
 console.log(res)
 
