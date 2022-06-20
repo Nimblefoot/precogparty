@@ -10,6 +10,7 @@ import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN } from "bn.js"
 import clsx from "clsx"
 import {
+  CLUSTER,
   COLLATERAL_DECIMALS,
   COLLATERAL_MINT,
   MINT_SET_COST,
@@ -26,6 +27,7 @@ import { Splitty } from "../Orderbook/Splitty"
 import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
 import useTakeOrder from "../Orderbook/useTakeOrder"
 import { useTakeOrders } from "./useTakeOrders"
+import { requestAdditionalBudgetIx } from "../../new/hooks/requestAdditionalBudgetIx"
 
 const useAccounting = ({
   usdcInput,
@@ -155,6 +157,9 @@ const useSubmitBet = ({
       (placeTxn ? PLACE_ORDER_COST : 0)
 
     const txn = new Transaction().add(
+      ...(CLUSTER === "mainnet"
+        ? [requestAdditionalBudgetIx(computeCost)]
+        : []),
       ...mintTxn.instructions,
       ...placeIxs,
       ...takeIxs

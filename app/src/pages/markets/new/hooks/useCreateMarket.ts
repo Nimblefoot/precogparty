@@ -7,7 +7,6 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   Transaction,
-  TransactionInstruction,
 } from "@solana/web3.js"
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -15,18 +14,10 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token"
 import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
-import { COLLATERAL_MINT } from "config"
+import { CLUSTER, COLLATERAL_MINT } from "config"
 import BN from "bn.js"
 import { initializeOrderbook } from "@/generated/syrup/instructions"
-
-export const requestAdditionalBudgetIx = (budget: number) => {
-  const data = Buffer.from(Uint8Array.of(0, ...new BN(budget).toArray("le", 4)))
-  return new TransactionInstruction({
-    keys: [],
-    programId: new PublicKey("ComputeBudget111111111111111111111111111111"),
-    data,
-  })
-}
+import { requestAdditionalBudgetIx } from "./requestAdditionalBudgetIx"
 
 const useCreateMarket = () => {
   const callback = useCallback(
@@ -133,7 +124,7 @@ const useCreateMarket = () => {
 
       const txn = new Transaction().add(
         // on devnet the default seems to be the max budget, and using this instruction breaks things ?
-        //requestAdditionalBudgetIx(341007),
+        ...(CLUSTER === "mainnet" ? [requestAdditionalBudgetIx(341007)] : []),
         x,
         createBook
       )
