@@ -1,9 +1,8 @@
 import { assert } from "chai"
 import {
   takeOrdersHelper,
-  seeWhatHappens,
   seePaginationHappen,
-} from "../app/utils/takeOrdersHelper"
+} from "../app/src/utils/takeOrdersHelper"
 
 // seeWhatHappens([13, 3, 8, 9, 10], 14)
 

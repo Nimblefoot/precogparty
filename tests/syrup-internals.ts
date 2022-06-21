@@ -25,6 +25,7 @@ import {
   createAssociatedTokenAccount,
   mintToChecked,
 } from "@solana/spl-token"
+import { takeOrdersHelper } from "../app/src/utils/takeOrdersHelper"
 
 const maxLength = 3 //
 const orderbookId = Keypair.generate().publicKey
@@ -157,7 +158,6 @@ describe("orderbook", () => {
         applesVault,
         orangesMint,
         orangesVault,
-        // orderbookInfo, //derivable from seeds
         firstPage: firstPageAddress,
       })
       .signers([admin])
@@ -358,5 +358,77 @@ describe("orderbook", () => {
       ])
       .signers([admin])
       .rpc()
+
+    const info2 = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
+    assert.equal(info2.length, 8, "correct orderbook length is 8")
+  })
+
+  it("takes a bunch of orders with takeOrdersHelper", async () => {
+    const takeOrderData = []
+
+    for (let i = 0; i < 8; i++) {
+      takeOrderData.push({
+        order: {
+          user: user.publicKey,
+          numApples: new anchor.BN(2e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(1e6),
+          memo: 0,
+        },
+        size: new anchor.BN(1e6),
+        pageNumber: Math.floor(i / 3),
+        index: i % 3,
+      })
+    }
+
+    const reorderedData = takeOrdersHelper(takeOrderData, 8, 3)
+
+    let counter = 0
+    for (let [data, lastPageIndex] of reorderedData) {
+      console.log("counter: " + counter)
+      counter++
+
+      const [orderPageKey] = await PublicKey.findProgramAddress(
+        [
+          orderbookId.toBytes(),
+          utf8.encode("page"),
+          new anchor.BN(data.pageNumber).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      )
+
+      const [lastPageKey] = await PublicKey.findProgramAddress(
+        [
+          orderbookId.toBytes(),
+          utf8.encode("page"),
+          new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      )
+
+      await program.methods
+        .takeOrder(data.order, data.size, data.pageNumber, data.index)
+        .accounts({
+          taker: admin.publicKey,
+          takerSendingAta: adminOrangesATA,
+          takerReceivingAta: adminApplesATA,
+          offererUserAccount: userAccountAddress,
+          offererReceivingAta: userOrangesATA,
+          vault: applesVault,
+          orderbookInfo: orderbookInfoAddress,
+          orderPage: orderPageKey,
+        })
+        .remainingAccounts([
+          {
+            pubkey: lastPageKey,
+            isSigner: false,
+            isWritable: true,
+          },
+        ])
+        .signers([admin])
+        .rpc()
+    }
   })
 })
