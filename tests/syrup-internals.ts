@@ -661,5 +661,35 @@ describe("orderbook", () => {
         .signers([admin])
         .rpc()
     }
+
+    const info = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
+
+    const firstPage = await program.account.orderbookPage.fetchNullable(
+      firstPageAddress
+    )
+
+    const secondPage = await program.account.orderbookPage.fetchNullable(
+      secondPageAddress
+    )
+
+    const thirdPage = await program.account.orderbookPage.fetchNullable(
+      thirdPageAddress
+    )
+
+    const fourthPage = await program.account.orderbookPage.fetchNullable(
+      fourthPageAddress
+    )
+
+    assert.equal(info.length, 4, "orderbook should have four orders")
+    // @ts-ignore
+    assert.equal(firstPage.list.length, 3, "first page should be full")
+    // @ts-ignore
+    assert.equal(secondPage.list.length, 1, "second page should be length 1")
+    // @ts-ignore
+    assert.equal(thirdPage.list.length, 0, "third page should be emprty")
+    // @ts-ignore
+    assert.equal(fourthPage.list.length, 0, "fourth page should be emprty")
   })
 })
