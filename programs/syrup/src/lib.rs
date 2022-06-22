@@ -39,6 +39,7 @@ pub fn delete_order(
             return err!(ErrorCode::LastPageEmpty);
         }
     } else {
+        msg!("just deleting order from the last page!");
         // if the order_page is the last page and the order is the final entry we just pop
         if index + 1 == (order_page.len() as u32) {
             order_page.pop();
@@ -284,7 +285,7 @@ pub mod syrup {
                         orderbook_length,
                     )?;
 
-                    acc.exit(&PROGRAM_ID)?;
+                    last_page.exit(&PROGRAM_ID)?;
                 } else {
                     return err!(ErrorCode::WrongRemainingAccount);
                 }
@@ -394,6 +395,7 @@ pub mod syrup {
             let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
 
             if pda == *acc.key {
+                msg!("about to delete an order not on the last page!");
                 delete_order(
                     index,
                     Some(last_page),
@@ -402,7 +404,8 @@ pub mod syrup {
                     orderbook_length,
                 )?;
 
-                acc.exit(&PROGRAM_ID)?;
+                // acc.exit(&PROGRAM_ID)?;
+                last_page.exit(&PROGRAM_ID)?;
             } else {
                 return err!(ErrorCode::WrongRemainingAccount);
             }
