@@ -385,11 +385,7 @@ describe("orderbook", () => {
 
     const reorderedData = takeOrdersHelper(takeOrderData, 8, 3)
 
-    let counter = 0
     for (let [data, lastPageIndex] of reorderedData) {
-      console.log("counter: " + counter)
-      counter++
-
       const [orderPageKey] = await PublicKey.findProgramAddress(
         [
           orderbookId.toBytes(),
@@ -429,6 +425,56 @@ describe("orderbook", () => {
         ])
         .signers([admin])
         .rpc()
+    }
+    const info = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
+    assert.equal(info.length, 0, "orderbook should be empty")
+
+    const firstPage = await program.account.orderbookPage.fetchNullable(
+      firstPageAddress
+    )
+
+    // console.log(JSON.stringify(firstPage.list))
+
+    // place way more orders
+    for (let i = 0; i < 14; i++) {
+      console.log("placing order: " + i)
+      const [infoKey] = await PublicKey.findProgramAddress(
+        [orderbookId.toBytes(), utf8.encode("orderbook-info")],
+        program.programId
+      )
+      const info = await program.account.orderbookInfo.fetchNullable(infoKey)
+      const nextOpenPageIndex = Math.floor(info.length / maxLength)
+      const [currentPageKey] = await PublicKey.findProgramAddress(
+        [
+          orderbookId.toBytes(),
+          utf8.encode("page"),
+          new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      )
+
+      await program.methods
+        .placeOrder({
+          user: user.publicKey,
+          numApples: new anchor.BN(1e6),
+          offeringApples: true,
+          numOranges: new anchor.BN((i + 1) * 1e6),
+          memo: 0,
+        })
+        .accounts({
+          user: user.publicKey,
+          userAta: userApplesATA,
+          vault: applesVault,
+          orderbookInfo: orderbookInfoAddress,
+          currentPage: currentPageKey,
+          userAccount: userAccountAddress,
+        })
+        .signers([user])
+        .rpc({
+          skipPreflight: true,
+        })
     }
   })
 })

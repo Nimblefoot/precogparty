@@ -257,7 +257,7 @@ pub mod syrup {
         )?;
 
         if amount_to_exchange == maximum_taker_payment {
-            if index == last_page_number {
+            if page_number == last_page_number {
                 delete_order(
                     index,
                     None,
