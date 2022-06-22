@@ -394,70 +394,67 @@ describe("orderbook", () => {
     assert.equal(fourthPage.list.length, 0)
   })
 
-  // it("takes orders", async () => {
-  //   const [infoKey] = await PublicKey.findProgramAddress(
-  //     [orderbookId.toBytes(), utf8.encode("orderbook-info")],
-  //     program.programId
-  //   )
-  //   const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-  //   const lastPageIndex = Math.floor((info.length - 1) / maxLength)
+  it("takes orders", async () => {
+    const [infoKey] = await PublicKey.findProgramAddress(
+      [orderbookId.toBytes(), utf8.encode("orderbook-info")],
+      program.programId
+    )
+    const info = await program.account.orderbookInfo.fetchNullable(infoKey)
+    const lastPageIndex = Math.floor((info.length - 1) / maxLength)
 
-  //   const [lastPageKey] = await PublicKey.findProgramAddress(
-  //     [
-  //       orderbookId.toBytes(),
-  //       utf8.encode("page"),
-  //       new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
-  //     ],
-  //     program.programId
-  //   )
+    const [lastPageKey] = await PublicKey.findProgramAddress(
+      [
+        orderbookId.toBytes(),
+        utf8.encode("page"),
+        new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+      ],
+      program.programId
+    )
 
-  //   const [firstPageKey] = await PublicKey.findProgramAddress(
-  //     [
-  //       orderbookId.toBytes(),
-  //       utf8.encode("page"),
-  //       new anchor.BN(0).toArrayLike(Buffer, "le", 4),
-  //     ],
-  //     program.programId
-  //   )
+    await program.methods
+      .takeOrder(
+        {
+          user: user.publicKey,
+          numApples: new anchor.BN(2e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(1e6),
+          memo: 0,
+        },
+        new anchor.BN(1e6),
+        1,
+        2
+      )
+      .accounts({
+        taker: admin.publicKey,
+        takerSendingAta: adminOrangesATA,
+        takerReceivingAta: adminApplesATA,
+        offererUserAccount: userAccountAddress,
+        offererReceivingAta: userOrangesATA,
+        vault: applesVault,
+        orderbookInfo: orderbookInfoAddress,
+        orderPage: secondPageAddress,
+      })
+      .remainingAccounts([
+        {
+          pubkey: lastPageKey,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
+      .signers([admin])
+      .rpc()
 
-  //   await program.methods
-  //     .takeOrder(
-  //       {
-  //         user: user.publicKey,
-  //         numApples: new anchor.BN(2e6),
-  //         offeringApples: true,
-  //         numOranges: new anchor.BN(1e6),
-  //         memo: 0,
-  //       },
-  //       new anchor.BN(1e6),
-  //       0,
-  //       0
-  //     )
-  //     .accounts({
-  //       taker: admin.publicKey,
-  //       takerSendingAta: adminOrangesATA,
-  //       takerReceivingAta: adminApplesATA,
-  //       offererUserAccount: userAccountAddress,
-  //       offererReceivingAta: userOrangesATA,
-  //       vault: applesVault,
-  //       orderbookInfo: orderbookInfoAddress,
-  //       orderPage: firstPageKey,
-  //     })
-  //     .remainingAccounts([
-  //       {
-  //         pubkey: lastPageKey,
-  //         isSigner: false,
-  //         isWritable: true,
-  //       },
-  //     ])
-  //     .signers([admin])
-  //     .rpc()
+    const info2 = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
+    assert.equal(info2.length, 8, "correct orderbook length is 8")
+    let thirdPage = await program.account.orderbookPage.fetchNullable(
+      thirdPageAddress
+    )
 
-  //   const info2 = await program.account.orderbookInfo.fetchNullable(
-  //     orderbookInfoAddress
-  //   )
-  //   assert.equal(info2.length, 8, "correct orderbook length is 8")
-  // })
+    // @ts-ignore
+    assert.equal(thirdPage.list.length, 2)
+  })
 
   // it("takes a bunch of orders with takeOrdersHelper", async () => {
   //   const takeOrderData = []
