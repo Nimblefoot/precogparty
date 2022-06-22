@@ -456,159 +456,159 @@ describe("orderbook", () => {
     assert.equal(thirdPage.list.length, 2)
   })
 
-  // it("takes a bunch of orders with takeOrdersHelper", async () => {
-  //   const takeOrderData = []
+  it("takes a bunch of orders with takeOrdersHelper", async () => {
+    const takeOrderData = []
 
-  //   for (let i = 0; i < 8; i++) {
-  //     takeOrderData.push({
-  //       order: {
-  //         user: user.publicKey,
-  //         numApples: new anchor.BN(2e6),
-  //         offeringApples: true,
-  //         numOranges: new anchor.BN(1e6),
-  //         memo: 0,
-  //       },
-  //       size: new anchor.BN(1e6),
-  //       pageNumber: Math.floor(i / 3),
-  //       index: i % 3,
-  //     })
-  //   }
+    for (let i = 0; i < 8; i++) {
+      takeOrderData.push({
+        order: {
+          user: user.publicKey,
+          numApples: new anchor.BN(2e6),
+          offeringApples: true,
+          numOranges: new anchor.BN(1e6),
+          memo: 0,
+        },
+        size: new anchor.BN(1e6),
+        pageNumber: Math.floor(i / 3),
+        index: i % 3,
+      })
+    }
 
-  //   const reorderedData = takeOrdersHelper(takeOrderData, 8, 3)
+    const reorderedData = takeOrdersHelper(takeOrderData, 8, 3)
 
-  //   for (let [data, lastPageIndex] of reorderedData) {
-  //     const [orderPageKey] = await PublicKey.findProgramAddress(
-  //       [
-  //         orderbookId.toBytes(),
-  //         utf8.encode("page"),
-  //         new anchor.BN(data.pageNumber).toArrayLike(Buffer, "le", 4),
-  //       ],
-  //       program.programId
-  //     )
+    for (let [data, lastPageIndex] of reorderedData) {
+      const [orderPageKey] = await PublicKey.findProgramAddress(
+        [
+          orderbookId.toBytes(),
+          utf8.encode("page"),
+          new anchor.BN(data.pageNumber).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      )
 
-  //     const [lastPageKey] = await PublicKey.findProgramAddress(
-  //       [
-  //         orderbookId.toBytes(),
-  //         utf8.encode("page"),
-  //         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
-  //       ],
-  //       program.programId
-  //     )
+      const [lastPageKey] = await PublicKey.findProgramAddress(
+        [
+          orderbookId.toBytes(),
+          utf8.encode("page"),
+          new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      )
 
-  //     await program.methods
-  //       .takeOrder(data.order, data.size, data.pageNumber, data.index)
-  //       .accounts({
-  //         taker: admin.publicKey,
-  //         takerSendingAta: adminOrangesATA,
-  //         takerReceivingAta: adminApplesATA,
-  //         offererUserAccount: userAccountAddress,
-  //         offererReceivingAta: userOrangesATA,
-  //         vault: applesVault,
-  //         orderbookInfo: orderbookInfoAddress,
-  //         orderPage: orderPageKey,
-  //       })
-  //       .remainingAccounts([
-  //         {
-  //           pubkey: lastPageKey,
-  //           isSigner: false,
-  //           isWritable: true,
-  //         },
-  //       ])
-  //       .signers([admin])
-  //       .rpc()
+      await program.methods
+        .takeOrder(data.order, data.size, data.pageNumber, data.index)
+        .accounts({
+          taker: admin.publicKey,
+          takerSendingAta: adminOrangesATA,
+          takerReceivingAta: adminApplesATA,
+          offererUserAccount: userAccountAddress,
+          offererReceivingAta: userOrangesATA,
+          vault: applesVault,
+          orderbookInfo: orderbookInfoAddress,
+          orderPage: orderPageKey,
+        })
+        .remainingAccounts([
+          {
+            pubkey: lastPageKey,
+            isSigner: false,
+            isWritable: true,
+          },
+        ])
+        .signers([admin])
+        .rpc()
 
-  //     const firstPage = await program.account.orderbookPage.fetchNullable(
-  //       firstPageAddress
-  //     )
-  //     const secondPage = await program.account.orderbookPage.fetchNullable(
-  //       secondPageAddress
-  //     )
-  //     const thirdPage = await program.account.orderbookPage.fetchNullable(
-  //       thirdPageAddress
-  //     )
-  //     const fourthPage = await program.account.orderbookPage.fetchNullable(
-  //       fourthPageAddress
-  //     )
+      const firstPage = await program.account.orderbookPage.fetchNullable(
+        firstPageAddress
+      )
+      const secondPage = await program.account.orderbookPage.fetchNullable(
+        secondPageAddress
+      )
+      const thirdPage = await program.account.orderbookPage.fetchNullable(
+        thirdPageAddress
+      )
+      const fourthPage = await program.account.orderbookPage.fetchNullable(
+        fourthPageAddress
+      )
 
-  //     console.log(
-  //       "page lengths: " +
-  //         // @ts-ignore
-  //         firstPage.list.length +
-  //         " - " +
-  //         // @ts-ignore
-  //         secondPage.list.length +
-  //         " - " +
-  //         // @ts-ignore
-  //         thirdPage.list.length +
-  //         " - " +
-  //         // @ts-ignore
-  //         fourthPage.list.length
-  //     )
-  //   }
-  //   const info = await program.account.orderbookInfo.fetchNullable(
-  //     orderbookInfoAddress
-  //   )
+      console.log(
+        "page lengths: " +
+          // @ts-ignore
+          firstPage.list.length +
+          " - " +
+          // @ts-ignore
+          secondPage.list.length +
+          " - " +
+          // @ts-ignore
+          thirdPage.list.length +
+          " - " +
+          // @ts-ignore
+          fourthPage.list.length
+      )
+    }
+    const info = await program.account.orderbookInfo.fetchNullable(
+      orderbookInfoAddress
+    )
 
-  //   const firstPage = await program.account.orderbookPage.fetchNullable(
-  //     firstPageAddress
-  //   )
+    const firstPage = await program.account.orderbookPage.fetchNullable(
+      firstPageAddress
+    )
 
-  //   const secondPage = await program.account.orderbookPage.fetchNullable(
-  //     secondPageAddress
-  //   )
+    const secondPage = await program.account.orderbookPage.fetchNullable(
+      secondPageAddress
+    )
 
-  //   const thirdPage = await program.account.orderbookPage.fetchNullable(
-  //     thirdPageAddress
-  //   )
+    const thirdPage = await program.account.orderbookPage.fetchNullable(
+      thirdPageAddress
+    )
 
-  //   // assert.equal(info.length, 0, "orderbook should be empty")
-  //   // // @ts-ignore
-  //   // assert.equal(firstPage.list.length, 0, "first page should be emprty")
-  //   // // @ts-ignore
-  //   // assert.equal(secondPage.list.length, 0, "second page should be emprty")
-  //   // // @ts-ignore
-  //   // assert.equal(thirdPage.list.length, 0, "third page should be emprty")
+    // assert.equal(info.length, 0, "orderbook should be empty")
+    // // @ts-ignore
+    // assert.equal(firstPage.list.length, 0, "first page should be emprty")
+    // // @ts-ignore
+    // assert.equal(secondPage.list.length, 0, "second page should be emprty")
+    // // @ts-ignore
+    // assert.equal(thirdPage.list.length, 0, "third page should be emprty")
 
-  //   // console.log(JSON.stringify(firstPage.list))
+    // console.log(JSON.stringify(firstPage.list))
 
-  //   // place way more orders
-  //   // for (let i = 0; i < 14; i++) {
-  //   //   console.log("placing order: " + i)
-  //   //   const [infoKey] = await PublicKey.findProgramAddress(
-  //   //     [orderbookId.toBytes(), utf8.encode("orderbook-info")],
-  //   //     program.programId
-  //   //   )
-  //   //   const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-  //   //   const nextOpenPageIndex = Math.floor(info.length / maxLength)
-  //   //   const [currentPageKey] = await PublicKey.findProgramAddress(
-  //   //     [
-  //   //       orderbookId.toBytes(),
-  //   //       utf8.encode("page"),
-  //   //       new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
-  //   //     ],
-  //   //     program.programId
-  //   //   )
+    // place way more orders
+    // for (let i = 0; i < 14; i++) {
+    //   console.log("placing order: " + i)
+    //   const [infoKey] = await PublicKey.findProgramAddress(
+    //     [orderbookId.toBytes(), utf8.encode("orderbook-info")],
+    //     program.programId
+    //   )
+    //   const info = await program.account.orderbookInfo.fetchNullable(infoKey)
+    //   const nextOpenPageIndex = Math.floor(info.length / maxLength)
+    //   const [currentPageKey] = await PublicKey.findProgramAddress(
+    //     [
+    //       orderbookId.toBytes(),
+    //       utf8.encode("page"),
+    //       new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
+    //     ],
+    //     program.programId
+    //   )
 
-  //   //   await program.methods
-  //   //     .placeOrder({
-  //   //       user: user.publicKey,
-  //   //       numApples: new anchor.BN(1e6),
-  //   //       offeringApples: true,
-  //   //       numOranges: new anchor.BN((i + 1) * 1e6),
-  //   //       memo: 0,
-  //   //     })
-  //   //     .accounts({
-  //   //       user: user.publicKey,
-  //   //       userAta: userApplesATA,
-  //   //       vault: applesVault,
-  //   //       orderbookInfo: orderbookInfoAddress,
-  //   //       currentPage: currentPageKey,
-  //   //       userAccount: userAccountAddress,
-  //   //     })
-  //   //     .signers([user])
-  //   //     .rpc({
-  //   //       skipPreflight: true,
-  //   //     })
-  //   // }
-  // })
+    //   await program.methods
+    //     .placeOrder({
+    //       user: user.publicKey,
+    //       numApples: new anchor.BN(1e6),
+    //       offeringApples: true,
+    //       numOranges: new anchor.BN((i + 1) * 1e6),
+    //       memo: 0,
+    //     })
+    //     .accounts({
+    //       user: user.publicKey,
+    //       userAta: userApplesATA,
+    //       vault: applesVault,
+    //       orderbookInfo: orderbookInfoAddress,
+    //       currentPage: currentPageKey,
+    //       userAccount: userAccountAddress,
+    //     })
+    //     .signers([user])
+    //     .rpc({
+    //       skipPreflight: true,
+    //     })
+    // }
+  })
 })
