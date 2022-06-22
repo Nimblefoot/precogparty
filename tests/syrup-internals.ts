@@ -516,34 +516,6 @@ describe("orderbook", () => {
         ])
         .signers([admin])
         .rpc()
-
-      const firstPage = await program.account.orderbookPage.fetchNullable(
-        firstPageAddress
-      )
-      const secondPage = await program.account.orderbookPage.fetchNullable(
-        secondPageAddress
-      )
-      const thirdPage = await program.account.orderbookPage.fetchNullable(
-        thirdPageAddress
-      )
-      const fourthPage = await program.account.orderbookPage.fetchNullable(
-        fourthPageAddress
-      )
-
-      console.log(
-        "page lengths: " +
-          // @ts-ignore
-          firstPage.list.length +
-          " - " +
-          // @ts-ignore
-          secondPage.list.length +
-          " - " +
-          // @ts-ignore
-          thirdPage.list.length +
-          " - " +
-          // @ts-ignore
-          fourthPage.list.length
-      )
     }
     const info = await program.account.orderbookInfo.fetchNullable(
       orderbookInfoAddress
@@ -561,54 +533,51 @@ describe("orderbook", () => {
       thirdPageAddress
     )
 
-    // assert.equal(info.length, 0, "orderbook should be empty")
-    // // @ts-ignore
-    // assert.equal(firstPage.list.length, 0, "first page should be emprty")
-    // // @ts-ignore
-    // assert.equal(secondPage.list.length, 0, "second page should be emprty")
-    // // @ts-ignore
-    // assert.equal(thirdPage.list.length, 0, "third page should be emprty")
-
-    // console.log(JSON.stringify(firstPage.list))
+    assert.equal(info.length, 0, "orderbook should be empty")
+    // @ts-ignore
+    assert.equal(firstPage.list.length, 0, "first page should be emprty")
+    // @ts-ignore
+    assert.equal(secondPage.list.length, 0, "second page should be emprty")
+    // @ts-ignore
+    assert.equal(thirdPage.list.length, 0, "third page should be emprty")
 
     // place way more orders
-    // for (let i = 0; i < 14; i++) {
-    //   console.log("placing order: " + i)
-    //   const [infoKey] = await PublicKey.findProgramAddress(
-    //     [orderbookId.toBytes(), utf8.encode("orderbook-info")],
-    //     program.programId
-    //   )
-    //   const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-    //   const nextOpenPageIndex = Math.floor(info.length / maxLength)
-    //   const [currentPageKey] = await PublicKey.findProgramAddress(
-    //     [
-    //       orderbookId.toBytes(),
-    //       utf8.encode("page"),
-    //       new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
-    //     ],
-    //     program.programId
-    //   )
+    for (let i = 0; i < 14; i++) {
+      const [infoKey] = await PublicKey.findProgramAddress(
+        [orderbookId.toBytes(), utf8.encode("orderbook-info")],
+        program.programId
+      )
+      const info = await program.account.orderbookInfo.fetchNullable(infoKey)
+      const nextOpenPageIndex = Math.floor(info.length / maxLength)
+      const [currentPageKey] = await PublicKey.findProgramAddress(
+        [
+          orderbookId.toBytes(),
+          utf8.encode("page"),
+          new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      )
 
-    //   await program.methods
-    //     .placeOrder({
-    //       user: user.publicKey,
-    //       numApples: new anchor.BN(1e6),
-    //       offeringApples: true,
-    //       numOranges: new anchor.BN((i + 1) * 1e6),
-    //       memo: 0,
-    //     })
-    //     .accounts({
-    //       user: user.publicKey,
-    //       userAta: userApplesATA,
-    //       vault: applesVault,
-    //       orderbookInfo: orderbookInfoAddress,
-    //       currentPage: currentPageKey,
-    //       userAccount: userAccountAddress,
-    //     })
-    //     .signers([user])
-    //     .rpc({
-    //       skipPreflight: true,
-    //     })
-    // }
+      await program.methods
+        .placeOrder({
+          user: user.publicKey,
+          numApples: new anchor.BN(1e6),
+          offeringApples: true,
+          numOranges: new anchor.BN((i + 1) * 1e6),
+          memo: 0,
+        })
+        .accounts({
+          user: user.publicKey,
+          userAta: userApplesATA,
+          vault: applesVault,
+          orderbookInfo: orderbookInfoAddress,
+          currentPage: currentPageKey,
+          userAccount: userAccountAddress,
+        })
+        .signers([user])
+        .rpc({
+          skipPreflight: true,
+        })
+    }
   })
 })
