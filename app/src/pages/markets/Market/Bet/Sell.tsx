@@ -10,6 +10,7 @@ import { PublicKey, Transaction } from "@solana/web3.js"
 import { BN, max } from "bn.js"
 import clsx from "clsx"
 import {
+  CLUSTER,
   COLLATERAL_DECIMALS,
   MINT_SET_COST,
   PLACE_ORDER_COST,
@@ -28,6 +29,7 @@ import usePlaceOrderTxn, { useResolutionMint } from "../Orderbook/usePlaceOrder"
 import useTakeOrder from "../Orderbook/useTakeOrder"
 import { useRelevantOrders } from "./useRelevantOrders"
 import { useTakeOrders } from "./useTakeOrders"
+import { requestAdditionalBudgetIx } from "../../new/hooks/requestAdditionalBudgetIx"
 
 const useSellAccounting = (
   marketAddress: PublicKey,
@@ -207,7 +209,14 @@ const useSubmitSell = ({
       takeIxs.length * TAKE_ORDER_COST +
       (placeTxn ? PLACE_ORDER_COST : 0)
 
-    const txn = new Transaction().add(...placeIxs, ...takeIxs, ...mergeIx)
+    const txn = new Transaction().add(
+      ...(CLUSTER === "mainnet"
+        ? [requestAdditionalBudgetIx(computeCost)]
+        : []),
+      ...placeIxs,
+      ...takeIxs,
+      ...mergeIx
+    )
 
     console.log(txn)
     await callback(txn, {

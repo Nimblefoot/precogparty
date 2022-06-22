@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "devnet": "export NEXT_PUBLIC_RPC=https://api.devnet.solana.com && next dev",
+    "dev:main": "export NEXT_PUBLIC_RPC=https://api.mainnet-beta.solana.com && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

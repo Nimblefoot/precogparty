@@ -4,3 +4,12 @@
 # If not set, defaults to the root directory.
 base = "/app"
 publish = ".next"
+
+[context.production.environment]
+NEXT_PUBLIC_RPC = "https://api.mainnet-beta.solana.com"
+
+[context.deploy-preview.environment]
+NEXT_PUBLIC_RPC = "https://api.devnet.solana.com"
+
+[context.branch-deploy.environment]
+NEXT_PUBLIC_RPC = "https://api.devnet.solana.com"

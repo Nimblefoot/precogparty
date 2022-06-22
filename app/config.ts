@@ -1,9 +1,5 @@
 import { PublicKey } from "@solana/web3.js"
 
-export const COLLATERAL_MINT = new PublicKey(
-  "So11111111111111111111111111111111111111112"
-)
-
 export const COLLATERAL_DECIMALS = 9
 
 export const RESOLUTION_MAPPING = {
@@ -28,3 +24,15 @@ export const PLACE_ORDER_COST = 65000
 export const DEFAULT_COMPUTE_MAX = 200000
 
 export const MARKET_DESCRIPTION_CHARLIMIT = 512
+
+export const CLUSTER = (
+  {
+    "https://api.mainnet-beta.solana.com": "mainnet",
+  } as const
+)[process.env.NEXT_PUBLIC_RPC as string]
+
+const WSOL_MINT = new PublicKey("So11111111111111111111111111111111111111112")
+
+const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+
+export const COLLATERAL_MINT = CLUSTER === "mainnet" ? USDC_MINT : WSOL_MINT
