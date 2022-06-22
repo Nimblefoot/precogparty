@@ -30,6 +30,21 @@ import { takeOrdersHelper } from "../app/src/utils/takeOrdersHelper"
 const maxLength = 3 //
 const orderbookId = Keypair.generate().publicKey
 
+function getRandomSubarray(arr, size) {
+  var shuffled = arr.slice(0),
+    i = arr.length,
+    min = i - size,
+    temp,
+    index
+  while (i-- > min) {
+    index = Math.floor((i + 1) * Math.random())
+    temp = shuffled[index]
+    shuffled[index] = shuffled[i]
+    shuffled[i] = temp
+  }
+  return shuffled.slice(min)
+}
+
 describe("orderbook", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env()
@@ -540,7 +555,9 @@ describe("orderbook", () => {
     assert.equal(secondPage.list.length, 0, "second page should be emprty")
     // @ts-ignore
     assert.equal(thirdPage.list.length, 0, "third page should be emprty")
+  })
 
+  it("Places 14 orders. Takes a random subset of 10 of them", async () => {
     // place way more orders
     for (let i = 0; i < 14; i++) {
       const [infoKey] = await PublicKey.findProgramAddress(
@@ -578,6 +595,71 @@ describe("orderbook", () => {
         .rpc({
           skipPreflight: true,
         })
+    }
+
+    // Going to fully take 10 random orders.
+    const allKeys = [...Array(14).keys()].map((x) => x++)
+
+    const targetKeys = getRandomSubarray(allKeys, 10)
+
+    let orderData = []
+    for (let i of targetKeys) {
+      orderData.push({
+        order: {
+          user: user.publicKey,
+          numApples: new anchor.BN(1e6),
+          offeringApples: true,
+          numOranges: new anchor.BN((i + 1) * 1e6),
+          memo: 0,
+        },
+        size: new anchor.BN((i + 1) * 1e6),
+        pageNumber: Math.floor(i / 3),
+        index: i % 3,
+      })
+    }
+
+    const orderedData = takeOrdersHelper(orderData, 14, 3)
+
+    for (let [data, lastPageIndex] of orderedData) {
+      const [orderPageKey] = await PublicKey.findProgramAddress(
+        [
+          orderbookId.toBytes(),
+          utf8.encode("page"),
+          new anchor.BN(data.pageNumber).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      )
+
+      const [lastPageKey] = await PublicKey.findProgramAddress(
+        [
+          orderbookId.toBytes(),
+          utf8.encode("page"),
+          new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+        ],
+        program.programId
+      )
+
+      await program.methods
+        .takeOrder(data.order, data.size, data.pageNumber, data.index)
+        .accounts({
+          taker: admin.publicKey,
+          takerSendingAta: adminOrangesATA,
+          takerReceivingAta: adminApplesATA,
+          offererUserAccount: userAccountAddress,
+          offererReceivingAta: userOrangesATA,
+          vault: applesVault,
+          orderbookInfo: orderbookInfoAddress,
+          orderPage: orderPageKey,
+        })
+        .remainingAccounts([
+          {
+            pubkey: lastPageKey,
+            isSigner: false,
+            isWritable: true,
+          },
+        ])
+        .signers([admin])
+        .rpc()
     }
   })
 })
