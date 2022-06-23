@@ -278,6 +278,25 @@ export type Syrup = {
           "isSigner": true
         },
         {
+          "name": "takerTradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "taker"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trade-log"
+              }
+            ]
+          }
+        },
+        {
           "name": "takerSendingAta",
           "isMut": true,
           "isSigner": false
@@ -304,6 +323,27 @@ export type Syrup = {
                   "defined": "Order"
                 },
                 "path": "order.user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "offererTradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "type": {
+                  "defined": "Order"
+                },
+                "path": "order.user"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trade-log"
               }
             ]
           }
@@ -445,9 +485,11 @@ export type Syrup = {
                 "value": "user-account"
               },
               {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "user"
+                "kind": "arg",
+                "type": {
+                  "defined": "Order"
+                },
+                "path": "order.user"
               }
             ]
           }
@@ -1146,6 +1188,25 @@ export const IDL: Syrup = {
           "isSigner": true
         },
         {
+          "name": "takerTradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "taker"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trade-log"
+              }
+            ]
+          }
+        },
+        {
           "name": "takerSendingAta",
           "isMut": true,
           "isSigner": false
@@ -1172,6 +1233,27 @@ export const IDL: Syrup = {
                   "defined": "Order"
                 },
                 "path": "order.user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "offererTradeLog",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "type": {
+                  "defined": "Order"
+                },
+                "path": "order.user"
+              },
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "trade-log"
               }
             ]
           }
@@ -1313,9 +1395,11 @@ export const IDL: Syrup = {
                 "value": "user-account"
               },
               {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "user"
+                "kind": "arg",
+                "type": {
+                  "defined": "Order"
+                },
+                "path": "order.user"
               }
             ]
           }

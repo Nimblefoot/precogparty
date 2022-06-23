@@ -544,6 +544,14 @@ pub struct TakeOrder<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
     #[account(
+        init_if_needed,
+        payer=taker,
+        seeds=[taker.key().as_ref(), "trade-log".as_ref()],
+        space = 8 +TradeLog::LEN,
+        bump
+    )]
+    pub taker_trade_log: Box<Account<'info, TradeLog>>,
+    #[account(
         mut,
         associated_token::authority = taker,
         associated_token::mint = if order.offering_apples { orderbook_info.oranges_mint } else { orderbook_info.apples_mint }
@@ -561,6 +569,14 @@ pub struct TakeOrder<'info> {
         bump
     )]
     pub offerer_user_account: Box<Account<'info, UserAccount>>,
+    #[account(
+        init_if_needed,
+        payer=taker,
+        seeds=[order.user.key().as_ref(), "trade-log".as_ref()],
+        space = 8 +TradeLog::LEN,
+        bump
+    )]
+    pub offerer_trade_log: Box<Account<'info, TradeLog>>,
     #[account(
         mut,
         associated_token::authority = order.user,

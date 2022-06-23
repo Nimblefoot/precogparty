@@ -52,6 +52,8 @@ describe("orderbook", () => {
   let userOrangesATA: PublicKey
   let adminApplesATA: PublicKey
   let adminOrangesATA: PublicKey
+  let adminTradeLog: PublicKey
+  let userTradeLog: PublicKey
 
   before(async () => {
     /** SETUP */
@@ -137,6 +139,14 @@ describe("orderbook", () => {
     )
     ;[TradeLogAddress] = await PublicKey.findProgramAddress(
       [orderbookId.toBytes(), utf8.encode("trades")],
+      program.programId
+    )
+    ;[userTradeLog] = await PublicKey.findProgramAddress(
+      [user.publicKey.toBuffer(), utf8.encode("trade-log")],
+      program.programId
+    )
+    ;[adminTradeLog] = await PublicKey.findProgramAddress(
+      [admin.publicKey.toBuffer(), utf8.encode("trade-log")],
       program.programId
     )
 
@@ -416,6 +426,8 @@ describe("orderbook", () => {
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
         tradeLog: TradeLogAddress,
+        takerTradeLog: adminTradeLog,
+        offererTradeLog: userTradeLog,
       })
       .signers([admin])
       .rpc()
@@ -473,6 +485,8 @@ describe("orderbook", () => {
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
         tradeLog: TradeLogAddress,
+        takerTradeLog: userTradeLog,
+        offererTradeLog: adminTradeLog,
       })
       .signers([user])
       .rpc({
@@ -571,6 +585,8 @@ describe("orderbook", () => {
         orderbookInfo: orderbookInfoAddress,
         orderPage: firstPageKey,
         tradeLog: TradeLogAddress,
+        takerTradeLog: userTradeLog,
+        offererTradeLog: adminTradeLog,
       })
       .signers([admin])
       .rpc({

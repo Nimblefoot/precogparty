@@ -13,9 +13,11 @@ export interface TakeOrderArgs {
 
 export interface TakeOrderAccounts {
   taker: PublicKey
+  takerTradeLog: PublicKey
   takerSendingAta: PublicKey
   takerReceivingAta: PublicKey
   offererUserAccount: PublicKey
+  offererTradeLog: PublicKey
   offererReceivingAta: PublicKey
   vault: PublicKey
   orderbookInfo: PublicKey
@@ -37,9 +39,11 @@ export const layout = borsh.struct([
 export function takeOrder(args: TakeOrderArgs, accounts: TakeOrderAccounts) {
   const keys: Array<AccountMeta> = [
     { pubkey: accounts.taker, isSigner: true, isWritable: true },
+    { pubkey: accounts.takerTradeLog, isSigner: false, isWritable: true },
     { pubkey: accounts.takerSendingAta, isSigner: false, isWritable: true },
     { pubkey: accounts.takerReceivingAta, isSigner: false, isWritable: true },
     { pubkey: accounts.offererUserAccount, isSigner: false, isWritable: true },
+    { pubkey: accounts.offererTradeLog, isSigner: false, isWritable: true },
     { pubkey: accounts.offererReceivingAta, isSigner: false, isWritable: true },
     { pubkey: accounts.vault, isSigner: false, isWritable: true },
     { pubkey: accounts.orderbookInfo, isSigner: false, isWritable: true },
