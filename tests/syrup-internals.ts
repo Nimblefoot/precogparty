@@ -70,6 +70,8 @@ describe("orderbook", () => {
   let userOrangesATA: PublicKey
   let adminApplesATA: PublicKey
   let adminOrangesATA: PublicKey
+  let adminTradeLog: PublicKey
+  let userTradeLog: PublicKey
 
   before(async () => {
     /** SETUP */
@@ -175,6 +177,14 @@ describe("orderbook", () => {
         utf8.encode("page"),
         new anchor.BN(3).toArrayLike(Buffer, "le", 4),
       ],
+      program.programId
+    )
+    ;[userTradeLog] = await PublicKey.findProgramAddress(
+      [user.publicKey.toBuffer(), utf8.encode("trade-log")],
+      program.programId
+    )
+    ;[adminTradeLog] = await PublicKey.findProgramAddress(
+      [admin.publicKey.toBuffer(), utf8.encode("trade-log")],
       program.programId
     )
 
@@ -448,6 +458,8 @@ describe("orderbook", () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: secondPageAddress,
+        takerTradeLog: adminTradeLog,
+        offererTradeLog: userTradeLog,
       })
       .remainingAccounts([
         {
@@ -521,6 +533,8 @@ describe("orderbook", () => {
           vault: applesVault,
           orderbookInfo: orderbookInfoAddress,
           orderPage: orderPageKey,
+          takerTradeLog: adminTradeLog,
+          offererTradeLog: userTradeLog,
         })
         .remainingAccounts([
           {
@@ -650,6 +664,8 @@ describe("orderbook", () => {
           vault: applesVault,
           orderbookInfo: orderbookInfoAddress,
           orderPage: orderPageKey,
+          takerTradeLog: adminTradeLog,
+          offererTradeLog: userTradeLog,
         })
         .remainingAccounts([
           {
