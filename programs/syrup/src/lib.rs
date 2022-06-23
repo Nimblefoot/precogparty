@@ -324,6 +324,15 @@ pub mod syrup {
             .orderbook_info
             .update_most_recent_trade(trade_record);
         ctx.accounts.trade_log.push(trade_record);
+        ctx.accounts.taker_trade_log.push(trade_record);
+
+        let offerer_trade_record = TradeRecord {
+            buy_order_for_apples: !trade_record.buy_order_for_apples,
+            num_apples: trade_record.num_apples,
+            num_oranges: trade_record.num_oranges,
+            time: trade_record.time,
+        };
+        ctx.accounts.offerer_trade_log.push(offerer_trade_record);
 
         Ok(())
     }
