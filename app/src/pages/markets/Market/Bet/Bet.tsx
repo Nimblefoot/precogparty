@@ -28,6 +28,7 @@ import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
 import useTakeOrder from "../Orderbook/useTakeOrder"
 import { useTakeOrders } from "./useTakeOrders"
 import { requestAdditionalBudgetIx } from "../../new/hooks/requestAdditionalBudgetIx"
+import useTakeOrderInstructions from "../Orderbook/useTakeOrderInstructions"
 
 const useAccounting = ({
   usdcInput,
@@ -111,7 +112,7 @@ const useSubmitBet = ({
 
   const mintSet = useMintContingentSet(marketAddress)
   const buy = usePlaceOrderTxn(marketAddress)
-  const takeOrder = useTakeOrder(marketAddress)
+  const takeOrders = useTakeOrderInstructions(marketAddress)
 
   const { callback, status } = useTransact()
 
@@ -136,20 +137,16 @@ const useSubmitBet = ({
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []
 
-    const takeTxns =
-      taking.orderInteractions &&
-      (await Promise.all(
-        taking.orderInteractions.map((x) =>
-          takeOrder({
+    const takeIxs = taking.orderInteractions
+      ? await takeOrders(
+          taking.orderInteractions.map((x) => ({
             order: x.order,
             pageNumber: x.order.page,
             index: x.order.index,
-            amountToExchange: x.amountToExchange,
-          })
+            size: x.amountToExchange,
+          }))
         )
-      ))
-
-    const takeIxs = takeTxns ? takeTxns.flatMap((tx) => tx.instructions) : []
+      : []
 
     const computeCost =
       MINT_SET_COST +
@@ -187,8 +184,8 @@ const useSubmitBet = ({
     buy,
     resolution,
     orderBuyAmount,
+    takeOrders,
     callback,
-    takeOrder,
     marketAddress,
     publicKey,
     onSuccess,
