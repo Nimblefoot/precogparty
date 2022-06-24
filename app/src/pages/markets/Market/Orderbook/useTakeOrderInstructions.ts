@@ -138,7 +138,10 @@ const useTakeOrderInstructions = (marketAddress: PublicKey) => {
         )
       )
 
-      return ixs
+      return {
+        ixs,
+        lastPageAfterTaking: batchableTakes[batchableTakes.length - 1]?.[1],
+      }
     },
     [marketAddress, noMint, orderbook, program, publicKey, yesMint]
   )

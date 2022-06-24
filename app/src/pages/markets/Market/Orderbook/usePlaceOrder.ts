@@ -68,11 +68,14 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
       numYes,
       numNo,
       uiSelling,
+      lastPageIndex,
     }: {
       offeringYes: boolean
       numYes: BN
       numNo: BN
       uiSelling: boolean
+      // sometimes you want to manually override the last page
+      lastPageIndex?: number
     }) => {
       console.log(offeringYes, numYes.toString(), numNo.toString())
       if (!publicKey) throw new Error("no publickey connected")
@@ -100,9 +103,9 @@ const usePlaceOrderTxn = (marketAddress: PublicKey) => {
         true
       )
 
-      const currentPageIndex = Math.floor(
-        orderbookQuery.data.info.length / ORDERBOOK_PAGE_MAX_LENGTH
-      )
+      const currentPageIndex =
+        lastPageIndex ??
+        Math.floor(orderbookQuery.data.info.length / ORDERBOOK_PAGE_MAX_LENGTH)
 
       const [currentPage] = await PublicKey.findProgramAddress(
         [

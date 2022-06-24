@@ -121,6 +121,17 @@ const useSubmitBet = ({
       amount: orderSpendAmount.add(taking.totalSpend ?? new BN(0)),
     })
 
+    const { ixs: takeIxs, lastPageAfterTaking } = taking.orderInteractions
+      ? await takeOrders(
+          taking.orderInteractions.map((x) => ({
+            order: x.order,
+            pageNumber: x.order.page,
+            index: x.order.index,
+            size: x.amountToExchange,
+          }))
+        )
+      : { ixs: [], lastPageAfterTaking: undefined }
+
     const placeTxn = orderSpendAmount.gt(new BN(0))
       ? await buy({
           offeringYes: resolution === "no",
@@ -133,20 +144,10 @@ const useSubmitBet = ({
               ? orderBuyAmount.sub(orderSpendAmount)
               : orderSpendAmount,
           uiSelling: false,
+          lastPageIndex: lastPageAfterTaking,
         })
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []
-
-    const takeIxs = taking.orderInteractions
-      ? await takeOrders(
-          taking.orderInteractions.map((x) => ({
-            order: x.order,
-            pageNumber: x.order.page,
-            index: x.order.index,
-            size: x.amountToExchange,
-          }))
-        )
-      : []
 
     const computeCost =
       MINT_SET_COST +

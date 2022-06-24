@@ -164,6 +164,17 @@ const useSubmitSell = ({
   const { callback, status } = useTransact()
 
   const submit = useCallback(async () => {
+    const { ixs: takeIxs, lastPageAfterTaking } = orderInteractions
+      ? await takeOrders(
+          orderInteractions.map((x) => ({
+            order: x.order,
+            pageNumber: x.order.page,
+            index: x.order.index,
+            size: x.amountToExchange,
+          }))
+        )
+      : { ixs: [], lastPageAfterTaking: undefined }
+
     const placeTxn = orderSpendAmount.gt(new BN(0))
       ? await buy({
           offeringYes: selling === "yes",
@@ -177,20 +188,10 @@ const useSubmitSell = ({
               ? orderSpendAmount.sub(orderUsdcToMake)
               : orderUsdcToMake,
           uiSelling: true,
+          lastPageIndex: lastPageAfterTaking,
         })
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []
-
-    const takeIxs = orderInteractions
-      ? await takeOrders(
-          orderInteractions.map((x) => ({
-            order: x.order,
-            pageNumber: x.order.page,
-            index: x.order.index,
-            size: x.amountToExchange,
-          }))
-        )
-      : []
 
     const mergeTxn = usdcMade && (await mergeSet({ amount: usdcMade }))
     const mergeIx = mergeTxn?.instructions ?? []
