@@ -519,11 +519,9 @@ describe("orderbook", () => {
       15,
       "User spent 15 apples to offering_apples 5 oranges for 3 apples each"
     )
+  })
 
-    const orderbookInfo = await program.account.orderbookInfo.fetchNullable(
-      orderbookInfoAddress
-    )
-
+  it("Correctly keeps a trade log.", async () => {
     const tradeLog = await program.account.tradeLog.fetchNullable(
       TradeLogAddress
     )
@@ -541,6 +539,40 @@ describe("orderbook", () => {
       },
       { buyOrderForApples: true, numOranges: "2000000", numApples: "2000000" },
     ])
+
+    const adminTrades = await await program.account.tradeLog.fetch(
+      adminTradeLog
+    )
+    const userTrades = await program.account.tradeLog.fetch(userTradeLog)
+
+    // @ts-ignore
+    assert.equal(adminTrades.trades.length, 2, "admin should have 2 trades")
+    // @ts-ignore
+    assert.equal(userTrades.trades.length, 2, "user should have 2 trades")
+
+    assert.equal(
+      adminTrades.trades[0].buyOrderForApples,
+      true,
+      "admin bought apples"
+    )
+    assert.equal(
+      userTrades.trades[0].buyOrderForApples,
+      false,
+      "admin sold apples"
+    )
+    assert.deepEqual(
+      [
+        userTrades.trades[1].numOranges,
+        userTrades.trades[1].numApples,
+        userTrades.trades[1].time,
+      ],
+      [
+        adminTrades.trades[1].numOranges,
+        adminTrades.trades[1].numApples,
+        adminTrades.trades[1].time,
+      ],
+      "same trade so should have the same data"
+    )
   })
 
   it("Closes an orderbook. Taking is blocked but you can still cancel, you can cancel other people's orders.", async () => {
