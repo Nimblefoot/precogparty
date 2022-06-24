@@ -105,11 +105,6 @@ const useTakeOrder = (marketAddress: PublicKey) => {
       )
 
       const [takerTradeLog] = await PublicKey.findProgramAddress(
-        [utf8.encode("trade-log"], 
-        SYRUP_ID
-        )
-        
-      const [takerTradeLogEntry] = await PublicKey.findProgramAddress(
         [publicKey.toBuffer(), utf8.encode("trade-log")],
         SYRUP_ID
       )
