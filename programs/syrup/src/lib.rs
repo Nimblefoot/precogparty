@@ -41,7 +41,7 @@ pub fn delete_order(
     } else {
         msg!("just deleting order from the last page!");
         // if the order_page is the last page and the order is the final entry we just pop
-        if index + 1 == (order_page.len() as u32) {
+        if index.checked_add(1).unwrap() == (order_page.len() as u32) {
             order_page.pop();
         } else if let Some(last_order) = order_page.pop() {
             order_page.set(index, last_order)
@@ -50,7 +50,7 @@ pub fn delete_order(
         }
     }
 
-    *orderbook_length -= 1;
+    *orderbook_length = (*orderbook_length).checked_sub(1).unwrap();
 
     // Delete from user account
     if let Some(deletion_index) = user_account.find_order(order_data, orderbook_id) {
@@ -159,7 +159,7 @@ pub mod syrup {
         // add to the lists of offers
         ctx.accounts.current_page.push(order)?;
 
-        ctx.accounts.orderbook_info.length += 1;
+        ctx.accounts.orderbook_info.length = ctx.accounts.orderbook_info.length.checked_add(1).unwrap();
 
         ctx.accounts.user_account.push(order_record)?;
 
@@ -193,16 +193,15 @@ pub mod syrup {
         };
 
         if order_data.offering_apples {
-            vault_outgoing_amount = ((amount_to_exchange as u128) * (order.num_apples as u128)
-                / (maximum_taker_payment as u128)) as u64;
-            new_num_apples = order.num_apples - vault_outgoing_amount;
-            new_num_oranges = order.num_oranges - amount_to_exchange;
+            vault_outgoing_amount = (amount_to_exchange as u128).checked_mul(order.num_apples as u128).unwrap().checked_div(maximum_taker_payment as u128).unwrap() as u64;
+            new_num_apples = order.num_apples.checked_sub(vault_outgoing_amount).unwrap();
+            new_num_oranges = order.num_oranges.checked_sub(amount_to_exchange).unwrap();
             vault_mint = ctx.accounts.orderbook_info.apples_mint;
         } else {
             vault_outgoing_amount =
-                (amount_to_exchange * order.num_oranges) / maximum_taker_payment;
-            new_num_apples = order.num_apples - amount_to_exchange;
-            new_num_oranges = order.num_oranges - vault_outgoing_amount;
+                (amount_to_exchange as u128).checked_mul(order.num_oranges as u128).unwrap().checked_div(maximum_taker_payment as u128).unwrap() as u64;
+            new_num_apples = order.num_apples.checked_sub(amount_to_exchange).unwrap();
+            new_num_oranges = order.num_oranges.checked_sub(vault_outgoing_amount).unwrap();
             vault_mint = ctx.accounts.orderbook_info.oranges_mint;
         }
 

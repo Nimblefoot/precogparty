@@ -47,7 +47,7 @@ impl TradeLog {
     pub fn push(&mut self, record: TradeRecord) {
         if self.is_full() {
             self.trades[self.start as usize] = record;
-            self.start = (self.start + 1).rem_euclid(TradeLog::MAX_ITEMS as u32)
+            self.start = self.start.checked_add(1).unwrap().rem_euclid(TradeLog::MAX_ITEMS as u32)
         } else {
             self.trades.push(record);
         }
@@ -68,7 +68,7 @@ impl TradeLog {
 
         let offset = index.rem_euclid(TradeLog::MAX_ITEMS as i32) as u32;
 
-        let pos = (starting_pos + offset).rem_euclid(TradeLog::MAX_ITEMS);
+        let pos = starting_pos.checked_add(offset).unwrap().rem_euclid(TradeLog::MAX_ITEMS);
 
         self.trades.get(pos as usize)
     }
@@ -94,7 +94,7 @@ impl OrderbookInfo {
         if self.length == 0u32 {
             0
         } else {
-            (self.length - 1) / (MAX_SIZE as u32)
+            self.length.checked_sub(1).unwrap() / (MAX_SIZE as u32)
         }
     }
 
