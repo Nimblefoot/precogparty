@@ -458,8 +458,8 @@ describe("orderbook", () => {
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: secondPageAddress,
-        takerTradeLog: adminTradeLog,
-        offererTradeLog: userTradeLog,
+        // takerTradeLog: adminTradeLog,
+        // offererTradeLog: userTradeLog,
       })
       .remainingAccounts([
         {
@@ -533,8 +533,8 @@ describe("orderbook", () => {
           vault: applesVault,
           orderbookInfo: orderbookInfoAddress,
           orderPage: orderPageKey,
-          takerTradeLog: adminTradeLog,
-          offererTradeLog: userTradeLog,
+          // takerTradeLog: adminTradeLog,
+          // offererTradeLog: userTradeLog,
         })
         .remainingAccounts([
           {
@@ -664,8 +664,8 @@ describe("orderbook", () => {
           vault: applesVault,
           orderbookInfo: orderbookInfoAddress,
           orderPage: orderPageKey,
-          takerTradeLog: adminTradeLog,
-          offererTradeLog: userTradeLog,
+          // takerTradeLog: adminTradeLog,
+          // offererTradeLog: userTradeLog,
         })
         .remainingAccounts([
           {
