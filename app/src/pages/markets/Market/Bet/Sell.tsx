@@ -3,11 +3,9 @@ import {
   useTransact,
 } from "src/components/TransactButton"
 import { BN_, displayBN } from "src/utils/BNutils"
-import { amountBoughtAtPercentOdds } from "src/utils/orderMath"
-import { RadioGroup } from "@headlessui/react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
-import { BN, max } from "bn.js"
+import { BN } from "bn.js"
 import clsx from "clsx"
 import {
   CLUSTER,
@@ -19,17 +17,14 @@ import {
 } from "config"
 import { usePosition } from "src/pages/positions/usePosition"
 import { queryClient } from "src/pages/providers"
-import { tokenAccountKeys, useTokenAccount } from "src/pages/tokenAccountQuery"
-import { parse } from "path"
+import { tokenAccountKeys } from "src/pages/tokenAccountQuery"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import useMergeContingentSet from "../hooks/useMergeContingentSet"
-import useMintContingentSet from "../hooks/useMintContingentSet"
 import { orderbookKeys } from "../Orderbook/orderbookQueries"
-import usePlaceOrderTxn, { useResolutionMint } from "../Orderbook/usePlaceOrder"
-import useTakeOrder from "../Orderbook/useTakeOrder"
+import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
 import { useRelevantOrders } from "./useRelevantOrders"
-import { useTakeOrders } from "./useTakeOrders"
 import { requestAdditionalBudgetIx } from "../../new/hooks/requestAdditionalBudgetIx"
+import useTakeOrderInstructions from "../Orderbook/useTakeOrderInstructions"
 
 const useSellAccounting = (
   marketAddress: PublicKey,
@@ -164,11 +159,22 @@ const useSubmitSell = ({
 
   const mergeSet = useMergeContingentSet(marketAddress)
   const buy = usePlaceOrderTxn(marketAddress)
-  const takeOrder = useTakeOrder(marketAddress)
+  const takeOrders = useTakeOrderInstructions(marketAddress)
 
   const { callback, status } = useTransact()
 
   const submit = useCallback(async () => {
+    const { ixs: takeIxs, lastPageAfterTaking } = orderInteractions
+      ? await takeOrders(
+          orderInteractions.map((x) => ({
+            order: x.order,
+            pageNumber: x.order.page,
+            index: x.order.index,
+            size: x.amountToExchange,
+          }))
+        )
+      : { ixs: [], lastPageAfterTaking: undefined }
+
     const placeTxn = orderSpendAmount.gt(new BN(0))
       ? await buy({
           offeringYes: selling === "yes",
@@ -182,24 +188,10 @@ const useSubmitSell = ({
               ? orderSpendAmount.sub(orderUsdcToMake)
               : orderUsdcToMake,
           uiSelling: true,
+          lastPageIndex: lastPageAfterTaking,
         })
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []
-
-    const takeTxns =
-      orderInteractions &&
-      (await Promise.all(
-        orderInteractions.map((x) =>
-          takeOrder({
-            order: x.order,
-            pageNumber: x.order.page,
-            index: x.order.index,
-            amountToExchange: x.amountToExchange,
-          })
-        )
-      ))
-
-    const takeIxs = takeTxns ? takeTxns.flatMap((tx) => tx.instructions) : []
 
     const mergeTxn = usdcMade && (await mergeSet({ amount: usdcMade }))
     const mergeIx = mergeTxn?.instructions ?? []
@@ -244,7 +236,7 @@ const useSubmitSell = ({
     orderUsdcToMake,
     publicKey,
     selling,
-    takeOrder,
+    takeOrders,
     usdcMade,
   ])
 

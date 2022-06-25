@@ -28,6 +28,7 @@ import usePlaceOrderTxn from "../Orderbook/usePlaceOrder"
 import useTakeOrder from "../Orderbook/useTakeOrder"
 import { useTakeOrders } from "./useTakeOrders"
 import { requestAdditionalBudgetIx } from "../../new/hooks/requestAdditionalBudgetIx"
+import useTakeOrderInstructions from "../Orderbook/useTakeOrderInstructions"
 
 const useAccounting = ({
   usdcInput,
@@ -111,7 +112,7 @@ const useSubmitBet = ({
 
   const mintSet = useMintContingentSet(marketAddress)
   const buy = usePlaceOrderTxn(marketAddress)
-  const takeOrder = useTakeOrder(marketAddress)
+  const takeOrders = useTakeOrderInstructions(marketAddress)
 
   const { callback, status } = useTransact()
 
@@ -119,6 +120,17 @@ const useSubmitBet = ({
     const mintTxn = await mintSet({
       amount: orderSpendAmount.add(taking.totalSpend ?? new BN(0)),
     })
+
+    const { ixs: takeIxs, lastPageAfterTaking } = taking.orderInteractions
+      ? await takeOrders(
+          taking.orderInteractions.map((x) => ({
+            order: x.order,
+            pageNumber: x.order.page,
+            index: x.order.index,
+            size: x.amountToExchange,
+          }))
+        )
+      : { ixs: [], lastPageAfterTaking: undefined }
 
     const placeTxn = orderSpendAmount.gt(new BN(0))
       ? await buy({
@@ -132,24 +144,10 @@ const useSubmitBet = ({
               ? orderBuyAmount.sub(orderSpendAmount)
               : orderSpendAmount,
           uiSelling: false,
+          lastPageIndex: lastPageAfterTaking,
         })
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []
-
-    const takeTxns =
-      taking.orderInteractions &&
-      (await Promise.all(
-        taking.orderInteractions.map((x) =>
-          takeOrder({
-            order: x.order,
-            pageNumber: x.order.page,
-            index: x.order.index,
-            amountToExchange: x.amountToExchange,
-          })
-        )
-      ))
-
-    const takeIxs = takeTxns ? takeTxns.flatMap((tx) => tx.instructions) : []
 
     const computeCost =
       MINT_SET_COST +
@@ -187,8 +185,8 @@ const useSubmitBet = ({
     buy,
     resolution,
     orderBuyAmount,
+    takeOrders,
     callback,
-    takeOrder,
     marketAddress,
     publicKey,
     onSuccess,

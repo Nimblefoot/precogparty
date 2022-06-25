@@ -39,6 +39,7 @@ pub fn delete_order(
             return err!(ErrorCode::LastPageEmpty);
         }
     } else {
+        msg!("just deleting order from the last page!");
         // if the order_page is the last page and the order is the final entry we just pop
         if index + 1 == (order_page.len() as u32) {
             order_page.pop();
@@ -257,7 +258,7 @@ pub mod syrup {
         )?;
 
         if amount_to_exchange == maximum_taker_payment {
-            if index == last_page_number {
+            if page_number == last_page_number {
                 delete_order(
                     index,
                     None,
@@ -284,7 +285,7 @@ pub mod syrup {
                         orderbook_length,
                     )?;
 
-                    acc.exit(&PROGRAM_ID)?;
+                    last_page.exit(&PROGRAM_ID)?;
                 } else {
                     return err!(ErrorCode::WrongRemainingAccount);
                 }
@@ -323,6 +324,15 @@ pub mod syrup {
             .orderbook_info
             .update_most_recent_trade(trade_record);
         ctx.accounts.trade_log.push(trade_record);
+        ctx.accounts.taker_trade_log.push(trade_record);
+
+        let offerer_trade_record = TradeRecord {
+            buy_order_for_apples: !trade_record.buy_order_for_apples,
+            num_apples: trade_record.num_apples,
+            num_oranges: trade_record.num_oranges,
+            time: trade_record.time,
+        };
+        ctx.accounts.offerer_trade_log.push(offerer_trade_record);
 
         Ok(())
     }
@@ -337,7 +347,11 @@ pub mod syrup {
         let order_data: Order = ctx.accounts.order_page.get(index);
         if order_data != order {
             return err!(ErrorCode::WrongOrder);
-        } else if ctx.accounts.user.key() != order_data.user {
+        }
+        // if orderbook is closed you can cancel other people's orders
+        else if !ctx.accounts.orderbook_info.is_closed()
+            && ctx.accounts.user.key() != order_data.user
+        {
             return err!(ErrorCode::IncorrectUser);
         };
 
@@ -390,6 +404,7 @@ pub mod syrup {
             let (pda, _) = Pubkey::find_program_address(&pda_seeds[..], ctx.program_id);
 
             if pda == *acc.key {
+                msg!("about to delete an order not on the last page!");
                 delete_order(
                     index,
                     Some(last_page),
@@ -398,7 +413,8 @@ pub mod syrup {
                     orderbook_length,
                 )?;
 
-                acc.exit(&PROGRAM_ID)?;
+                // acc.exit(&PROGRAM_ID)?;
+                last_page.exit(&PROGRAM_ID)?;
             } else {
                 return err!(ErrorCode::WrongRemainingAccount);
             }
@@ -537,6 +553,14 @@ pub struct TakeOrder<'info> {
     #[account(mut)]
     pub taker: Signer<'info>,
     #[account(
+        init_if_needed,
+        payer=taker,
+        seeds=[taker.key().as_ref(), "trade-log".as_ref()],
+        space = 8 +TradeLog::LEN,
+        bump
+    )]
+    pub taker_trade_log: Box<Account<'info, TradeLog>>,
+    #[account(
         mut,
         associated_token::authority = taker,
         associated_token::mint = if order.offering_apples { orderbook_info.oranges_mint } else { orderbook_info.apples_mint }
@@ -554,6 +578,14 @@ pub struct TakeOrder<'info> {
         bump
     )]
     pub offerer_user_account: Box<Account<'info, UserAccount>>,
+    #[account(
+        init_if_needed,
+        payer=taker,
+        seeds=[order.user.key().as_ref(), "trade-log".as_ref()],
+        space = 8 +TradeLog::LEN,
+        bump
+    )]
+    pub offerer_trade_log: Box<Account<'info, TradeLog>>,
     #[account(
         mut,
         associated_token::authority = order.user,
@@ -593,20 +625,17 @@ pub struct TakeOrder<'info> {
 #[derive(Accounts)]
 #[instruction(order: Order, page_number: u32, index: u32)]
 pub struct CancelOrder<'info> {
-    #[account(
-        mut,
-        address = order.user
-    )]
+    #[account(mut)]
     pub user: Signer<'info>,
     #[account(
         mut,
-        seeds = ["user-account".as_ref(), user.key().as_ref()],
+        seeds = ["user-account".as_ref(), order.user.as_ref()],
         bump
     )]
     pub user_account: Box<Account<'info, UserAccount>>,
     #[account(
         mut,
-        associated_token::authority = user,
+        associated_token::authority = order.user,
         associated_token::mint = if order.offering_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
     )]
     pub user_ata: Box<Account<'info, TokenAccount>>,

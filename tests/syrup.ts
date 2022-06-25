@@ -52,6 +52,8 @@ describe("orderbook", () => {
   let userOrangesATA: PublicKey
   let adminApplesATA: PublicKey
   let adminOrangesATA: PublicKey
+  let adminTradeLog: PublicKey
+  let userTradeLog: PublicKey
 
   before(async () => {
     /** SETUP */
@@ -137,6 +139,14 @@ describe("orderbook", () => {
     )
     ;[TradeLogAddress] = await PublicKey.findProgramAddress(
       [orderbookId.toBytes(), utf8.encode("trades")],
+      program.programId
+    )
+    ;[userTradeLog] = await PublicKey.findProgramAddress(
+      [user.publicKey.toBuffer(), utf8.encode("trade-log")],
+      program.programId
+    )
+    ;[adminTradeLog] = await PublicKey.findProgramAddress(
+      [admin.publicKey.toBuffer(), utf8.encode("trade-log")],
       program.programId
     )
 
@@ -416,6 +426,8 @@ describe("orderbook", () => {
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
         tradeLog: TradeLogAddress,
+        takerTradeLog: adminTradeLog,
+        offererTradeLog: userTradeLog,
       })
       .signers([admin])
       .rpc()
@@ -473,6 +485,8 @@ describe("orderbook", () => {
         orderbookInfo: orderbookInfoAddress,
         orderPage: lastPageKey,
         tradeLog: TradeLogAddress,
+        takerTradeLog: userTradeLog,
+        offererTradeLog: adminTradeLog,
       })
       .signers([user])
       .rpc({
@@ -505,11 +519,9 @@ describe("orderbook", () => {
       15,
       "User spent 15 apples to offering_apples 5 oranges for 3 apples each"
     )
+  })
 
-    const orderbookInfo = await program.account.orderbookInfo.fetchNullable(
-      orderbookInfoAddress
-    )
-
+  it("Correctly keeps a trade log.", async () => {
     const tradeLog = await program.account.tradeLog.fetchNullable(
       TradeLogAddress
     )
@@ -527,9 +539,43 @@ describe("orderbook", () => {
       },
       { buyOrderForApples: true, numOranges: "2000000", numApples: "2000000" },
     ])
+
+    const adminTrades = await await program.account.tradeLog.fetch(
+      adminTradeLog
+    )
+    const userTrades = await program.account.tradeLog.fetch(userTradeLog)
+
+    // @ts-ignore
+    assert.equal(adminTrades.trades.length, 2, "admin should have 2 trades")
+    // @ts-ignore
+    assert.equal(userTrades.trades.length, 2, "user should have 2 trades")
+
+    assert.equal(
+      adminTrades.trades[0].buyOrderForApples,
+      true,
+      "admin bought apples"
+    )
+    assert.equal(
+      userTrades.trades[0].buyOrderForApples,
+      false,
+      "admin sold apples"
+    )
+    assert.deepEqual(
+      [
+        userTrades.trades[1].numOranges,
+        userTrades.trades[1].numApples,
+        userTrades.trades[1].time,
+      ],
+      [
+        adminTrades.trades[1].numOranges,
+        adminTrades.trades[1].numApples,
+        adminTrades.trades[1].time,
+      ],
+      "same trade so should have the same data"
+    )
   })
 
-  it("closes an orderbook. Taking is blocked but you can still cancel.", async () => {
+  it("Closes an orderbook. Taking is blocked but you can still cancel, you can cancel other people's orders.", async () => {
     await program.methods
       .closeOrderbook()
       .accounts({
@@ -571,6 +617,8 @@ describe("orderbook", () => {
         orderbookInfo: orderbookInfoAddress,
         orderPage: firstPageKey,
         tradeLog: TradeLogAddress,
+        takerTradeLog: userTradeLog,
+        offererTradeLog: adminTradeLog,
       })
       .signers([admin])
       .rpc({
@@ -581,6 +629,7 @@ describe("orderbook", () => {
           "should not be able to take orders after the orderbook is closed!"
       )
 
+    // can cancel other people's orders if orderbook is closed
     await program.methods
       .cancelOrder(
         {
@@ -594,14 +643,14 @@ describe("orderbook", () => {
         0
       )
       .accounts({
-        user: user.publicKey,
+        user: admin.publicKey,
         userAccount: userAccountAddress,
         userAta: userApplesATA,
         vault: applesVault,
         orderbookInfo: orderbookInfoAddress,
         orderPage: firstPageKey,
       })
-      .signers([user])
+      .signers([admin])
       .rpc()
   })
 

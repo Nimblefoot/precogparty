@@ -104,6 +104,16 @@ const useTakeOrder = (marketAddress: PublicKey) => {
         SYRUP_ID
       )
 
+      const [takerTradeLog] = await PublicKey.findProgramAddress(
+        [publicKey.toBuffer(), utf8.encode("trade-log")],
+        SYRUP_ID
+      )
+
+      const [offererTradeLog] = await PublicKey.findProgramAddress(
+        [order.user.toBuffer(), utf8.encode("trade-log")],
+        SYRUP_ID
+      )
+
       const remainingAccounts =
         pageNumber == lastPageIndex
           ? []
@@ -126,6 +136,8 @@ const useTakeOrder = (marketAddress: PublicKey) => {
           vault,
           orderbookInfo,
           orderPage,
+          takerTradeLog,
+          offererTradeLog,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
