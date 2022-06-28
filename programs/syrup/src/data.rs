@@ -238,3 +238,14 @@ mod tests {
         assert_eq!(log.get(-51).unwrap().num_oranges, 660);
     }
 }
+
+#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, PartialEq)]
+pub struct OrderMetadata {
+    pub page_number: u32,
+    pub index: u32,
+    pub order: Order,
+    pub last_page: Pubkey,
+    pub order_page: Pubkey,
+    pub user_account: Pubkey,
+    pub user_ata: Pubkey
+}

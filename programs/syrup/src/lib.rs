@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
-use data::TradeLog;
-use data::{Order, OrderbookInfo, OrderbookPage};
+use data::{Order, OrderbookInfo, OrderbookPage, OrderMetadata, TradeLog};
 pub mod data;
 use user_account::UserAccount;
 pub mod user_account;
@@ -88,6 +87,8 @@ pub fn edit_order(
 
 #[program]
 pub mod syrup {
+
+    use data::OrderMetadata;
 
     use crate::data::TradeRecord;
 
@@ -438,6 +439,11 @@ pub mod syrup {
 
         Ok(())
     }
+
+    pub fn take_multiple_orders(ctx: Context<TakeMultipleOrders>, buying_apples: bool, take_order_data: Vec<OrderMetadata>) -> Result<()> {
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -680,4 +686,40 @@ pub struct CloseOrderbook<'info> {
         bump
     )]
     pub trade_log: Account<'info, TradeLog>,
+}
+
+// 9 Accounts
+#[derive(Accounts)]
+#[instruction(buying_apples: bool)]
+pub struct TakeMultipleOrders<'info> {
+    pub taker: Signer<'info>,
+    #[account(
+        mut,
+        associated_token::authority = taker,
+        associated_token::mint = if buying_apples { orderbook_info.oranges_mint } else { orderbook_info.apples_mint }
+    )]
+    pub taker_sending_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        associated_token::authority = taker,
+        associated_token::mint = if buying_apples { orderbook_info.apples_mint } else { orderbook_info.oranges_mint }
+    )]
+    pub taker_receiving_ata: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        seeds = [orderbook_info.id.to_bytes().as_ref(), "orderbook-info".as_ref()],
+        bump
+    )]
+    pub orderbook_info: Account<'info, OrderbookInfo>,
+    pub vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        seeds=[orderbook_info.id.to_bytes().as_ref(), "trades".as_ref()],
+        bump
+    )]
+    pub trade_log: Account<'info, TradeLog>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub rent: Sysvar<'info, Rent>,
+    pub system_program: Program<'info, System>,
 }
