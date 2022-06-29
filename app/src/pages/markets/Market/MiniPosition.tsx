@@ -17,7 +17,9 @@ export const MiniPosition = ({
 
   const hasPosition =
     position !== undefined &&
-    (position.deposited.gt(new BN(0)) || position.escrowed.gt(new BN(0)))
+    (position.size?.gt(new BN(0)) ||
+      position.deposited.gt(new BN(0)) ||
+      position.escrowed.gt(new BN(0)))
 
   return !hasPosition ? null : (
     <Disclosure>
