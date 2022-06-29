@@ -15,7 +15,11 @@ export const MiniPosition = ({
 }) => {
   const position = usePosition(marketAddress)
 
-  return position === undefined ? null : (
+  const hasPosition =
+    position !== undefined &&
+    (position.deposited.gt(new BN(0)) || position.escrowed.gt(new BN(0)))
+
+  return !hasPosition ? null : (
     <Disclosure>
       {({ open }) => (
         <div className="rounded-lg shadow overflow-hidden">
