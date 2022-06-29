@@ -675,5 +675,8 @@ describe("orderbook", () => {
       result == "it failed",
       "Cannot have two orderbooks with the same name"
     )
+
+    let info = await program.account.orderbookInfo.fetch(orderbookInfoAddress)
+    console.log(info.length)
   })
 })

@@ -15,6 +15,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 use solana_program::pubkey;
+use anchor_spl::associated_token::get_associated_token_address;
 
 const PROGRAM_ID: Pubkey = pubkey!("3K1ibBw93WY4PmJ1CBfoTg4mx2yGVvr7WLCsaqAY5g1K");
 
@@ -441,6 +442,62 @@ pub mod syrup {
     }
 
     pub fn take_multiple_orders(ctx: Context<TakeMultipleOrders>, buying_apples: bool, take_order_data: Vec<OrderMetadata>) -> Result<()> {
+
+        // pub struct OrderMetadata {
+        //     pub page_number: u32,
+        //     pub index: u32,
+        //     pub order: Order,
+        //     pub last_page: Pubkey,
+        //     pub order_page: Pubkey,
+        //     pub user_account: Pubkey,
+        //     pub user_ata: Pubkey
+        // }
+
+        let orderbook_id_bytes = ctx.accounts.orderbook_info.id.to_bytes();
+
+        let mint_key = if buying_apples { ctx.accounts.orderbook_info.oranges_mint } else { ctx.accounts.orderbook_info.apples_mint };
+        
+        for data in take_order_data {
+            let order_page_acc = ctx.remaining_accounts.get(data.order_page_idx as usize).unwrap();
+            
+            let page_number_bytes = data.page_number.to_le_bytes();
+
+            let order_page_seeds = [
+                orderbook_id_bytes.as_ref(),
+                b"page".as_ref(),
+                page_number_bytes.as_ref(),
+            ];
+
+            let (order_page_key, _) = Pubkey::find_program_address(&order_page_seeds[..], ctx.program_id);
+
+            if order_page_key != *order_page_acc.key {
+                return err!(ErrorCode::WrongRemainingAccount);
+            }
+
+            let offerer_user_account_acc = ctx.remaining_accounts.get(data.offerer_user_account_idx as usize).unwrap();
+
+            let offerer_user_account_seeds = [
+                b"user-account".as_ref(),
+                data.order.user.as_ref(),
+            ];
+
+            let (offerer_user_account_key, _) = Pubkey::find_program_address(&offerer_user_account_seeds[..], ctx.program_id);
+
+            if offerer_user_account_key != *offerer_user_account_acc.key {
+                return err!(ErrorCode::WrongRemainingAccount);
+            }
+
+            let offerer_receiving_ata_acc = ctx.remaining_accounts.get(data.offerer_receiving_ata_idx as usize).unwrap();
+
+            let correct_offerer_receiving_ata_key = get_associated_token_address(
+                &data.order.user,
+                &mint_key,
+            );
+
+            if correct_offerer_receiving_ata_key != *offerer_receiving_ata_acc.key {
+                return err!(ErrorCode::WrongRemainingAccount);
+            }
+        }
 
         Ok(())
     }

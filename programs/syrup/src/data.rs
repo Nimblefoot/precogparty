@@ -244,8 +244,8 @@ pub struct OrderMetadata {
     pub page_number: u32,
     pub index: u32,
     pub order: Order,
-    pub last_page: Pubkey,
-    pub order_page: Pubkey,
-    pub user_account: Pubkey,
-    pub user_ata: Pubkey
+    pub last_page_idx: u32,
+    pub order_page_idx: u32,
+    pub offerer_user_account_idx: u32,
+    pub offerer_receiving_ata_idx: u32
 }
