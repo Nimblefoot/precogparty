@@ -27,15 +27,14 @@ const New = ({}) => {
 
   const getCreateMarketTxn = useCreateMarket()
   const getTxn = async () => {
-    const authority =
-      resolutionAuthority !== ""
-        ? new PublicKey(resolutionAuthority)
-        : publicKey!
-    console.log("aaa", authority)
     const txn = await getCreateMarketTxn({
       name,
       description: desc,
-      authority,
+      authority: publicKey!,
+      resolutionAuthority:
+        resolutionAuthority !== ""
+          ? new PublicKey(resolutionAuthority)
+          : publicKey!,
     })
     return txn
   }

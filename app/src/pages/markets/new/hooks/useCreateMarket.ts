@@ -25,10 +25,12 @@ const useCreateMarket = () => {
       name,
       description,
       authority,
+      resolutionAuthority,
     }: {
       name: string
       description: string
       authority: PublicKey
+      resolutionAuthority: PublicKey
     }) => {
       const collateralMint = COLLATERAL_MINT
 
@@ -63,7 +65,7 @@ const useCreateMarket = () => {
           yesMint,
           noMint,
           marketAuthority: authority,
-          resolutionAuthority: authority,
+          resolutionAuthority,
           descriptionAuthority: authority,
           collateralVault,
           collateralMint,
