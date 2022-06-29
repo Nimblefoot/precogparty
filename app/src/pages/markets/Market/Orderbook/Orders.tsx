@@ -8,6 +8,18 @@ import { Resolution } from "config"
 import clsx from "clsx"
 import { UserSmall } from "src/pages/markets/User"
 
+const NoOrders = () => (
+  <>
+    <div className="w-full col-span-2 p-2">
+      <div className="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center">
+        <span className="mt-2 block text-sm font-medium text-gray-600">
+          No orders. Place a bet for others to match!
+        </span>
+      </div>
+    </div>
+  </>
+)
+
 const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
   const orderbook = useOrderbook(marketAddress)
   const orders = useMemo(
@@ -37,6 +49,7 @@ const Orders = ({ marketAddress }: { marketAddress: PublicKey }) => {
           <OrderColumn orders={yesOffers} resolution="yes" />
 
           <OrderColumn orders={noOffers} resolution="no" />
+          {yesOffers?.length === 0 && noOffers?.length === 0 && <NoOrders />}
         </div>
       </div>
     </>
