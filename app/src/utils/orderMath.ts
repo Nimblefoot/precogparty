@@ -23,7 +23,7 @@ export const getPercentOdds = ({
   numApples: BN_
   numOranges: BN_
 }) =>
-  unitsNo
+  unitsYes
     .muln(10 ** 6)
     .div(unitsNo.add(unitsYes))
     .toNumber() /
