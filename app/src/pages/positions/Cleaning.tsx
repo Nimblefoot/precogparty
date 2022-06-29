@@ -9,17 +9,21 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import { PublicKey, Transaction } from "@solana/web3.js"
 import { COLLATERAL_MINT } from "config"
-import useMergeContingentSet from "src/pages/markets/Market/hooks/useMergeContingentSet"
 import { queryClient } from "src/pages/providers"
 import { tokenAccountKeys } from "src/pages/tokenAccountQuery"
-import { useQueries } from "react-query"
-import { useMarketsWithPosition, usePositions } from "./useMarketsWithPosition"
+import { usePositions } from "./useMarketsWithPosition"
+import BN from "bn.js"
 
 export const WithdrawAllButton = () => {
   const { publicKey } = useWallet()
   const { connection } = useConnection()
   const positions = usePositions()
   const { callback, status } = useTransact()
+
+  const totalWithdrawable = positions?.reduce(
+    (acc, [_, position]) => acc.add(position.withdrawable),
+    new BN(0)
+  )
 
   const withdrawAll = async () => {
     if (publicKey === null) return undefined
@@ -48,9 +52,11 @@ export const WithdrawAllButton = () => {
         const userYes = await getAssociatedTokenAddress(yesMint, publicKey)
         const userNo = await getAssociatedTokenAddress(noMint, publicKey)
 
+        console.log("AMOUNT TO WITHDRAW", amount.toNumber())
+
         return mergeContingentSet(
           {
-            amount,
+            amount: amount,
           },
           {
             user: publicKey,
@@ -84,6 +90,9 @@ export const WithdrawAllButton = () => {
         onClick={withdrawAll}
         status={status}
         verb="Withdraw All"
+        disabled={
+          totalWithdrawable === undefined || totalWithdrawable.eq(new BN(0))
+        }
       />
     </>
   )

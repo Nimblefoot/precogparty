@@ -48,6 +48,7 @@ export const usePositions = () => {
   const { data: userOrders } = useOrderbookUserAccount()
 
   const positions = useMemo(() => {
+    console.log("im recalculating positions")
     if (!markets.data) return undefined
     if (!accounts) return undefined
     if (userOrders === undefined) return undefined
@@ -56,7 +57,7 @@ export const usePositions = () => {
       ({ account }) => account.data.parsed.info.tokenAmount.amount > 0
     )
 
-    return markets.data
+    const positions = markets.data
       .map((market) => {
         const [yesAccount] = nonzero.filter(({ account }) =>
           new PublicKey(account.data.parsed.info.mint).equals(
@@ -93,6 +94,10 @@ export const usePositions = () => {
           ] as const
       })
       .filter((x): x is typeof x & {} => x !== undefined)
+    console.log("im done recalculating positions")
+    console.log(positions)
+
+    return positions
   }, [accounts, markets.data, userOrders])
 
   return positions
