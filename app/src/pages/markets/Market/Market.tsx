@@ -14,6 +14,7 @@ import interpolateOddsColors from "src/utils/interpolateOddsColors"
 import clsx from "clsx"
 import { TokenControls } from "./TokenControls"
 import { History } from "./History/History"
+import { useWallet } from "@solana/wallet-adapter-react"
 
 const MarketRouter = () => {
   const router = useRouter()
@@ -34,6 +35,7 @@ const MarketRouter = () => {
 }
 
 const Market = ({ address, name }: { address: PublicKey; name: string }) => {
+  const { publicKey } = useWallet()
   const market = useMarket(address)
   const book = useOrderbook(address)
 
@@ -144,7 +146,11 @@ const Market = ({ address, name }: { address: PublicKey; name: string }) => {
           <MiniPosition marketAddress={address} />
           <BetPanel marketAddress={address} />
 
-          {market.data.resolution === 0 && <Resolve market={address} />}
+          {market.data.resolution === 0 &&
+            publicKey !== null &&
+            market.data.resolutionAuthority.equals(publicKey) && (
+              <Resolve market={address} />
+            )}
           <TokenControls address={address} />
         </div>
       </div>
