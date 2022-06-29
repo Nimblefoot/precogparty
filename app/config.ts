@@ -10,6 +10,11 @@ export const RESOLUTION_MAPPING_INVERSE = {
 } as const
 export type Resolution = keyof typeof RESOLUTION_MAPPING
 
+export const COSTS = {
+  INIT_ATA: 18000,
+  CREATE_USER_ACCOUNT: 15000,
+}
+
 export const ORDERBOOK_PAGE_MAX_LENGTH = 100
 
 export const ORDERBOOK_PRICE_RATIO_DECIMALS = 9

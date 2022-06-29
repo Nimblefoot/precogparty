@@ -10,6 +10,7 @@ import clsx from "clsx"
 import {
   CLUSTER,
   COLLATERAL_DECIMALS,
+  DEFAULT_COMPUTE_MAX,
   MINT_SET_COST,
   PLACE_ORDER_COST,
   Resolution,
@@ -202,7 +203,7 @@ const useSubmitSell = ({
       (placeTxn ? PLACE_ORDER_COST : 0)
 
     const txn = new Transaction().add(
-      ...(CLUSTER === "mainnet"
+      ...(CLUSTER === "mainnet" && computeCost > DEFAULT_COMPUTE_MAX
         ? [requestAdditionalBudgetIx(computeCost)]
         : []),
       ...placeIxs,

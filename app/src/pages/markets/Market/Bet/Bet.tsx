@@ -13,6 +13,8 @@ import {
   CLUSTER,
   COLLATERAL_DECIMALS,
   COLLATERAL_MINT,
+  COSTS,
+  DEFAULT_COMPUTE_MAX,
   MINT_SET_COST,
   PLACE_ORDER_COST,
   Resolution,
@@ -150,12 +152,15 @@ const useSubmitBet = ({
     const placeIxs = placeTxn ? placeTxn.instructions : []
 
     const computeCost =
+      (mintTxn.instructions.length - 1) * COSTS.INIT_ATA +
       MINT_SET_COST +
       takeIxs.length * TAKE_ORDER_COST +
-      (placeTxn ? PLACE_ORDER_COST : 0)
+      (placeTxn
+        ? PLACE_ORDER_COST + (placeIxs.length - 1) * COSTS.CREATE_USER_ACCOUNT
+        : 0)
 
     const txn = new Transaction().add(
-      ...(CLUSTER === "mainnet"
+      ...(CLUSTER === "mainnet" && computeCost > DEFAULT_COMPUTE_MAX
         ? [requestAdditionalBudgetIx(computeCost)]
         : []),
       ...mintTxn.instructions,
