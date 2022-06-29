@@ -28,6 +28,7 @@ export const MARKET_DESCRIPTION_CHARLIMIT = 512
 export const CLUSTER = (
   {
     "https://api.mainnet-beta.solana.com": "mainnet",
+    "https://api.devnet.solana.com": "devnet",
   } as const
 )[process.env.NEXT_PUBLIC_RPC as string]
 
