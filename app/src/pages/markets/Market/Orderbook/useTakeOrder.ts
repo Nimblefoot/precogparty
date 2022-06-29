@@ -18,6 +18,7 @@ import { useResolutionMint } from "./usePlaceOrder"
 import { OrderFields } from "@/generated/syrup/types"
 import { useSyrup } from "src/hooks/useProgram"
 
+/* not used */
 const useTakeOrder = (marketAddress: PublicKey) => {
   const { publicKey } = useWallet()
   const { connection } = useConnection()
