@@ -1,7 +1,5 @@
 import { PublicKey } from "@solana/web3.js"
 
-export const COLLATERAL_DECIMALS = 9
-
 export const RESOLUTION_MAPPING = {
   yes: 1,
   no: 2,
@@ -35,5 +33,7 @@ export const CLUSTER = (
 const WSOL_MINT = new PublicKey("So11111111111111111111111111111111111111112")
 
 const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+
+export const COLLATERAL_DECIMALS = CLUSTER === "mainnet" ? 6 : 9
 
 export const COLLATERAL_MINT = CLUSTER === "mainnet" ? USDC_MINT : WSOL_MINT
