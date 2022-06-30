@@ -26,6 +26,7 @@ import {
   mintToChecked,
 } from "@solana/spl-token"
 import { takeOrdersHelper } from "../app/src/utils/takeOrdersHelper"
+import { takeMultipleOrders } from "../app/src/utils/takeMultipleOrders"
 
 const maxLength = 3 //
 const orderbookId = Keypair.generate().publicKey
@@ -571,141 +572,183 @@ describe("orderbook", () => {
     assert.equal(thirdPage.list.length, 0, "third page should be emprty")
   })
 
-  it("Places 14 orders. Takes a random subset of 10 of them", async () => {
-    // place way more orders
-    for (let i = 0; i < 14; i++) {
-      const [infoKey] = await PublicKey.findProgramAddress(
-        [orderbookId.toBytes(), utf8.encode("orderbook-info")],
-        program.programId
-      )
-      const info = await program.account.orderbookInfo.fetchNullable(infoKey)
-      const nextOpenPageIndex = Math.floor(info.length / maxLength)
-      const [currentPageKey] = await PublicKey.findProgramAddress(
-        [
-          orderbookId.toBytes(),
-          utf8.encode("page"),
-          new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
-        ],
-        program.programId
-      )
+  it("places 20 orders. tests take_multiple_orders", async () => {
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; i < 2; j++) {
+        const [infoKey] = await PublicKey.findProgramAddress(
+          [orderbookId.toBytes(), utf8.encode("orderbook-info")],
+          program.programId
+        )
+        const info = await program.account.orderbookInfo.fetchNullable(infoKey)
+        const nextOpenPageIndex = Math.floor(info.length / maxLength)
+        const [currentPageKey] = await PublicKey.findProgramAddress(
+          [
+            orderbookId.toBytes(),
+            utf8.encode("page"),
+            new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
+          ],
+          program.programId
+        )
 
-      await program.methods
-        .placeOrder({
-          user: user.publicKey,
-          numApples: new anchor.BN(1e6),
-          offeringApples: true,
-          numOranges: new anchor.BN((i + 1) * 1e6),
-          memo: 0,
-        })
-        .accounts({
-          user: user.publicKey,
-          userAta: userApplesATA,
-          vault: applesVault,
-          orderbookInfo: orderbookInfoAddress,
-          currentPage: currentPageKey,
-          userAccount: userAccountAddress,
-        })
-        .signers([user])
-        .rpc({
-          skipPreflight: true,
-        })
+        await program.methods
+          .placeOrder({
+            user: j === 0 ? user.publicKey : admin.publicKey,
+            numApples: new anchor.BN(1e6),
+            offeringApples: true,
+            numOranges: new anchor.BN((2 * i + j + 1) * 1e6),
+            memo: 0,
+          })
+          .accounts({
+            user: user.publicKey,
+            userAta: userApplesATA,
+            vault: applesVault,
+            orderbookInfo: orderbookInfoAddress,
+            currentPage: currentPageKey,
+            userAccount: userAccountAddress,
+          })
+          .signers([user])
+          .rpc({
+            skipPreflight: true,
+          })
+      }
     }
-
-    // Going to fully take 10 random orders.
-    const allKeys = [...Array(14).keys()].map((x) => x++)
-
-    const targetKeys = getRandomSubarray(allKeys, 10)
-
-    let orderData = []
-    for (let i of targetKeys) {
-      orderData.push({
-        order: {
-          user: user.publicKey,
-          numApples: new anchor.BN(1e6),
-          offeringApples: true,
-          numOranges: new anchor.BN((i + 1) * 1e6),
-          memo: 0,
-        },
-        size: new anchor.BN((i + 1) * 1e6),
-        pageNumber: Math.floor(i / 3),
-        index: i % 3,
-      })
-    }
-
-    const orderedData = takeOrdersHelper(orderData, 14, 3)
-
-    for (let [data, lastPageIndex] of orderedData) {
-      const [orderPageKey] = await PublicKey.findProgramAddress(
-        [
-          orderbookId.toBytes(),
-          utf8.encode("page"),
-          new anchor.BN(data.pageNumber).toArrayLike(Buffer, "le", 4),
-        ],
-        program.programId
-      )
-
-      const [lastPageKey] = await PublicKey.findProgramAddress(
-        [
-          orderbookId.toBytes(),
-          utf8.encode("page"),
-          new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
-        ],
-        program.programId
-      )
-
-      await program.methods
-        .takeOrder(data.order, data.size, data.pageNumber, data.index)
-        .accounts({
-          taker: admin.publicKey,
-          takerSendingAta: adminOrangesATA,
-          takerReceivingAta: adminApplesATA,
-          offererUserAccount: userAccountAddress,
-          offererReceivingAta: userOrangesATA,
-          vault: applesVault,
-          orderbookInfo: orderbookInfoAddress,
-          orderPage: orderPageKey,
-          // takerTradeLog: adminTradeLog,
-          // offererTradeLog: userTradeLog,
-        })
-        .remainingAccounts([
-          {
-            pubkey: lastPageKey,
-            isSigner: false,
-            isWritable: true,
-          },
-        ])
-        .signers([admin])
-        .rpc()
-    }
-
-    const info = await program.account.orderbookInfo.fetchNullable(
-      orderbookInfoAddress
-    )
-
-    const firstPage = await program.account.orderbookPage.fetchNullable(
-      firstPageAddress
-    )
-
-    const secondPage = await program.account.orderbookPage.fetchNullable(
-      secondPageAddress
-    )
-
-    const thirdPage = await program.account.orderbookPage.fetchNullable(
-      thirdPageAddress
-    )
-
-    const fourthPage = await program.account.orderbookPage.fetchNullable(
-      fourthPageAddress
-    )
-
-    assert.equal(info.length, 4, "orderbook should have four orders")
-    // @ts-ignore
-    assert.equal(firstPage.list.length, 3, "first page should be full")
-    // @ts-ignore
-    assert.equal(secondPage.list.length, 1, "second page should be length 1")
-    // @ts-ignore
-    assert.equal(thirdPage.list.length, 0, "third page should be emprty")
-    // @ts-ignore
-    assert.equal(fourthPage.list.length, 0, "fourth page should be emprty")
   })
+
+  // it("Places 14 orders. Takes a random subset of 10 of them with takeorderhelper", async () => {
+  //   // place way more orders
+  //   for (let i = 0; i < 14; i++) {
+  //     const [infoKey] = await PublicKey.findProgramAddress(
+  //       [orderbookId.toBytes(), utf8.encode("orderbook-info")],
+  //       program.programId
+  //     )
+  //     const info = await program.account.orderbookInfo.fetchNullable(infoKey)
+  //     const nextOpenPageIndex = Math.floor(info.length / maxLength)
+  //     const [currentPageKey] = await PublicKey.findProgramAddress(
+  //       [
+  //         orderbookId.toBytes(),
+  //         utf8.encode("page"),
+  //         new anchor.BN(nextOpenPageIndex).toArrayLike(Buffer, "le", 4),
+  //       ],
+  //       program.programId
+  //     )
+
+  //     await program.methods
+  //       .placeOrder({
+  //         user: user.publicKey,
+  //         numApples: new anchor.BN(1e6),
+  //         offeringApples: true,
+  //         numOranges: new anchor.BN((i + 1) * 1e6),
+  //         memo: 0,
+  //       })
+  //       .accounts({
+  //         user: user.publicKey,
+  //         userAta: userApplesATA,
+  //         vault: applesVault,
+  //         orderbookInfo: orderbookInfoAddress,
+  //         currentPage: currentPageKey,
+  //         userAccount: userAccountAddress,
+  //       })
+  //       .signers([user])
+  //       .rpc({
+  //         skipPreflight: true,
+  //       })
+  //   }
+
+  //   // Going to fully take 10 random orders.
+  //   const allKeys = [...Array(14).keys()].map((x) => x++)
+
+  //   const targetKeys = getRandomSubarray(allKeys, 10)
+
+  //   let orderData = []
+  //   for (let i of targetKeys) {
+  //     orderData.push({
+  //       order: {
+  //         user: user.publicKey,
+  //         numApples: new anchor.BN(1e6),
+  //         offeringApples: true,
+  //         numOranges: new anchor.BN((i + 1) * 1e6),
+  //         memo: 0,
+  //       },
+  //       size: new anchor.BN((i + 1) * 1e6),
+  //       pageNumber: Math.floor(i / 3),
+  //       index: i % 3,
+  //     })
+  //   }
+
+  //   const orderedData = takeOrdersHelper(orderData, 14, 3)
+
+  //   for (let [data, lastPageIndex] of orderedData) {
+  //     const [orderPageKey] = await PublicKey.findProgramAddress(
+  //       [
+  //         orderbookId.toBytes(),
+  //         utf8.encode("page"),
+  //         new anchor.BN(data.pageNumber).toArrayLike(Buffer, "le", 4),
+  //       ],
+  //       program.programId
+  //     )
+
+  //     const [lastPageKey] = await PublicKey.findProgramAddress(
+  //       [
+  //         orderbookId.toBytes(),
+  //         utf8.encode("page"),
+  //         new anchor.BN(lastPageIndex).toArrayLike(Buffer, "le", 4),
+  //       ],
+  //       program.programId
+  //     )
+
+  //     await program.methods
+  //       .takeOrder(data.order, data.size, data.pageNumber, data.index)
+  //       .accounts({
+  //         taker: admin.publicKey,
+  //         takerSendingAta: adminOrangesATA,
+  //         takerReceivingAta: adminApplesATA,
+  //         offererUserAccount: userAccountAddress,
+  //         offererReceivingAta: userOrangesATA,
+  //         vault: applesVault,
+  //         orderbookInfo: orderbookInfoAddress,
+  //         orderPage: orderPageKey,
+  //         // takerTradeLog: adminTradeLog,
+  //         // offererTradeLog: userTradeLog,
+  //       })
+  //       .remainingAccounts([
+  //         {
+  //           pubkey: lastPageKey,
+  //           isSigner: false,
+  //           isWritable: true,
+  //         },
+  //       ])
+  //       .signers([admin])
+  //       .rpc()
+  //   }
+
+  //   const info = await program.account.orderbookInfo.fetchNullable(
+  //     orderbookInfoAddress
+  //   )
+
+  //   const firstPage = await program.account.orderbookPage.fetchNullable(
+  //     firstPageAddress
+  //   )
+
+  //   const secondPage = await program.account.orderbookPage.fetchNullable(
+  //     secondPageAddress
+  //   )
+
+  //   const thirdPage = await program.account.orderbookPage.fetchNullable(
+  //     thirdPageAddress
+  //   )
+
+  //   const fourthPage = await program.account.orderbookPage.fetchNullable(
+  //     fourthPageAddress
+  //   )
+
+  //   assert.equal(info.length, 4, "orderbook should have four orders")
+  //   // @ts-ignore
+  //   assert.equal(firstPage.list.length, 3, "first page should be full")
+  //   // @ts-ignore
+  //   assert.equal(secondPage.list.length, 1, "second page should be length 1")
+  //   // @ts-ignore
+  //   assert.equal(thirdPage.list.length, 0, "third page should be emprty")
+  //   // @ts-ignore
+  //   assert.equal(fourthPage.list.length, 0, "fourth page should be emprty")
+  // })
 })

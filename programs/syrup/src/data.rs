@@ -247,5 +247,6 @@ pub struct OrderMetadata {
     pub last_page_idx: u32,
     pub order_page_idx: u32,
     pub offerer_user_account_idx: u32,
-    pub offerer_receiving_ata_idx: u32
+    pub offerer_receiving_ata_idx: u32,
+    pub size: u64
 }

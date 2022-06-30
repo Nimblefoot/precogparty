@@ -575,6 +575,8 @@ describe("orderbook", () => {
     // )
   })
 
+  it("places more orders. then tests take_multiple_orders instruction", async () => {})
+
   it("Closes an orderbook. Taking is blocked but you can still cancel, you can cancel other people's orders.", async () => {
     await program.methods
       .closeOrderbook()
@@ -676,7 +678,7 @@ describe("orderbook", () => {
       "Cannot have two orderbooks with the same name"
     )
 
-    let info = await program.account.orderbookInfo.fetch(orderbookInfoAddress)
-    console.log(info.length)
+    // let info = await program.account.orderbookInfo.fetch(orderbookInfoAddress)
+    // console.log(info.length)
   })
 })
