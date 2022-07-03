@@ -1,6 +1,6 @@
 import useConfirmationAlert from "src/hooks/useConfirmationAlert"
 import { useWallet, useConnection } from "@solana/wallet-adapter-react"
-import { Transaction, TransactionInstruction } from "@solana/web3.js"
+import { PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js"
 import clsx from "clsx"
 import { useCallback, useState } from "react"
 import ReactCanvasConfetti from "react-canvas-confetti"
@@ -36,8 +36,27 @@ export const useTransact = () => {
       setStatus("signing")
 
       const recentbhash = await connection.getLatestBlockhash()
-      const txns = bundles.map((bundle) => {
-        const txn = new Transaction().add(...bundle)
+
+      const txns = bundles.map((bundle, i) => {
+        const txn = new Transaction().add(
+          ...bundle,
+          ...(bundles.length > 1
+            ? [
+                new TransactionInstruction({
+                  keys: [
+                    { pubkey: publicKey, isSigner: true, isWritable: true },
+                  ],
+                  data: Buffer.from(
+                    `Precog transaction ${i + 1} of ${bundles.length}`,
+                    "utf-8"
+                  ),
+                  programId: new PublicKey(
+                    "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+                  ),
+                }),
+              ]
+            : [])
+        )
         txn.recentBlockhash = recentbhash.blockhash
         txn.feePayer = publicKey
         return txn
@@ -69,7 +88,7 @@ export const useTransact = () => {
           setStatus("sending")
           console.log("SENDING", signedTx)
           sig = await connection.sendRawTransaction(signedTx.serialize(), {
-            //skipPreflight: true,
+            skipPreflight: signed.length > 1,
           })
           console.log("sent tx", sig)
 
