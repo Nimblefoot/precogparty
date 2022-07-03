@@ -1,84 +1,90 @@
 import useConfirmationAlert from "src/hooks/useConfirmationAlert"
 import { useWallet, useConnection } from "@solana/wallet-adapter-react"
-import { Transaction } from "@solana/web3.js"
+import { Transaction, TransactionInstruction } from "@solana/web3.js"
 import clsx from "clsx"
-import { connect } from "http2"
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import ReactCanvasConfetti from "react-canvas-confetti"
+import { bundleInstructions } from "@/utils/fillTransaction"
 
 export type Status = "initial" | "signing" | "sending" | "confirming" | "done"
 
 //TODO lazy load canvas-confetti
 
+type CallbackOptions = {
+  onCancel?: () => void | Promise<void>
+  onSuccess?: () => void | Promise<void>
+  onError?: () => void | Promise<void>
+}
+
 export const useTransact = () => {
   const [status, setStatus] = useState<Status>("initial")
-  const { sendTransaction, signTransaction, publicKey } = useWallet()
+  const { signTransaction, publicKey } = useWallet()
   const { connection } = useConnection()
 
   const [snackSuccess, snackError] = useConfirmationAlert()
 
-  const callback = async (
-    txn: Transaction,
-    options?: {
-      onCancel?: () => void | Promise<void>
-      onSuccess?: () => void | Promise<void>
-      onError?: () => void | Promise<void>
-    }
-  ) => {
-    if (!signTransaction || !publicKey) {
-      return
-    }
-
-    setStatus("signing")
-    const recentbhash = await connection.getLatestBlockhash()
-    txn.recentBlockhash = recentbhash.blockhash
-    txn.feePayer = publicKey
-
-    let signed
-    try {
-      signed = await signTransaction(txn)
-    } catch (e: any) {
-      setStatus("initial")
-      if ((e.message as string).includes("User rejected the request")) {
-        await options?.onCancel?.()
+  const callback = useCallback(
+    async (txn: Transaction, options?: CallbackOptions) => {
+      if (!signTransaction || !publicKey) {
         return
-      } else {
-        console.log("pooey")
+      }
+
+      console.log("bink", txn)
+      console.log("borp", bundleInstructions(txn.instructions))
+
+      setStatus("signing")
+      const recentbhash = await connection.getLatestBlockhash()
+      txn.recentBlockhash = recentbhash.blockhash
+      txn.feePayer = publicKey
+
+      let signed
+      try {
+        signed = await signTransaction(txn)
+      } catch (e: any) {
+        setStatus("initial")
+        if ((e.message as string).includes("User rejected the request")) {
+          await options?.onCancel?.()
+          return
+        } else {
+          console.log("pooey")
+          console.error(e)
+          snackError(e.message)
+          await options?.onError?.()
+
+          throw e
+        }
+      }
+
+      setStatus("sending")
+      console.log(txn)
+
+      let sig
+      try {
+        sig = await connection.sendRawTransaction(signed.serialize(), {
+          //skipPreflight: true,
+        })
+        console.log("sent tx", sig)
+
+        setStatus("confirming")
+        const result = await connection.confirmTransaction(sig)
+        console.log("confirmed tx", result)
+
+        snackSuccess("Confirmed!", sig)
+
+        await options?.onSuccess?.()
+        setStatus("done")
+      } catch (e: any) {
+        console.log(e.logs)
         console.error(e)
-        snackError(e.message)
         await options?.onError?.()
 
-        throw e
+        snackError(e.message, sig)
+        setStatus("initial")
       }
-    }
+    },
+    [connection, publicKey, signTransaction, snackError, snackSuccess]
+  )
 
-    setStatus("sending")
-    console.log(txn)
-
-    let sig
-    try {
-      sig = await connection.sendRawTransaction(signed.serialize(), {
-        //skipPreflight: true,
-      })
-      console.log("sent tx", sig)
-
-      setStatus("confirming")
-      const result = await connection.confirmTransaction(sig)
-      console.log("confirmed tx", result)
-
-      snackSuccess("Confirmed!", sig)
-
-      await options?.onSuccess?.()
-      setStatus("done")
-    } catch (e: any) {
-      console.log(e.logs)
-      console.error(e)
-      await options?.onError?.()
-
-      snackError(e.message, sig)
-      setStatus("initial")
-    }
-  }
   return { callback, status }
 }
 
