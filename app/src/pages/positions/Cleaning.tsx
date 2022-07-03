@@ -74,10 +74,10 @@ export const WithdrawAllButton = () => {
     )
 
     const init = initUserCollateralIx ? [initUserCollateralIx] : []
-    const txn = new Transaction().add(...init, ...ixs)
+    const allIxs = [...init, ...ixs]
 
     // TODO transaction limits enforcement
-    await callback(txn, {
+    await callback(allIxs, {
       onSuccess: () => {
         queryClient.invalidateQueries(tokenAccountKeys.all)
       },

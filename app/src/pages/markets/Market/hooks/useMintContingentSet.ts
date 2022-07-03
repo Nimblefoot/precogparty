@@ -61,8 +61,7 @@ const useMintContingentSet = (address: PublicKey) => {
       if (initUserNoIx) init.push(initUserNoIx)
       if (initUserYesIx) init.push(initUserYesIx)
 
-      const txn = new Transaction().add(...init, x)
-      return txn
+      return [...init, x]
     },
     [publicKey, market.data, connection, address]
   )

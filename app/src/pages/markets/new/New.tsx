@@ -1,9 +1,9 @@
-import TransactButton, {
+import {
   StatelessTransactButton,
   useTransact,
 } from "src/components/TransactButton"
-import { useConnection, useWallet } from "@solana/wallet-adapter-react"
-import { PublicKey, Transaction } from "@solana/web3.js"
+import { useWallet } from "@solana/wallet-adapter-react"
+import { PublicKey } from "@solana/web3.js"
 import { MARKET_DESCRIPTION_CHARLIMIT } from "config"
 import { useRouter } from "next/router"
 import React, { useEffect, useState } from "react"

@@ -8,7 +8,7 @@ import { tokenAccountKeys, useTokenAccount } from "src/pages/tokenAccountQuery"
 import React, { useCallback } from "react"
 import { useMarket } from "./hooks/marketQueries"
 
-import useRedeemTxn from "./hooks/useRedeemTxn"
+import useRedeemIxs from "./hooks/useRedeemIxs"
 import { queryClient } from "src/pages/providers"
 
 function classNames(...classes: string[]) {
@@ -47,7 +47,7 @@ export function RedeemButton({
     }[resolution]
 
   const { callback, status } = useTransact()
-  const getTxn = useRedeemTxn(address)
+  const getTxn = useRedeemIxs(address)
   const onSubmit = useCallback(async () => {
     // ideally this should just await the query but the UX impact is zero so whatever
     if (!market.data)

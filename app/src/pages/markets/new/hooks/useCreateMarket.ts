@@ -124,15 +124,14 @@ const useCreateMarket = () => {
         }
       )
 
-      const txn = new Transaction().add(
+      return [
         // on devnet the default seems to be the max budget, and using this instruction breaks things ?
         ...(CLUSTER === "mainnet" || CLUSTER === "devnet"
           ? [requestAdditionalBudgetIx(341007)]
           : []),
         x,
-        createBook
-      )
-      return txn
+        createBook,
+      ]
     },
     []
   )

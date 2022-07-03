@@ -23,16 +23,17 @@ const useAirdrop = () => {
       COLLATERAL_MINT,
       publicKey
     )
-    const tx = new Transaction().add(
+    const ixs = [
       ...(ataIx ? [ataIx] : []),
       SystemProgram.transfer({
         fromPubkey: publicKey,
         toPubkey: ata,
         lamports: amount,
       }),
-      createSyncNativeInstruction(ata)
-    )
-    await callback(tx, {
+      createSyncNativeInstruction(ata),
+    ]
+
+    await callback(ixs, {
       onSuccess: () =>
         queryClient.invalidateQueries(tokenAccountKeys.token(COLLATERAL_MINT)),
     })

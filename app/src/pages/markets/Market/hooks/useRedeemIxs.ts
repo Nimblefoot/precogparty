@@ -7,7 +7,7 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import { COLLATERAL_MINT } from "config"
 import getATAandCreateIxIfNeeded from "src/utils/getATAandCreateIxIfNeeded"
 
-const useRedeemTxn = (marketAddress: PublicKey) => {
+const useRedeemIxs = (marketAddress: PublicKey) => {
   const { publicKey } = useWallet()
   const { connection } = useConnection()
 
@@ -50,8 +50,7 @@ const useRedeemTxn = (marketAddress: PublicKey) => {
       )
 
       const init = initUserCollateralIx ? [initUserCollateralIx] : []
-      const txn = new Transaction().add(...init, x)
-      return txn
+      return [...init, x]
     },
     [connection, marketAddress, publicKey]
   )
@@ -59,4 +58,4 @@ const useRedeemTxn = (marketAddress: PublicKey) => {
   return callback
 }
 
-export default useRedeemTxn
+export default useRedeemIxs

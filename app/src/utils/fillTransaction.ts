@@ -16,8 +16,6 @@ const fillTransaction = (
   contents: TransactionInstruction[],
   remaining: TransactionInstruction[]
 ] => {
-  console.log("SIZE", accSize)
-
   const [ix, ...rest] = ixs
   if (ix === undefined) return [accumulator, []]
 

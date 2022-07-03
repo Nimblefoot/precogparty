@@ -7,6 +7,7 @@ import ReactCanvasConfetti from "react-canvas-confetti"
 import { bundleInstructions } from "@/utils/fillTransaction"
 
 export type Status = "initial" | "signing" | "sending" | "confirming" | "done"
+type PendingCount = [done: number, total: number]
 
 //TODO lazy load canvas-confetti
 
@@ -18,28 +19,35 @@ type CallbackOptions = {
 
 export const useTransact = () => {
   const [status, setStatus] = useState<Status>("initial")
-  const { signTransaction, publicKey } = useWallet()
+  const [pendingCount, setPendingCount] = useState<PendingCount>([0, 0])
+  const { signTransaction, publicKey, signAllTransactions } = useWallet()
   const { connection } = useConnection()
 
   const [snackSuccess, snackError] = useConfirmationAlert()
 
   const callback = useCallback(
-    async (txn: Transaction, options?: CallbackOptions) => {
-      if (!signTransaction || !publicKey) {
+    async (ixs: TransactionInstruction[], options?: CallbackOptions) => {
+      if (!signAllTransactions || !publicKey) {
         return
       }
 
-      console.log("bink", txn)
-      console.log("borp", bundleInstructions(txn.instructions))
+      const bundles = bundleInstructions(ixs)
 
       setStatus("signing")
-      const recentbhash = await connection.getLatestBlockhash()
-      txn.recentBlockhash = recentbhash.blockhash
-      txn.feePayer = publicKey
 
-      let signed
+      const recentbhash = await connection.getLatestBlockhash()
+      const txns = bundles.map((bundle) => {
+        const txn = new Transaction().add(...bundle)
+        txn.recentBlockhash = recentbhash.blockhash
+        txn.feePayer = publicKey
+        return txn
+      })
+
+      console.log("TXNS TO SEND", txns)
+
+      let signed: Transaction[]
       try {
-        signed = await signTransaction(txn)
+        signed = await signAllTransactions(txns)
       } catch (e: any) {
         setStatus("initial")
         if ((e.message as string).includes("User rejected the request")) {
@@ -55,22 +63,22 @@ export const useTransact = () => {
         }
       }
 
-      setStatus("sending")
-      console.log(txn)
-
       let sig
       try {
-        sig = await connection.sendRawTransaction(signed.serialize(), {
-          //skipPreflight: true,
-        })
-        console.log("sent tx", sig)
+        for (const signedTx of signed) {
+          setStatus("sending")
+          console.log("SENDING", signedTx)
+          sig = await connection.sendRawTransaction(signedTx.serialize(), {
+            //skipPreflight: true,
+          })
+          console.log("sent tx", sig)
 
-        setStatus("confirming")
-        const result = await connection.confirmTransaction(sig)
-        console.log("confirmed tx", result)
+          setStatus("confirming")
+          const result = await connection.confirmTransaction(sig)
+          console.log("confirmed tx", result)
 
-        snackSuccess("Confirmed!", sig)
-
+          snackSuccess("Confirmed!", sig)
+        }
         await options?.onSuccess?.()
         setStatus("done")
       } catch (e: any) {
@@ -82,7 +90,7 @@ export const useTransact = () => {
         setStatus("initial")
       }
     },
-    [connection, publicKey, signTransaction, snackError, snackSuccess]
+    [connection, publicKey, signAllTransactions, snackError, snackSuccess]
   )
 
   return { callback, status }
@@ -148,23 +156,5 @@ export function StatelessTransactButton({
           : "Confirming..."}
       </button>
     </>
-  )
-}
-
-type Props = {
-  verb: string
-  disabled?: boolean
-  getTxn: () => Promise<Transaction>
-}
-
-export default function TransactButton({ getTxn, ...props }: Props) {
-  const { callback, status } = useTransact()
-
-  const onClick = async () => {
-    const txn = await getTxn()
-    await callback(txn)
-  }
-  return (
-    <StatelessTransactButton {...props} status={status} onClick={onClick} />
   )
 }

@@ -6,14 +6,14 @@ import { PublicKey } from "@solana/web3.js"
 import { queryClient } from "src/pages/providers"
 import React, { useCallback, useState } from "react"
 import { marketKeys } from "./hooks/marketQueries"
-import useResolveMarketTxn from "./hooks/useResolveMarketTxn"
+import useResolveMarketIxs from "./hooks/useResolveMarketIxs"
 
 type Resolution = "yes" | "no"
 export function Resolve({ market }: { market: PublicKey }) {
   const [resolution, setResolution] = useState<Resolution | undefined>()
 
   const { callback, status } = useTransact()
-  const getResolveMarketTxn = useResolveMarketTxn()
+  const getResolveMarketTxn = useResolveMarketIxs()
   const onSubmit = useCallback(async () => {
     if (!resolution) return
     const txn = await getResolveMarketTxn({ resolution, market })

@@ -55,9 +55,7 @@ const useMergeContingentSet = (address: PublicKey) => {
       )
 
       const init = initUserCollateralIx ? [initUserCollateralIx] : []
-
-      const txn = new Transaction().add(...init, x)
-      return txn
+      return [...init, x]
     },
     [publicKey, connection, address]
   )

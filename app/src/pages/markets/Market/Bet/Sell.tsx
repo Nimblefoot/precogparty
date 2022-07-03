@@ -194,25 +194,23 @@ const useSubmitSell = ({
       : undefined
     const placeIxs = placeTxn ? placeTxn.instructions : []
 
-    const mergeTxn = usdcMade && (await mergeSet({ amount: usdcMade }))
-    const mergeIx = mergeTxn?.instructions ?? []
+    const mergeIxs = (usdcMade && (await mergeSet({ amount: usdcMade }))) ?? []
 
     const computeCost =
       MINT_SET_COST +
       takeIxs.length * TAKE_ORDER_COST +
       (placeTxn ? PLACE_ORDER_COST : 0)
 
-    const txn = new Transaction().add(
+    const ixs = [
       ...(CLUSTER === "mainnet" && computeCost > DEFAULT_COMPUTE_MAX
         ? [requestAdditionalBudgetIx(computeCost)]
         : []),
       ...placeIxs,
       ...takeIxs,
-      ...mergeIx
-    )
+      ...mergeIxs,
+    ]
 
-    console.log(txn)
-    await callback(txn, {
+    await callback(ixs, {
       onSuccess: () => {
         queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
         // TODO invalidate the correct keys

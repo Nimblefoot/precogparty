@@ -118,7 +118,7 @@ const useSubmitBet = ({
   const { callback, status } = useTransact()
 
   const submit = useCallback(async () => {
-    const mintTxn = await mintSet({
+    const mintIxs = await mintSet({
       amount: orderSpendAmount.add(taking.totalSpend ?? new BN(0)),
     })
 
@@ -151,23 +151,23 @@ const useSubmitBet = ({
     const placeIxs = placeTxn ? placeTxn.instructions : []
 
     const computeCost =
-      (mintTxn.instructions.length - 1) * COSTS.INIT_ATA +
+      (mintIxs.length - 1) * COSTS.INIT_ATA +
       MINT_SET_COST +
       takeIxs.length * TAKE_ORDER_COST +
       (placeTxn
         ? PLACE_ORDER_COST + (placeIxs.length - 1) * COSTS.CREATE_USER_ACCOUNT
         : 0)
 
-    const txn = new Transaction().add(
+    const ixs = [
       ...(CLUSTER === "mainnet" && computeCost > DEFAULT_COMPUTE_MAX
         ? [requestAdditionalBudgetIx(computeCost)]
         : []),
-      ...mintTxn.instructions,
+      ...mintIxs,
       ...placeIxs,
-      ...takeIxs
-    )
+      ...takeIxs,
+    ]
 
-    await callback(txn, {
+    await callback(ixs, {
       onSuccess: () => {
         queryClient.invalidateQueries(orderbookKeys.book(marketAddress))
         queryClient.invalidateQueries(

@@ -343,8 +343,7 @@ const CancelOrderButton = ({ order }: { order: OrderRecordFields }) => {
       .signers([])
       .instruction()
 
-    const tx = new Transaction().add(ix)
-    await callback(tx)
+    await callback([ix])
 
     queryClient.invalidateQueries(orderbookKeys.book(order.market))
     queryClient.invalidateQueries(orderbookKeys.userAccount(publicKey))

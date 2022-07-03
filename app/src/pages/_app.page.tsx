@@ -26,9 +26,6 @@ import { displayBN } from "src/utils/BNutils"
 import BN from "bn.js"
 import clsx from "clsx"
 import useAirdrop from "src/hooks/useAirdrop"
-import TransactButton, {
-  StatelessTransactButton,
-} from "src/components/TransactButton"
 
 const navigation = [
   //{ name: "Home", href: "#", icon: HomeIcon },

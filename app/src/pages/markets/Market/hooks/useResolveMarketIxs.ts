@@ -9,7 +9,7 @@ import { Resolution, RESOLUTION_MAPPING } from "config"
 // import { useSyrup } from "src/hooks/useProgram"
 // import { utf8 } from "@project-serum/anchor/dist/cjs/utils/bytes"
 
-const useResolveMarketTxn = () => {
+const useResolveMarketIxs = () => {
   const { publicKey } = useWallet()
 
   const callback = useCallback(
@@ -50,8 +50,7 @@ const useResolveMarketTxn = () => {
 
       // const txn = new Transaction().add(x).add(y)
 
-      const txn = new Transaction().add(x)
-      return txn
+      return [x]
     },
     [publicKey]
   )
@@ -59,4 +58,4 @@ const useResolveMarketTxn = () => {
   return callback
 }
 
-export default useResolveMarketTxn
+export default useResolveMarketIxs
