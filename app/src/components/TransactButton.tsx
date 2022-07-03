@@ -5,6 +5,7 @@ import clsx from "clsx"
 import { useCallback, useState } from "react"
 import ReactCanvasConfetti from "react-canvas-confetti"
 import { bundleInstructions } from "@/utils/fillTransaction"
+import { sign } from "crypto"
 
 export type Status = "initial" | "signing" | "sending" | "confirming" | "done"
 type PendingCount = [done: number, total: number]
@@ -84,7 +85,7 @@ export const useTransact = () => {
 
       let sig
       try {
-        for (const signedTx of signed) {
+        for (const [signedTx, i] of signed.map((x, i) => [x, i] as const)) {
           setStatus("sending")
           console.log("SENDING", signedTx)
           sig = await connection.sendRawTransaction(signedTx.serialize(), {
@@ -96,7 +97,12 @@ export const useTransact = () => {
           const result = await connection.confirmTransaction(sig)
           console.log("confirmed tx", result)
 
-          snackSuccess("Confirmed!", sig)
+          snackSuccess(
+            signed.length > 1
+              ? `Confirmed! (${i + 1} of ${signed.length})`
+              : "Confirmed!",
+            sig
+          )
         }
         await options?.onSuccess?.()
         setStatus("done")
