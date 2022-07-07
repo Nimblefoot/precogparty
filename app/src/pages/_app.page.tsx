@@ -105,8 +105,22 @@ const Layout = ({ Component, pageProps }: AppProps) => {
                     </div>
                   </Transition.Child>
                   <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-                    <div className="flex-shrink-0 flex items-center px-4">
-                      precog.markets
+                    <div className="flex items-center flex-shrink-0 px-4 gap-3 bg-white">
+                      <Image
+                        src="/precogs.svg"
+                        height={35}
+                        width={35}
+                        alt="precog logo"
+                      />
+                      <div
+                        className="text-lg mb-1"
+                        style={{
+                          fontFamily: "'Quicksand', sans-serif",
+                          fontWeight: 600,
+                        }}
+                      >
+                        precog.markets
+                      </div>
                     </div>
                     <nav className="mt-5 px-2 space-y-1">
                       {navigation.map((item) => (
@@ -308,27 +322,5 @@ function UserInfoDesktop({}) {
 }
 
 function UserInfoMobile({}) {
-  return (
-    <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-      <a href="#" className="flex-shrink-0 group block">
-        <div className="flex items-center">
-          <div>
-            <img
-              className="inline-block h-10 w-10 rounded-full"
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-              alt=""
-            />
-          </div>
-          <div className="ml-3">
-            <p className="text-base font-medium text-gray-700 group-hover:text-gray-900">
-              Tom Cook
-            </p>
-            {/* <p className="text-sm font-medium text-gray-500 group-hover:text-gray-700">
-              View profile
-            </p> */}
-          </div>
-        </div>
-      </a>
-    </div>
-  )
+  return <UserInfoDesktop />
 }
