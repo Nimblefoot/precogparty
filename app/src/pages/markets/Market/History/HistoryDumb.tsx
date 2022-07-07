@@ -63,7 +63,7 @@ export function HistoryDumb({
           color: "#84cc16",
         },
       ]}
-      margin={{ top: 5, right: 20, bottom: 25, left: 40 }}
+      margin={{ top: 5, right: 0, bottom: 25, left: 40 }}
       xScale={{
         type: "time",
         useUTC: false,
