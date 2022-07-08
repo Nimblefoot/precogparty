@@ -1,15 +1,18 @@
+import HumanTime from "@/components/HumanTime"
 import { PredictionMarketFields } from "@/generated/client/accounts"
 import { TradeLogFields } from "@/generated/syrup/accounts"
 import interpolateOddsColors from "@/utils/interpolateOddsColors"
 import { getPercentOdds } from "@/utils/orderMath"
-import { ClockIcon, SearchIcon } from "@heroicons/react/outline"
+import { CalendarIcon, ClockIcon, SearchIcon } from "@heroicons/react/outline"
 import clsx from "clsx"
+import dayjs from "dayjs"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import useMarketSearch from "./hooks/useMarketSearch"
 import { useMarkets } from "./Market/hooks/marketQueries"
 import { useOrderbookLogs } from "./Market/Orderbook/orderbookQueries"
 import { UserSmall } from "./User"
+import * as R from "ramda"
 
 export default function Browse() {
   const query = useMarkets()
@@ -23,7 +26,17 @@ export default function Browse() {
     return y
   }, [search, searchString])
 
-  const markets = searchString !== "" ? searchResults : query.data
+  const markets = useMemo(() => {
+    if (searchString !== "") return searchResults
+    const marketData = query.data
+    if (marketData === undefined) return undefined
+    if (tradeLogs === undefined) return undefined
+    return R.sortBy<typeof marketData[number]>((x) => {
+      const log = tradeLogs[x.publicKey.toString()]
+      if (log === null) return 0
+      return 0 - log.openTime.toNumber()
+    }, marketData)
+  }, [query.data, searchResults, searchString, tradeLogs])
 
   console.log("AAAAA", tradeLogs)
   return (
@@ -142,18 +155,12 @@ function MarketPreview({
               )}
             </span>
           </div>
-          <div className="flex content-center flex-row gap-4 mt-2">
-            <div>
-              <UserSmall publicKey={market.marketAuthority} />
+          <div className="flex flex-row gap-4 mt-2 text-sm items-center justify-between">
+            <UserSmall publicKey={market.marketAuthority} />
+
+            <div className="">
+              <HumanTime date={new Date(log.openTime.toNumber() * 1000)} />
             </div>
-            {/* <div className="text-sm flex justify-center flex-col">
-           <div className="flex">
-             <div className="h-5 w-5 self-center mr-1">
-               <ClockIcon />
-             </div>
-             <div className="">Jan 25 2020</div>
-           </div>
-          </div> */}
           </div>
         </li>
       </a>
