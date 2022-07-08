@@ -11,12 +11,16 @@ import { PublicKey } from "@solana/web3.js"
 import BN from "bn.js"
 import { useCallback, useMemo } from "react"
 import { useQuery } from "react-query"
+import { useMarkets } from "../hooks/marketQueries"
+
+import R from "ramda"
 
 export const orderbookKeys = {
   all: ["orderbooks"],
   book: (address: PublicKey) => [...orderbookKeys.all, address.toString()],
   userAccount: (address?: PublicKey) => ["user", address?.toString()],
-  log: (address: PublicKey) => ["log", address.toString()],
+  allLogs: ["log"],
+  log: (address: PublicKey) => [...orderbookKeys.allLogs, address.toString()],
 } as const
 
 export type Orderbook = {
@@ -96,18 +100,59 @@ export const useOrderbookLog = (marketAddress: PublicKey) => {
     if (data === null)
       throw new Error(`no orderbook log found ${marketAddress.toString()}`)
 
-    const trades = data.trades
-    const start = data.start
-
-    return {
-      trades: trades.slice(start).concat(trades.slice(0, start)),
-      start: data.start,
-      openTime: data.openTime,
-      closeTime: data.closeTime,
-    }
+    return formatTradeLog(data)!
   }, [connection, marketAddress])
 
   const query = useQuery(orderbookKeys.log(marketAddress), fetchData)
+
+  return query
+}
+
+const formatTradeLog = <T extends TradeLog | null>(d: T) => {
+  if (d === null) return null
+
+  const trades = d.trades
+  const start = d.start
+  return {
+    trades: trades.slice(start).concat(trades.slice(0, start)),
+    start: d.start,
+    openTime: d.openTime,
+    closeTime: d.closeTime,
+  }
+}
+
+// TODO make this use useOrderbookLog singular data in the way you would want
+export const useOrderbookLogs = () => {
+  const { connection } = useConnection()
+  const { data: markets } = useMarkets()
+  const fetchData = useCallback(async () => {
+    if (!markets) throw new Error()
+
+    const tradeLogs = await Promise.all(
+      markets.map((m) =>
+        PublicKey.findProgramAddress(
+          [m.publicKey.toBuffer(), utf8.encode("trades")],
+          SYRUP_ID
+        )
+      )
+    )
+
+    const data = await TradeLog.fetchMultiple(
+      connection,
+      tradeLogs.map(([addr]) => addr)
+    )
+
+    const pairs = R.zipObj(
+      markets.map((x) => x.publicKey.toString()),
+      data.map(formatTradeLog)
+    )
+
+    return pairs
+  }, [connection, markets])
+
+  const query = useQuery(orderbookKeys.allLogs, fetchData, {
+    enabled: markets !== undefined,
+  })
 
   return query
 }
