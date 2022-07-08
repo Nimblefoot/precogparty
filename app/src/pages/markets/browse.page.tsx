@@ -131,17 +131,14 @@ function MarketPreview({
                   )}
                 </div>
               ) : (
-                market.resolution ===
-                2(
-                  <div className="text-right">
-                    <h1 className="text-lg text-rose-700 font-semibold">NO</h1>
-                    {percentOdds && (
-                      <div className="text-gray-500">
-                        Last traded {percentOdds.toFixed(0)}%
-                      </div>
-                    )}
-                  </div>
-                )
+                <div className="text-right">
+                  <h1 className="text-lg text-rose-700 font-semibold">NO</h1>
+                  {percentOdds && (
+                    <div className="text-gray-500">
+                      Last traded {percentOdds.toFixed(0)}%
+                    </div>
+                  )}
+                </div>
               )}
             </span>
           </div>
