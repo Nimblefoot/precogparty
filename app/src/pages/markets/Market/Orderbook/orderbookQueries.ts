@@ -13,7 +13,7 @@ import { useCallback, useMemo } from "react"
 import { useQuery } from "react-query"
 import { useMarkets } from "../hooks/marketQueries"
 
-import R from "ramda"
+import * as R from "ramda"
 
 export const orderbookKeys = {
   all: ["orderbooks"],

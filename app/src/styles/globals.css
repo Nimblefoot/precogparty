@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  h1 {
+    font-family: 'Quicksand', sans-serif;
+  }
+}
+
 html {
   background-color: #f3f4f6;
 }
